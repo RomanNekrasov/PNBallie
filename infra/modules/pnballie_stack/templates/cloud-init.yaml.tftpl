@@ -31,53 +31,6 @@ write_files:
       ${line}
 %{ endfor ~}
 
-  - path: /opt/pnballie/fetch-secrets.sh
-    owner: root:root
-    permissions: "0755"
-    content: |
-      #!/usr/bin/env bash
-      set -euo pipefail
-
-      TEMPLATE_PATH="/opt/pnballie/.env.template"
-      OUTPUT_PATH="/opt/pnballie/.env"
-
-      KEY_VAULT_NAME="$(awk -F= '/^KEY_VAULT_NAME=/{print $2}' "$TEMPLATE_PATH" | tr -d '\r')"
-      if [[ -z "$KEY_VAULT_NAME" ]]; then
-        echo "KEY_VAULT_NAME not found in $TEMPLATE_PATH" >&2
-        exit 1
-      fi
-
-      TOKEN="$(curl -fsS -H Metadata:true \
-        'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://vault.azure.net' \
-        | jq -r '.access_token')"
-      if [[ -z "$TOKEN" || "$TOKEN" == "null" ]]; then
-        echo "Failed to acquire managed identity token for Key Vault" >&2
-        exit 1
-      fi
-
-      get_secret_value() {
-        local secret_name="$1"
-        curl -fsS \
-          -H "Authorization: Bearer $TOKEN" \
-          "https://$KEY_VAULT_NAME.vault.azure.net/secrets/$secret_name?api-version=7.4" \
-          | jq -r '.value'
-      }
-
-      tmp_file="$(mktemp)"
-      while IFS= read -r line || [[ -n "$line" ]]; do
-        if [[ "$line" =~ ^([^=]+)=__KV__:(.+)$ ]]; then
-          key="$${BASH_REMATCH[1]}"
-          secret_name="$${BASH_REMATCH[2]}"
-          secret_value="$(get_secret_value "$secret_name")"
-          printf '%s=%s\n' "$key" "$secret_value" >> "$tmp_file"
-        else
-          printf '%s\n' "$line" >> "$tmp_file"
-        fi
-      done < "$TEMPLATE_PATH"
-
-      install -m 600 "$tmp_file" "$OUTPUT_PATH"
-      rm -f "$tmp_file"
-
   - path: /opt/pnballie/mount-data-disk.sh
     owner: root:root
     permissions: "0755"
@@ -118,16 +71,51 @@ write_files:
       #!/usr/bin/env bash
       set -euo pipefail
 
+      ensure_azure_cli() {
+        if command -v az >/dev/null 2>&1; then
+          return
+        fi
+
+        echo "Azure CLI not found; installing..."
+        curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+      }
+
       cd /opt/pnballie
-      /opt/pnballie/fetch-secrets.sh
+      cp .env.template .env
       set -a
       source ./.env
       set +a
 
-      docker login "$ACR_LOGIN_SERVER" -u "$ACR_USERNAME" -p "$ACR_PASSWORD"
+      ensure_azure_cli
+      az login --identity --allow-no-subscriptions >/dev/null
+
+      if [[ -z "$${ACR_NAME:-}" ]]; then
+        ACR_NAME="$${ACR_LOGIN_SERVER%%.*}"
+      fi
+
+      ACR_TOKEN=""
+      for attempt in $(seq 1 12); do
+        ACR_TOKEN="$(az acr login --name "$ACR_NAME" --expose-token --query accessToken -o tsv 2>/tmp/pnballie-acr-login.err || true)"
+        if [[ -n "$ACR_TOKEN" ]]; then
+          break
+        fi
+        echo "Failed to get ACR token (attempt $attempt/12); retrying in 5s..."
+        sleep 5
+      done
+
+      if [[ -z "$ACR_TOKEN" ]]; then
+        echo "Could not obtain ACR access token."
+        cat /tmp/pnballie-acr-login.err || true
+        exit 1
+      fi
+
+      printf '%s\n' "$ACR_TOKEN" | docker login "$ACR_LOGIN_SERVER" \
+        --username 00000000-0000-0000-0000-000000000000 \
+        --password-stdin
       docker compose --env-file .env -f docker-compose.prod.yml pull
       docker compose --env-file .env -f docker-compose.prod.yml up -d --remove-orphans
       docker logout "$ACR_LOGIN_SERVER" || true
+      az account clear || true
       rm -f .env
 
 runcmd:

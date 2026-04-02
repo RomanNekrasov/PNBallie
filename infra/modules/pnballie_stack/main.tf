@@ -9,23 +9,11 @@ locals {
     managed_by  = "terraform"
   }
 
-  key_vault_secret_names = {
-    acr_username = "acr-username"
-    acr_password = "acr-password"
-  }
-
-  key_vault_secret_values = {
-    acr_username = azurerm_container_registry.main.admin_username
-    acr_password = azurerm_container_registry.main.admin_password
-  }
-
   env_content = templatefile("${path.module}/templates/prod.env.tftpl", {
-    site_fqdn              = azurerm_public_ip.vm.fqdn
-    acr_login_server       = azurerm_container_registry.main.login_server
-    image_tag              = var.image_tag
-    key_vault_name         = azurerm_key_vault.main.name
-    kv_secret_acr_username = local.key_vault_secret_names.acr_username
-    kv_secret_acr_password = local.key_vault_secret_names.acr_password
+    site_fqdn        = azurerm_public_ip.vm.fqdn
+    acr_name         = azurerm_container_registry.main.name
+    acr_login_server = azurerm_container_registry.main.login_server
+    image_tag        = var.image_tag
   })
 
   cloud_init = templatefile("${path.module}/templates/cloud-init.yaml.tftpl", {
@@ -49,7 +37,7 @@ resource "azurerm_container_registry" "main" {
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
   sku                 = "Basic"
-  admin_enabled       = true
+  admin_enabled       = false
   tags                = local.tags
 }
 
@@ -74,21 +62,7 @@ resource "azurerm_key_vault_access_policy" "terraform" {
   secret_permissions = [
     "Get",
     "List",
-    "Set",
-    "Delete",
-    "Recover",
-    "Purge",
   ]
-}
-
-resource "azurerm_key_vault_secret" "runtime" {
-  for_each = local.key_vault_secret_values
-
-  name         = local.key_vault_secret_names[each.key]
-  value        = each.value
-  key_vault_id = azurerm_key_vault.main.id
-
-  depends_on = [azurerm_key_vault_access_policy.terraform]
 }
 
 resource "azurerm_virtual_network" "main" {
@@ -185,6 +159,13 @@ resource "azurerm_user_assigned_identity" "vm" {
   tags                = local.tags
 }
 
+resource "azurerm_role_assignment" "vm_acr_pull" {
+  scope                            = azurerm_container_registry.main.id
+  role_definition_name             = "AcrPull"
+  principal_id                     = azurerm_user_assigned_identity.vm.principal_id
+  skip_service_principal_aad_check = true
+}
+
 resource "azurerm_linux_virtual_machine" "main" {
   name                = "${local.prefix}-vm"
   resource_group_name = azurerm_resource_group.main.name
@@ -227,17 +208,6 @@ resource "azurerm_linux_virtual_machine" "main" {
   }
 
   depends_on = [azurerm_network_interface_security_group_association.vm]
-}
-
-resource "azurerm_key_vault_access_policy" "vm" {
-  key_vault_id = azurerm_key_vault.main.id
-  tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = azurerm_user_assigned_identity.vm.principal_id
-
-  secret_permissions = [
-    "Get",
-    "List",
-  ]
 }
 
 resource "azurerm_managed_disk" "data" {
