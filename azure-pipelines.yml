@@ -213,7 +213,39 @@ stages:
                     scriptType: "bash"
                     scriptLocation: "inlineScript"
                     inlineScript: |
-                      curl -fsS "https://${PROD_VM_IP}/api/players" >/dev/null
+                      chmod 600 "$(prodVmKey.secureFilePath)"
+
+                      MAX_ATTEMPTS=30
+                      SLEEP_SECONDS=5
+
+                      for ATTEMPT in $(seq 1 "${MAX_ATTEMPTS}"); do
+                        HTTP_CODE="$(curl -ksS -o /tmp/pnballie-health-body.txt -w "%{http_code}" "https://${PROD_VM_IP}/api/players" || true)"
+                        if [ "${HTTP_CODE}" = "200" ]; then
+                          echo "Health check passed on attempt ${ATTEMPT}/${MAX_ATTEMPTS}"
+                          exit 0
+                        fi
+
+                        echo "Health check attempt ${ATTEMPT}/${MAX_ATTEMPTS} returned HTTP ${HTTP_CODE}; retrying in ${SLEEP_SECONDS}s..."
+                        sleep "${SLEEP_SECONDS}"
+                      done
+
+                      echo "Health check failed after ${MAX_ATTEMPTS} attempts."
+                      echo "Last response body:"
+                      cat /tmp/pnballie-health-body.txt || true
+
+                      ssh -o StrictHostKeyChecking=no -o ConnectTimeout=20 -i "$(prodVmKey.secureFilePath)" "$(prodVmAdminUser)@${PROD_VM_IP}" <<EOFSSH
+                        set -euo pipefail
+                        cd /opt/pnballie
+                        sudo -n docker compose -f docker-compose.prod.yml ps
+                        echo "---- backend logs ----"
+                        sudo -n docker compose -f docker-compose.prod.yml logs --tail=120 backend || true
+                        echo "---- frontend logs ----"
+                        sudo -n docker compose -f docker-compose.prod.yml logs --tail=120 frontend || true
+                        echo "---- caddy logs ----"
+                        sudo -n docker compose -f docker-compose.prod.yml logs --tail=120 caddy || true
+                      EOFSSH
+
+                      exit 1
 
                 - task: AzureCLI@2
                   displayName: Remove temporary SSH rule (PROD)
