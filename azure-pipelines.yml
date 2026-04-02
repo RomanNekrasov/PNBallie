@@ -1,0 +1,229 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: "ubuntu-latest"
+
+variables:
+  - name: tag
+    value: "$(Build.BuildId)"
+  - name: serviceConnection
+    value: "pnb-dlb-s-datalab-devops-conn"
+  - name: acrName
+    value: "pnbdlbppnballiecr"
+  - name: containerRegistry
+    value: "pnbdlbppnballiecr.azurecr.io"
+  - name: prodVmAdminUser
+    value: "pnballie"
+  - name: PROD_VM_SSH_PRIVATE_KEY
+    value: "pnballie_prod_vm"
+  - name: PROD_VM_IP
+    value: "pnb-dlb-p-pnballie.westeurope.cloudapp.azure.com"
+  - name: prodVmResourceGroup
+    value: "pnb-dlb-p-pnballie-rg"
+  - name: prodVmNsgName
+    value: "pnb-dlb-p-pnballie-vm-nsg"
+  - name: prodVmSshRuleName
+    value: "AllowSSH-AzurePipelines"
+  - name: prodVmSshRulePriority
+    value: "101"
+  - name: VITE_AZURE_CLIENT_ID
+    value: "65660e3c-ebc1-44d9-b4b4-563a03c7e26d"
+  - name: VITE_AZURE_TENANT_ID
+    value: "d2aff5f9-8c21-47f2-88f3-08ac4fda56f5"
+  - name: VITE_AZURE_SCOPE
+    value: "api://65660e3c-ebc1-44d9-b4b4-563a03c7e26d/user"
+
+# Override these in Azure DevOps variables when needed:
+# - VITE_AZURE_CLIENT_ID
+# - VITE_AZURE_TENANT_ID
+# - VITE_AZURE_SCOPE (optional, defaults to User.Read if empty)
+# - PROD_VM_IP
+# - PROD_VM_SSH_PRIVATE_KEY (secure file name)
+# - prodVmResourceGroup / prodVmNsgName
+
+stages:
+  - stage: Build
+    displayName: Build and push Docker images
+    jobs:
+      - job: BuildFrontend
+        displayName: Build Frontend
+        steps:
+          - task: AzureCLI@2
+            displayName: Build and push frontend image
+            inputs:
+              azureSubscription: "$(serviceConnection)"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                if [ -z "${VITE_AZURE_CLIENT_ID:-}" ]; then
+                  echo "Missing required pipeline variable: VITE_AZURE_CLIENT_ID"
+                  exit 1
+                fi
+                if [ -z "${VITE_AZURE_TENANT_ID:-}" ]; then
+                  echo "Missing required pipeline variable: VITE_AZURE_TENANT_ID"
+                  exit 1
+                fi
+
+                FRONTEND_SCOPE="${VITE_AZURE_SCOPE:-User.Read}"
+
+                az acr login --name $(acrName)
+                cd frontend
+                docker build \
+                  --platform linux/amd64 \
+                  --build-arg VITE_AZURE_CLIENT_ID="${VITE_AZURE_CLIENT_ID}" \
+                  --build-arg VITE_AZURE_TENANT_ID="${VITE_AZURE_TENANT_ID}" \
+                  --build-arg VITE_AZURE_SCOPE="${FRONTEND_SCOPE}" \
+                  -t pnballie-frontend:$(tag) .
+
+                docker tag pnballie-frontend:$(tag) $(containerRegistry)/pnballie-frontend:$(tag)
+                docker tag pnballie-frontend:$(tag) $(containerRegistry)/pnballie-frontend:latest
+                docker push $(containerRegistry)/pnballie-frontend:$(tag)
+                docker push $(containerRegistry)/pnballie-frontend:latest
+
+      - job: BuildBackend
+        displayName: Build Backend
+        steps:
+          - task: AzureCLI@2
+            displayName: Build and push backend image
+            inputs:
+              azureSubscription: "$(serviceConnection)"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                az acr login --name $(acrName)
+                cd backend
+                docker build --platform linux/amd64 -t pnballie-backend:$(tag) .
+                docker tag pnballie-backend:$(tag) $(containerRegistry)/pnballie-backend:$(tag)
+                docker tag pnballie-backend:$(tag) $(containerRegistry)/pnballie-backend:latest
+                docker push $(containerRegistry)/pnballie-backend:$(tag)
+                docker push $(containerRegistry)/pnballie-backend:latest
+
+  - stage: DeployPROD
+    displayName: Deploy to Production VM
+    dependsOn: Build
+    jobs:
+      - deployment: DeployProduction
+        displayName: Deploy on PROD VM over SSH
+        environment: "production"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: DownloadSecureFile@1
+                  name: prodVmKey
+                  displayName: Download PROD VM SSH private key
+                  inputs:
+                    secureFile: "$(PROD_VM_SSH_PRIVATE_KEY)"
+
+                - task: AzureCLI@2
+                  displayName: Allow temporary SSH from pipeline agent (PROD)
+                  inputs:
+                    azureSubscription: "$(serviceConnection)"
+                    scriptType: "bash"
+                    scriptLocation: "inlineScript"
+                    inlineScript: |
+                      NSG_RG="$(prodVmResourceGroup)"
+                      NSG_NAME="$(prodVmNsgName)"
+                      NSG_RULE_NAME="$(prodVmSshRuleName)"
+                      NSG_RULE_PRIORITY="$(prodVmSshRulePriority)"
+
+                      if [ -z "${NSG_RG}" ] || [ -z "${NSG_NAME}" ]; then
+                        echo "Missing required pipeline variables: prodVmResourceGroup/prodVmNsgName"
+                        exit 1
+                      fi
+
+                      AGENT_IP=$(curl -fsSL https://api.ipify.org)
+                      if [ -z "${AGENT_IP:-}" ]; then
+                        echo "Unable to determine pipeline agent public IP"
+                        exit 1
+                      fi
+
+                      AGENT_CIDR="${AGENT_IP}/32"
+                      echo "Authorizing temporary SSH from ${AGENT_CIDR} for PROD"
+
+                      if az network nsg rule show \
+                        --resource-group "${NSG_RG}" \
+                        --nsg-name "${NSG_NAME}" \
+                        --name "${NSG_RULE_NAME}" >/dev/null 2>&1; then
+                        az network nsg rule update \
+                          --resource-group "${NSG_RG}" \
+                          --nsg-name "${NSG_NAME}" \
+                          --name "${NSG_RULE_NAME}" \
+                          --priority "${NSG_RULE_PRIORITY}" \
+                          --access Allow \
+                          --protocol Tcp \
+                          --direction Inbound \
+                          --source-address-prefixes "${AGENT_CIDR}" \
+                          --source-port-ranges "*" \
+                          --destination-address-prefixes "*" \
+                          --destination-port-ranges 22
+                      else
+                        az network nsg rule create \
+                          --resource-group "${NSG_RG}" \
+                          --nsg-name "${NSG_NAME}" \
+                          --name "${NSG_RULE_NAME}" \
+                          --priority "${NSG_RULE_PRIORITY}" \
+                          --direction Inbound \
+                          --access Allow \
+                          --protocol Tcp \
+                          --source-port-ranges "*" \
+                          --destination-port-ranges 22 \
+                          --source-address-prefixes "${AGENT_CIDR}" \
+                          --destination-address-prefixes "*" \
+                          --description "Temporary SSH access for Azure Pipelines hosted agent (PROD)"
+                      fi
+
+                      sleep 10
+
+                - task: AzureCLI@2
+                  displayName: Pull + restart stack on PROD VM
+                  inputs:
+                    azureSubscription: "$(serviceConnection)"
+                    scriptType: "bash"
+                    scriptLocation: "inlineScript"
+                    inlineScript: |
+                      if [ -z "${PROD_VM_IP:-}" ]; then
+                        echo "Missing required pipeline variable: PROD_VM_IP"
+                        exit 1
+                      fi
+
+                      chmod 600 "$(prodVmKey.secureFilePath)"
+
+                      ssh -o StrictHostKeyChecking=no -o ConnectTimeout=20 -i "$(prodVmKey.secureFilePath)" "$(prodVmAdminUser)@${PROD_VM_IP}" <<EOFSSH
+                        set -euo pipefail
+                        cd /opt/pnballie
+
+                        if [ -f .env.template ]; then
+                          sudo -n sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=$(tag)/" .env.template
+                        fi
+
+                        # Keep VM disk healthy on long-lived hosts before pulling new images.
+                        sudo -n docker image prune -a -f || true
+                        sudo -n docker builder prune -a -f || true
+                        sudo -n /opt/pnballie/deploy.sh
+                      EOFSSH
+
+                - task: AzureCLI@2
+                  displayName: Health check (PROD)
+                  inputs:
+                    azureSubscription: "$(serviceConnection)"
+                    scriptType: "bash"
+                    scriptLocation: "inlineScript"
+                    inlineScript: |
+                      curl -fsS "https://${PROD_VM_IP}/api/players" >/dev/null
+
+                - task: AzureCLI@2
+                  displayName: Remove temporary SSH rule (PROD)
+                  condition: always()
+                  inputs:
+                    azureSubscription: "$(serviceConnection)"
+                    scriptType: "bash"
+                    scriptLocation: "inlineScript"
+                    inlineScript: |
+                      az network nsg rule delete \
+                        --resource-group "$(prodVmResourceGroup)" \
+                        --nsg-name "$(prodVmNsgName)" \
+                        --name "$(prodVmSshRuleName)" || true

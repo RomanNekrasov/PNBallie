@@ -1,0 +1,35 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      SITE_FQDN: ${SITE_FQDN}
+    depends_on:
+      - frontend
+
+  backend:
+    image: ${ACR_LOGIN_SERVER}/pnballie-backend:${IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    volumes:
+      - /data/pnballie:/data
+    expose:
+      - "8000"
+
+  frontend:
+    image: ${ACR_LOGIN_SERVER}/pnballie-frontend:${IMAGE_TAG}
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,13 @@
+subscription_id   = "your-subscription-id"
+location          = "westeurope"
+org_prefix        = "pnb-dlb"
+env_short         = "p"
+project           = "pnballie"
+image_tag         = "latest"
+vm_size           = "Standard_B1s"
+vm_admin_username = "pnballie"
+ssh_allowed_cidr  = "203.0.113.10/32"
+data_disk_size_gb = 16
+
+# Set this via environment variable (do not commit secrets):
+# export TF_VAR_vm_ssh_public_key="$(cat ~/.ssh/pnballie_prod_vm.pub)"

@@ -42,3 +42,10 @@ node_modules
 *.log
 .ruff_cache/
 .mypy_cache/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfplan
+infra/prod/terraform.tfvars
