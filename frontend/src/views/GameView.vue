@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-dvh flex items-center justify-center bg-[#1a1a2e] overflow-hidden">
+  <div class="w-full h-dvh flex items-center justify-center bg-[#1a1510] overflow-hidden">
     <div class="relative w-full max-w-[420px] h-full max-h-[800px]">
       <!-- SVG Table Background -->
       <FoosballTable class="absolute inset-0 w-full h-full" :wiggle="wiggleTeam" />
@@ -19,8 +19,10 @@
         <PlayerBox
           team="blue"
           label="Achter"
+          position="blue_back"
           :player-name="playerName('blue_back')"
           @tap="openModal('blue_back')"
+          @dropped="(from, to) => swapPlayers(from, to)"
         />
       </div>
 
@@ -29,8 +31,10 @@
         <PlayerBox
           team="orange"
           label="Voor"
+          position="orange_front"
           :player-name="playerName('orange_front')"
           @tap="openModal('orange_front')"
+          @dropped="(from, to) => swapPlayers(from, to)"
         />
       </div>
 
@@ -39,8 +43,10 @@
         <PlayerBox
           team="blue"
           label="Voor"
+          position="blue_front"
           :player-name="playerName('blue_front')"
           @tap="openModal('blue_front')"
+          @dropped="(from, to) => swapPlayers(from, to)"
         />
       </div>
 
@@ -49,8 +55,10 @@
         <PlayerBox
           team="orange"
           label="Achter"
+          position="orange_back"
           :player-name="playerName('orange_back')"
           @tap="openModal('orange_back')"
+          @dropped="(from, to) => swapPlayers(from, to)"
         />
       </div>
 
@@ -145,7 +153,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import type { Position } from '../types'
 import { usePlayers } from '../composables/usePlayers'
 import { useMatch } from '../composables/useMatch'
@@ -161,7 +169,7 @@ const {
   orangeScore, blueScore, selectedPlayers,
   submitting, feedback, canSubmit,
   setPlayer, adjustScore, submitMatch,
-  rotatePlayers, playerCount,
+  rotatePlayers, swapPlayers, playerCount,
   sessionMatches, sessionExpired, deleteMatch,
 } = useMatch()
 
@@ -169,9 +177,116 @@ const modalOpen = ref(false)
 const modalPosition = ref<Position | null>(null)
 const wiggleTeam = ref<'orange' | 'blue' | null>(null)
 const historyOpen = ref(false)
+const customCursorEl = ref<HTMLElement | null>(null)
+const customCursorEnabled = ref(false)
+const cursorRotation = ref(0)
+const cursorLastPointer = ref<{ x: number; y: number; t: number } | null>(null)
+const cursorSuppressedByTouch = ref(false)
+
+function spawnBounce(e: MouseEvent | TouchEvent) {
+  if ('touches' in e) {
+    suppressCustomCursor()
+  }
+
+  const el = document.createElement('div')
+  el.className = 'ball-bounce'
+  el.textContent = '\u26BD'
+  const x = 'touches' in e ? e.touches[0]!.clientX : (e as MouseEvent).clientX
+  const y = 'touches' in e ? e.touches[0]!.clientY : (e as MouseEvent).clientY
+  el.style.left = `${x}px`
+  el.style.top = `${y}px`
+  document.body.appendChild(el)
+  el.addEventListener('animationend', () => el.remove())
+}
+
+function suppressCustomCursor() {
+  if (!customCursorEl.value) return
+  cursorSuppressedByTouch.value = true
+  customCursorEl.value.style.opacity = '0'
+}
+
+function revealCustomCursor() {
+  if (!customCursorEl.value) return
+  cursorSuppressedByTouch.value = false
+  customCursorEl.value.style.opacity = '1'
+}
+
+function updateCustomCursorPosition(x: number, y: number) {
+  if (!customCursorEl.value) return
+  customCursorEl.value.style.left = `${x}px`
+  customCursorEl.value.style.top = `${y}px`
+  customCursorEl.value.style.transform = `translate(-50%, -50%) rotate(${cursorRotation.value}deg)`
+}
+
+function onCursorPointerMove(e: PointerEvent) {
+  if (!customCursorEnabled.value || !customCursorEl.value) return
+  if (e.pointerType === 'touch') {
+    suppressCustomCursor()
+    return
+  }
+
+  if (cursorSuppressedByTouch.value) {
+    revealCustomCursor()
+  }
+
+  const next = { x: e.clientX, y: e.clientY, t: e.timeStamp }
+  const prev = cursorLastPointer.value
+  cursorLastPointer.value = next
+
+  if (prev) {
+    const dx = next.x - prev.x
+    const dy = next.y - prev.y
+    const dt = Math.max(1, next.t - prev.t)
+    const speed = Math.hypot(dx, dy) / dt
+    const influence = 1 + Math.min(2, speed * 5)
+    const spinDelta = (dx + dy * 0.55) * 1.25 * influence
+    cursorRotation.value = (cursorRotation.value + spinDelta) % 360
+  }
+
+  updateCustomCursorPosition(next.x, next.y)
+}
+
+function enableCustomCursor() {
+  if (!window.matchMedia('(pointer: fine)').matches) return
+
+  const el = document.createElement('div')
+  el.className = 'football-cursor-ball'
+  el.textContent = '\u26BD'
+  el.style.opacity = '0'
+  document.body.appendChild(el)
+
+  customCursorEl.value = el
+  customCursorEnabled.value = true
+  cursorRotation.value = 0
+  cursorLastPointer.value = null
+  // Start hidden until first real mouse move, then reveal.
+  cursorSuppressedByTouch.value = true
+  document.body.classList.add('football-cursor')
+  document.addEventListener('pointermove', onCursorPointerMove)
+}
+
+function disableCustomCursor() {
+  document.removeEventListener('pointermove', onCursorPointerMove)
+  document.body.classList.remove('football-cursor')
+  customCursorEnabled.value = false
+  cursorLastPointer.value = null
+  if (customCursorEl.value) {
+    customCursorEl.value.remove()
+    customCursorEl.value = null
+  }
+}
 
 onMounted(() => {
   fetchPlayers()
+  enableCustomCursor()
+  document.addEventListener('click', spawnBounce)
+  document.addEventListener('touchstart', spawnBounce, { passive: true })
+})
+
+onUnmounted(() => {
+  disableCustomCursor()
+  document.removeEventListener('click', spawnBounce)
+  document.removeEventListener('touchstart', spawnBounce)
 })
 
 // Auto-dismiss feedback
@@ -216,6 +331,63 @@ async function handleSubmit() {
 </script>
 
 <style>
+body.football-cursor,
+body.football-cursor * {
+  cursor: none !important;
+}
+
+.football-cursor-ball {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 28px;
+  height: 28px;
+  pointer-events: none;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  line-height: 1;
+  transform: translate(-50%, -50%) rotate(0deg);
+  will-change: transform, left, top;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.55));
+  transition: opacity 0.12s ease;
+}
+
+@keyframes ball-bounce {
+  0%   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  30%  { transform: translate(-50%, -80%) scale(1.2); opacity: 1; }
+  50%  { transform: translate(-50%, -50%) scale(0.9); opacity: 0.9; }
+  70%  { transform: translate(-50%, -65%) scale(1.05); opacity: 0.7; }
+  100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+}
+
+.ball-bounce {
+  position: fixed;
+  pointer-events: none;
+  font-size: 28px;
+  z-index: 9999;
+  animation: ball-bounce 0.5s ease-out forwards;
+}
+
+.touch-drag-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  padding: 8px 16px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  transform: translate(-50%, -120%);
+  white-space: nowrap;
+}
+
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.3s ease;
 }

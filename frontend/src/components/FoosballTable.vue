@@ -11,7 +11,7 @@
     <!-- Field lines -->
     <line x1="30" y1="350" x2="370" y2="350" stroke="rgba(255,255,255,0.25)" stroke-width="2" />
     <circle cx="200" cy="350" r="50" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2" />
-    <text x="200" y="354" text-anchor="middle" font-size="14" font-weight="bold" fill="rgba(255,255,255,0.12)" font-family="system-ui, sans-serif" letter-spacing="2">PNBallie</text>
+    <text x="200" y="354" text-anchor="middle" font-size="14" font-weight="bold" fill="rgba(255,255,255,0.08)" font-family="'Barlow Condensed', system-ui, sans-serif" letter-spacing="3">PNBallie</text>
 
     <!-- Top goal area -->
     <rect x="130" y="20" width="140" height="60" rx="4" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2" />
@@ -21,7 +21,11 @@
     <rect x="130" y="620" width="140" height="60" rx="4" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2" />
     <rect x="160" y="650" width="80" height="30" rx="2" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2" />
 
-    <!-- Rods — evenly spaced, 70px apart, y=100..590 -->
+    <!-- Ball -->
+    <circle cx="200" cy="350" r="5" fill="#f5f5f0" opacity="0.6" class="ball" />
+
+    <!-- Rods + Players -->
+
     <!-- Blue keeper (1) — y=100 -->
     <line x1="10" y1="100" x2="390" y2="100" stroke="#8B7355" stroke-width="4" stroke-linecap="round" />
     <circle cx="200" cy="100" r="8" fill="#2d5fa1" stroke="#1e4a80" stroke-width="2" :class="{ wiggle: wiggle === 'blue' }" />
@@ -107,5 +111,14 @@ defineProps<{
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-4px); }
   75% { transform: translateX(4px); }
+}
+
+.ball {
+  animation: ball-float 3s ease-in-out infinite;
+}
+
+@keyframes ball-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
 }
 </style>

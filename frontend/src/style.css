@@ -1,11 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 html, body, #app {
   margin: 0;
   padding: 0;
   width: 100%;
-  height: 100dvh;
-  overflow: hidden;
+  min-height: 100dvh;
   font-family: system-ui, -apple-system, sans-serif;
-  background-color: #1a1a2e;
+  background-color: #1a1510;
+  color: #f0e6d6;
+}
+
+.font-sport {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
 }
