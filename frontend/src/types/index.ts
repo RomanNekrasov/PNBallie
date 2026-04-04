@@ -29,6 +29,7 @@ export type Position = 'orange_front' | 'orange_back' | 'blue_front' | 'blue_bac
 export interface PlayerStats {
   player_id: number
   name: string
+  elo: number
   wins: number
   losses: number
   wins_1v1: number
@@ -78,7 +79,51 @@ export interface GlobalStats {
   matches_per_day: DayCount[]
 }
 
+export interface LeaderboardEntry {
+  player_id: number
+  name: string
+  elo: number
+  rank: number
+  wins: number
+  losses: number
+}
+
+export interface HeadToHeadMatchup {
+  player1_id: number
+  player1_name: string
+  player2_id: number
+  player2_name: string
+  player1_wins: number
+  player2_wins: number
+  total: number
+}
+
+export interface DuoStat {
+  player1_id: number
+  player1_name: string
+  player2_id: number
+  player2_name: string
+  wins: number
+  total: number
+  winrate: number
+}
+
+export interface RecordItem {
+  key: string
+  label: string
+  emoji: string
+  description: string
+  value: string
+  detail: string
+}
+
 export interface StatsResponse {
   players: PlayerStats[]
   global: GlobalStats
+  leaderboard: LeaderboardEntry[]
+  head_to_head: {
+    matchups: HeadToHeadMatchup[]
+    duos: DuoStat[]
+  }
+  records: RecordItem[]
 }

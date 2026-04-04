@@ -144,6 +144,13 @@ export function useMatch() {
     sessionMatches.value = sessionMatches.value.filter(m => m.id !== id)
   }
 
+  function swapPlayers(from: Position, to: Position) {
+    if (from === to) return
+    const temp = selectedPlayers.value[from]
+    selectedPlayers.value[from] = selectedPlayers.value[to]
+    selectedPlayers.value[to] = temp
+  }
+
   return {
     orangeScore,
     blueScore,
@@ -156,6 +163,7 @@ export function useMatch() {
     resetScores,
     submitMatch,
     rotatePlayers,
+    swapPlayers,
     playerCount,
     sessionMatches,
     sessionExpired,
