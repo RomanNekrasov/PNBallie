@@ -23,6 +23,7 @@
           :player-id="playerId('blue_back')"
           :player-name="playerName('blue_back')"
           :player-avatar="playerAvatarAt('blue_back')"
+          :crowned="isLeader('blue_back')"
           @tap="openModal('blue_back')"
           @dropped="(from, to) => swapPlayers(from, to)"
         />
@@ -37,6 +38,7 @@
           :player-id="playerId('orange_front')"
           :player-name="playerName('orange_front')"
           :player-avatar="playerAvatarAt('orange_front')"
+          :crowned="isLeader('orange_front')"
           @tap="openModal('orange_front')"
           @dropped="(from, to) => swapPlayers(from, to)"
         />
@@ -51,6 +53,7 @@
           :player-id="playerId('blue_front')"
           :player-name="playerName('blue_front')"
           :player-avatar="playerAvatarAt('blue_front')"
+          :crowned="isLeader('blue_front')"
           @tap="openModal('blue_front')"
           @dropped="(from, to) => swapPlayers(from, to)"
         />
@@ -65,6 +68,7 @@
           :player-id="playerId('orange_back')"
           :player-name="playerName('orange_back')"
           :player-avatar="playerAvatarAt('orange_back')"
+          :crowned="isLeader('orange_back')"
           @tap="openModal('orange_back')"
           @dropped="(from, to) => swapPlayers(from, to)"
         />
@@ -155,6 +159,7 @@
       :players="players"
       :current-player-id="modalPosition ? selectedPlayers[modalPosition] : null"
       :selected-players="selectedPlayers"
+      :leader-player-ids="leaderPlayerIds"
       :position="modalPosition!"
       @close="modalOpen = false"
       @select="handlePlayerSelect"
@@ -166,6 +171,7 @@
 import { computed, nextTick, ref, onMounted, onUnmounted, watch } from 'vue'
 import type { Position } from '../types'
 import { usePlayers } from '../composables/usePlayers'
+import { useStats } from '../composables/useStats'
 import { useMatch } from '../composables/useMatch'
 import FoosballTable from '../components/FoosballTable.vue'
 import ScoreBox from '../components/ScoreBox.vue'
@@ -176,6 +182,7 @@ import MatchHistoryModal from '../components/MatchHistoryModal.vue'
 import { playerAvatar } from '../playerAvatar'
 
 const { players, fetchPlayers } = usePlayers()
+const { stats, fetchStats } = useStats()
 const {
   orangeScore, blueScore, selectedPlayers,
   submitting, feedback, canSubmit,
@@ -194,6 +201,9 @@ const cursorRotation = ref(0)
 const cursorLastPointer = ref<{ x: number; y: number; t: number } | null>(null)
 const cursorSuppressedByTouch = ref(false)
 const rotationAnimating = ref(false)
+const leaderPlayerIds = computed(() => stats.value?.leaderboard
+  .filter(entry => entry.rank === 1)
+  .map(entry => entry.player_id) ?? [])
 const canRotatePlayers = computed(() => {
   if (playerCount.value === 4) return true
   if (playerCount.value !== 2) return false
@@ -303,6 +313,7 @@ function disableCustomCursor() {
 
 onMounted(() => {
   fetchPlayers()
+  fetchStats()
   enableCustomCursor()
   document.addEventListener('click', spawnBounce)
   document.addEventListener('touchstart', spawnBounce, { passive: true })
@@ -333,6 +344,11 @@ function playerId(position: Position): number | null {
 
 function playerAvatarAt(position: Position): string | null {
   return playerAvatar(playerName(position))
+}
+
+function isLeader(position: Position): boolean {
+  const id = playerId(position)
+  return id !== null && leaderPlayerIds.value.includes(id)
 }
 
 function playerIdentityRects(): Map<number, DOMRect> {
@@ -399,6 +415,7 @@ function handlePlayerSelect(playerId: number | null) {
 
 async function handleDeleteMatch(id: number) {
   await deleteMatch(id)
+  await fetchStats()
 }
 
 async function handleSubmit() {
@@ -406,6 +423,7 @@ async function handleSubmit() {
   const bs = blueScore.value
   try {
     await submitMatch()
+    await fetchStats()
     wiggleTeam.value = os > bs ? 'orange' : 'blue'
     setTimeout(() => { wiggleTeam.value = null }, 1500)
   } catch {
@@ -489,11 +507,9 @@ body.football-cursor * {
   align-items: center;
   justify-content: center;
   transition: transform 0.15s;
-  background: rgba(255,255,255,0.12);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255,255,255,0.2);
-  box-shadow: 0 4px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.2);
+  background: #252d37;
+  border: 1px solid #46515f;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 .glass-btn:active {
   transform: scale(0.9);

@@ -25,6 +25,7 @@ function mountPlayer(): VueWrapper {
       playerId: 1,
       playerName: 'Ada',
       playerAvatar: null,
+      crowned: false,
       position: 'orange_front',
     },
   })

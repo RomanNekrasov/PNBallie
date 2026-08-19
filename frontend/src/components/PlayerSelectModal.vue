@@ -18,21 +18,24 @@
             class="player-choice aspect-square rounded-2xl text-white font-semibold text-base flex flex-col items-center justify-center text-center p-2 transition-all leading-tight relative overflow-hidden"
             :class="[
               disabledIds.has(player.id)
-                ? 'bg-white/5 opacity-30 cursor-not-allowed'
+                ? 'player-choice-disabled opacity-30 cursor-not-allowed'
                 : currentPlayerId === player.id
-                  ? 'bg-white/30 ring-2 ring-white active:scale-95'
-                  : 'bg-white/12 active:scale-95 active:bg-white/20'
+                  ? 'player-choice-selected ring-2 ring-white active:scale-95'
+                  : 'player-choice-default active:scale-95'
             ]"
           >
             <span v-if="currentPlayerId === player.id" class="selected-check" aria-label="Huidige selectie">✓</span>
-            <img
-              v-if="playerAvatar(player.name)"
-              :src="playerAvatar(player.name)!"
-              :alt="`Avatar van ${player.name}`"
-              class="choice-avatar"
-              draggable="false"
-            />
-            <span v-else class="choice-avatar choice-avatar-fallback">{{ playerInitials(player.name) }}</span>
+            <span class="choice-avatar-wrap">
+              <CrownIcon v-if="leaderIds.has(player.id)" class="choice-crown" />
+              <img
+                v-if="playerAvatar(player.name)"
+                :src="playerAvatar(player.name)!"
+                :alt="`Avatar van ${player.name}`"
+                class="choice-avatar"
+                draggable="false"
+              />
+              <span v-else class="choice-avatar choice-avatar-fallback">{{ playerInitials(player.name) }}</span>
+            </span>
             <span class="choice-name">{{ player.name }}</span>
             <span v-if="selectedPosition(player.id)" class="choice-status">{{ selectedPosition(player.id) }}</span>
           </button>
@@ -41,7 +44,7 @@
         <button
           v-if="currentPlayerId !== null"
           @click="select(null)"
-          class="mt-4 py-3 px-6 rounded-xl text-center text-red-300 bg-white/5 active:bg-white/10 font-medium"
+          class="remove-choice mt-4 py-3 px-6 rounded-xl text-center text-red-300 font-medium"
         >
           Verwijder selectie
         </button>
@@ -55,12 +58,14 @@
 import { computed } from 'vue'
 import type { Player, Position } from '../types'
 import { playerAvatar, playerInitials } from '../playerAvatar'
+import CrownIcon from './CrownIcon.vue'
 
 const props = defineProps<{
   open: boolean
   players: Player[]
   currentPlayerId: number | null
   selectedPlayers: Record<Position, number | null>
+  leaderPlayerIds: number[]
   position: Position
 }>()
 
@@ -78,6 +83,8 @@ const disabledIds = computed(() => {
   }
   return ids
 })
+
+const leaderIds = computed(() => new Set(props.leaderPlayerIds))
 
 const POSITION_LABELS: Record<Position, string> = {
   orange_front: 'Oranje · voor',
@@ -103,7 +110,31 @@ function select(playerId: number | null) {
 <style scoped>
 .player-choice {
   min-height: 146px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid #46515f;
+}
+
+.player-choice-default {
+  background: #252d37;
+}
+
+.player-choice-default:active {
+  background: #313b47;
+}
+
+.player-choice-selected {
+  background: #3c4b5e;
+}
+
+.player-choice-disabled {
+  background: #161b21;
+}
+
+.remove-choice {
+  background: #282126;
+}
+
+.remove-choice:active {
+  background: #3a282f;
 }
 
 .choice-avatar {
@@ -113,6 +144,22 @@ function select(playerId: number | null) {
   object-position: center bottom;
   filter: drop-shadow(0 7px 8px rgba(0, 0, 0, 0.38));
   pointer-events: none;
+}
+
+.choice-avatar-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.choice-crown {
+  position: absolute;
+  z-index: 2;
+  top: -11px;
+  left: 50%;
+  width: 28px;
+  height: auto;
+  transform: translateX(-50%) rotate(-7deg);
 }
 
 .choice-avatar-fallback {

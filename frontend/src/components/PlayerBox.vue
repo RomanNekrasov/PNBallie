@@ -3,7 +3,7 @@
     ref="rootEl"
     class="player-box relative w-[90px] h-[90px] rounded-xl text-white font-semibold text-sm leading-tight flex flex-col items-center justify-center transition-all select-none"
     :class="{ 'ring-2 ring-white/50 scale-105': dragOver, 'opacity-40 scale-95': dragging }"
-    :style="[glassStyle, { touchAction: playerName ? 'none' : 'manipulation' }]"
+    :style="[teamStyle, { touchAction: playerName ? 'none' : 'manipulation' }]"
     :draggable="!!playerName"
     @click.stop="handleClick"
     @dragstart="onDragStart"
@@ -25,6 +25,7 @@
       class="player-identity"
       :data-player-id="playerId"
     >
+      <CrownIcon v-if="crowned" class="field-crown" />
       <img
         v-if="playerAvatar"
         :src="playerAvatar"
@@ -42,6 +43,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue'
 import type { Position } from '../types'
+import CrownIcon from './CrownIcon.vue'
 
 const TOUCH_DRAG_THRESHOLD = 8
 
@@ -51,6 +53,7 @@ const props = defineProps<{
   playerId: number | null
   playerName: string | null
   playerAvatar: string | null
+  crowned: boolean
   position: Position
 }>()
 
@@ -85,14 +88,13 @@ let animationFrame: number | null = null
 let suppressNextClick = false
 let clickResetTimer: ReturnType<typeof setTimeout> | null = null
 
-const glassStyle = computed(() => {
-  const color = props.team === 'orange' ? '217, 124, 46' : '45, 95, 161'
+const teamStyle = computed(() => {
+  const background = props.team === 'orange' ? '#9f4f1e' : '#244f86'
+  const border = props.team === 'orange' ? '#dc7c35' : '#4c82c5'
   return {
-    background: `rgba(${color}, 0.45)`,
-    backdropFilter: 'blur(16px) saturate(180%)',
-    WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-    border: `1px solid rgba(${color}, 0.65)`,
-    boxShadow: `0 4px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.2)`,
+    background,
+    border: `1px solid ${border}`,
+    boxShadow: '0 5px 14px rgba(0, 0, 0, 0.32)',
   }
 })
 
@@ -288,6 +290,16 @@ onBeforeUnmount(() => cleanupPointer(dragging.value))
   object-fit: contain;
   object-position: center bottom;
   filter: drop-shadow(0 7px 7px rgba(0, 0, 0, 0.42));
+}
+
+.field-crown {
+  position: absolute;
+  z-index: 4;
+  top: -13px;
+  left: 50%;
+  width: 30px;
+  height: auto;
+  transform: translateX(-50%) rotate(-7deg);
 }
 
 .player-avatar-fallback {

@@ -1,5 +1,5 @@
 <template>
-  <div class="select-none rounded-2xl" :style="glassStyle">
+  <div class="select-none rounded-2xl" :style="teamStyle">
     <!-- Touch: horizontal scroll-snap picker -->
     <div v-if="isTouch" class="relative">
       <div
@@ -97,14 +97,13 @@ function onScroll() {
   }, 50)
 }
 
-const glassStyle = computed(() => {
-  const color = props.team === 'orange' ? '217, 124, 46' : '45, 95, 161'
+const teamStyle = computed(() => {
+  const background = props.team === 'orange' ? '#8f461d' : '#244b7c'
+  const border = props.team === 'orange' ? '#d87a34' : '#477dbd'
   return {
-    background: `rgba(${color}, 0.45)`,
-    backdropFilter: 'blur(16px) saturate(180%)',
-    WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-    border: `1px solid rgba(${color}, 0.65)`,
-    boxShadow: `0 4px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.2)`,
+    background,
+    border: `1px solid ${border}`,
+    boxShadow: '0 5px 16px rgba(0, 0, 0, 0.32)',
   }
 })
 </script>

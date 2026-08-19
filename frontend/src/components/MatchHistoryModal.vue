@@ -16,13 +16,7 @@
           <div
             v-for="match in matches"
             :key="match.id"
-            class="rounded-2xl p-4 flex items-center justify-between"
-            style="
-              background: rgba(255,255,255,0.08);
-              backdrop-filter: blur(16px) saturate(180%);
-              -webkit-backdrop-filter: blur(16px) saturate(180%);
-              border: 1px solid rgba(255,255,255,0.15);
-            "
+            class="history-card rounded-2xl p-4 flex items-center justify-between"
           >
             <div class="flex-1 min-w-0">
               <!-- Score line -->
@@ -55,7 +49,7 @@
       <div class="p-4 flex justify-center pb-[env(safe-area-inset-bottom)]">
         <button
           @click="$emit('close')"
-          class="px-6 py-3 rounded-xl text-white font-semibold bg-white/10 active:bg-white/20"
+          class="close-button px-6 py-3 rounded-xl text-white font-semibold"
         >
           Sluiten
         </button>
@@ -98,3 +92,19 @@ function blueNames(match: Match): string {
     .join(' & ')
 }
 </script>
+
+<style scoped>
+.history-card {
+  border: 1px solid #46515f;
+  background: #252d37;
+}
+
+.close-button {
+  border: 1px solid #46515f;
+  background: #252d37;
+}
+
+.close-button:active {
+  background: #313b47;
+}
+</style>
