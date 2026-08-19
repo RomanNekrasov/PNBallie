@@ -20,7 +20,9 @@
           team="blue"
           label="Achter"
           position="blue_back"
+          :player-id="playerId('blue_back')"
           :player-name="playerName('blue_back')"
+          :player-avatar="playerAvatarAt('blue_back')"
           @tap="openModal('blue_back')"
           @dropped="(from, to) => swapPlayers(from, to)"
         />
@@ -32,7 +34,9 @@
           team="orange"
           label="Voor"
           position="orange_front"
+          :player-id="playerId('orange_front')"
           :player-name="playerName('orange_front')"
+          :player-avatar="playerAvatarAt('orange_front')"
           @tap="openModal('orange_front')"
           @dropped="(from, to) => swapPlayers(from, to)"
         />
@@ -44,7 +48,9 @@
           team="blue"
           label="Voor"
           position="blue_front"
+          :player-id="playerId('blue_front')"
           :player-name="playerName('blue_front')"
+          :player-avatar="playerAvatarAt('blue_front')"
           @tap="openModal('blue_front')"
           @dropped="(from, to) => swapPlayers(from, to)"
         />
@@ -56,7 +62,9 @@
           team="orange"
           label="Achter"
           position="orange_back"
+          :player-id="playerId('orange_back')"
           :player-name="playerName('orange_back')"
+          :player-avatar="playerAvatarAt('orange_back')"
           @tap="openModal('orange_back')"
           @dropped="(from, to) => swapPlayers(from, to)"
         />
@@ -71,9 +79,11 @@
         />
         <div class="flex items-center gap-3">
           <button
-            v-if="playerCount >= 2"
-            @click="rotatePlayers"
+            v-if="canRotatePlayers"
+            @click="handleRotatePlayers"
             class="glass-btn"
+            :class="{ 'rotation-button-active': rotationAnimating }"
+            :disabled="rotationAnimating"
             :title="playerCount === 2 ? 'Wissel zijdes' : 'Roteer spelers'"
           >
             <svg v-if="playerCount >= 4" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -153,7 +163,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { computed, nextTick, ref, onMounted, onUnmounted, watch } from 'vue'
 import type { Position } from '../types'
 import { usePlayers } from '../composables/usePlayers'
 import { useMatch } from '../composables/useMatch'
@@ -163,6 +173,7 @@ import PlayerBox from '../components/PlayerBox.vue'
 import PlayerSelectModal from '../components/PlayerSelectModal.vue'
 import SubmitButton from '../components/SubmitButton.vue'
 import MatchHistoryModal from '../components/MatchHistoryModal.vue'
+import { playerAvatar } from '../playerAvatar'
 
 const { players, fetchPlayers } = usePlayers()
 const {
@@ -182,6 +193,17 @@ const customCursorEnabled = ref(false)
 const cursorRotation = ref(0)
 const cursorLastPointer = ref<{ x: number; y: number; t: number } | null>(null)
 const cursorSuppressedByTouch = ref(false)
+const rotationAnimating = ref(false)
+const canRotatePlayers = computed(() => {
+  if (playerCount.value === 4) return true
+  if (playerCount.value !== 2) return false
+
+  const orangeCount = [selectedPlayers.value.orange_front, selectedPlayers.value.orange_back]
+    .filter(id => id !== null).length
+  const blueCount = [selectedPlayers.value.blue_front, selectedPlayers.value.blue_back]
+    .filter(id => id !== null).length
+  return orangeCount === 1 && blueCount === 1
+})
 
 function spawnBounce(e: MouseEvent | TouchEvent) {
   const target = e.target as Element | null
@@ -305,6 +327,65 @@ function playerName(position: Position): string | null {
   return players.value.find(p => p.id === id)?.name ?? null
 }
 
+function playerId(position: Position): number | null {
+  return selectedPlayers.value[position]
+}
+
+function playerAvatarAt(position: Position): string | null {
+  return playerAvatar(playerName(position))
+}
+
+function playerIdentityRects(): Map<number, DOMRect> {
+  const rects = new Map<number, DOMRect>()
+  document.querySelectorAll<HTMLElement>('.player-identity[data-player-id]').forEach(element => {
+    const id = Number(element.dataset.playerId)
+    if (Number.isFinite(id)) rects.set(id, element.getBoundingClientRect())
+  })
+  return rects
+}
+
+async function handleRotatePlayers() {
+  if (rotationAnimating.value) return
+  rotationAnimating.value = true
+  const before = playerIdentityRects()
+
+  try {
+    rotatePlayers()
+    await nextTick()
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    const animations: Promise<unknown>[] = []
+    document.querySelectorAll<HTMLElement>('.player-identity[data-player-id]').forEach(element => {
+      const id = Number(element.dataset.playerId)
+      const previousRect = before.get(id)
+      if (!previousRect || typeof element.animate !== 'function') return
+
+      const nextRect = element.getBoundingClientRect()
+      const x = previousRect.left - nextRect.left
+      const y = previousRect.top - nextRect.top
+      if (Math.abs(x) < 1 && Math.abs(y) < 1) return
+
+      element.style.zIndex = '30'
+      const animation = element.animate([
+        { transform: `translate3d(${x}px, ${y}px, 0) rotate(-7deg) scale(.94)` },
+        { transform: `translate3d(${x * 0.42}px, ${y * 0.42}px, 0) rotate(7deg) scale(1.04)`, offset: 0.58 },
+        { transform: 'translate3d(0, 0, 0) rotate(0deg) scale(1)' },
+      ], {
+        duration: 440,
+        easing: 'cubic-bezier(.22, 1, .36, 1)',
+      })
+      animations.push(animation.finished.catch(() => undefined).finally(() => {
+        element.style.zIndex = ''
+      }))
+    })
+
+    await Promise.all(animations)
+  } finally {
+    rotationAnimating.value = false
+  }
+}
+
 function openModal(position: Position) {
   modalPosition.value = position
   modalOpen.value = true
@@ -416,5 +497,24 @@ body.football-cursor * {
 }
 .glass-btn:active {
   transform: scale(0.9);
+}
+
+.glass-btn:disabled {
+  cursor: default;
+}
+
+.rotation-button-active svg {
+  animation: rotate-control 0.44s cubic-bezier(.22, 1, .36, 1);
+}
+
+@keyframes rotate-control {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rotation-button-active svg {
+    animation: none;
+  }
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
   <div
     ref="rootEl"
-    class="player-box w-[90px] h-[90px] rounded-xl text-white font-semibold text-sm leading-tight flex flex-col items-center justify-center transition-all select-none"
+    class="player-box relative w-[90px] h-[90px] rounded-xl text-white font-semibold text-sm leading-tight flex flex-col items-center justify-center transition-all select-none"
     :class="{ 'ring-2 ring-white/50 scale-105': dragOver, 'opacity-40 scale-95': dragging }"
     :style="[glassStyle, { touchAction: playerName ? 'none' : 'manipulation' }]"
     :draggable="!!playerName"
@@ -19,8 +19,23 @@
     @touchstart.stop
     :data-position="position"
   >
-    <span class="text-[10px] uppercase tracking-wider opacity-75">{{ label }}</span>
-    <span class="truncate max-w-[90px]">{{ playerName || 'Kies...' }}</span>
+    <span class="player-position-label">{{ label }}</span>
+    <div
+      v-if="playerName"
+      class="player-identity"
+      :data-player-id="playerId"
+    >
+      <img
+        v-if="playerAvatar"
+        :src="playerAvatar"
+        :alt="`Avatar van ${playerName}`"
+        class="player-avatar"
+        draggable="false"
+      />
+      <div v-else class="player-avatar player-avatar-fallback">{{ playerInitials }}</div>
+      <span class="player-name" :class="`player-name--${team}`">{{ playerName }}</span>
+    </div>
+    <span v-else class="player-empty">Kies...</span>
   </div>
 </template>
 
@@ -33,9 +48,22 @@ const TOUCH_DRAG_THRESHOLD = 8
 const props = defineProps<{
   team: 'orange' | 'blue'
   label: string
+  playerId: number | null
   playerName: string | null
+  playerAvatar: string | null
   position: Position
 }>()
+
+const playerInitials = computed(() => {
+  if (!props.playerName) return ''
+  return props.playerName
+    .trim()
+    .split(/\s+/)
+    .map(part => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+})
 
 const emit = defineEmits<{
   tap: []
@@ -217,9 +245,104 @@ onBeforeUnmount(() => cleanupPointer(dragging.value))
 
 <style scoped>
 .player-box {
+  overflow: visible;
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
+}
+
+.player-position-label {
+  position: absolute;
+  bottom: 5px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 9px;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  opacity: 0.72;
+  z-index: 2;
+}
+
+.player-identity {
+  position: absolute;
+  left: 50%;
+  top: -37px;
+  width: 108px;
+  margin-left: -54px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  will-change: transform;
+  z-index: 1;
+}
+
+.player-avatar {
+  position: relative;
+  z-index: 1;
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  object-position: center bottom;
+  filter: drop-shadow(0 7px 7px rgba(0, 0, 0, 0.42));
+}
+
+.player-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.player-name {
+  --player-accent: #e7b94e;
+  position: relative;
+  z-index: 2;
+  display: block;
+  box-sizing: border-box;
+  width: 84px;
+  margin-top: -20px;
+  padding: 1px 8px 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 17px;
+  font-weight: 900;
+  letter-spacing: 0.055em;
+  text-align: center;
+  text-transform: uppercase;
+  color: #fff8dd;
+  border: 1px solid rgba(255, 221, 129, 0.9);
+  background:
+    linear-gradient(110deg, transparent 14%, rgba(255, 255, 255, 0.2) 36%, transparent 58%),
+    linear-gradient(180deg, #353b46 0%, #151922 54%, #090b10 100%);
+  box-shadow:
+    0 3px 7px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -3px 0 var(--player-accent);
+  clip-path: polygon(7px 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 7px 100%, 0 50%);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+.player-name--orange {
+  --player-accent: #f28a32;
+}
+
+.player-name--blue {
+  --player-accent: #4387df;
+}
+
+.player-empty {
+  margin-top: 8px;
+  font-size: 13px;
 }
 
 .player-box.player-drop-target {

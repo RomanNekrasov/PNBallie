@@ -64,6 +64,7 @@ export function useMatch() {
       // 1v1: swap team AND position (mirrored sides)
       const orangeId = s.orange_front ?? s.orange_back
       const blueId = s.blue_front ?? s.blue_back
+      if (orangeId === null || blueId === null) return
       const orangeWasFront = s.orange_front !== null
       const blueWasFront = s.blue_front !== null
       s.orange_front = null

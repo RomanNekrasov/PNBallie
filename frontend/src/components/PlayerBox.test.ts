@@ -22,7 +22,9 @@ function mountPlayer(): VueWrapper {
     props: {
       team: 'orange',
       label: 'Voor',
+      playerId: 1,
       playerName: 'Ada',
+      playerAvatar: null,
       position: 'orange_front',
     },
   })
