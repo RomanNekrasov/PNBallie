@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel
 from sqlmodel import Field, Relationship, SQLModel
@@ -74,3 +74,130 @@ class MatchRead(BaseModel):
     blue_score: int
     played_at: datetime
     players: list[MatchPlayerOut]
+
+
+# --- Statistics API schemas ---
+
+
+class DayCount(BaseModel):
+    day: str
+    count: int
+
+
+class PlayerStatsRead(BaseModel):
+    player_id: int
+    name: str
+    elo: int
+    elo_precise: float
+    rank: int | None
+    matches: int
+    wins: int
+    losses: int
+    winrate: float | None
+    wins_1v1: int
+    losses_1v1: int
+    wins_2v2: int
+    losses_2v2: int
+    wins_orange: int
+    matches_orange: int
+    wins_blue: int
+    matches_blue: int
+    wins_voor: int
+    matches_voor: int
+    wins_achter: int
+    matches_achter: int
+    winrate_orange: float | None
+    winrate_blue: float | None
+    winrate_voor: float | None
+    winrate_achter: float | None
+    color_delta: float | None
+    position_delta: float | None
+    average_goals_for: float | None
+    average_goals_against: float | None
+    average_goal_difference: float | None
+    recent_form: list[Literal["W", "L"]]
+    biggest_victory_margin: int
+    biggest_victory_score: str | None
+    current_winstreak: int
+    longest_winstreak: int
+    current_losestreak: int
+    longest_losestreak: int
+
+
+class GlobalStatsRead(BaseModel):
+    total_matches: int
+    total_1v1: int
+    total_2v2: int
+    average_goals_per_match: float | None
+    orange_wins: int
+    blue_wins: int
+    orange_wins_1v1: int
+    blue_wins_1v1: int
+    orange_wins_2v2: int
+    blue_wins_2v2: int
+    current_orange_streak: int
+    longest_orange_streak: int
+    current_blue_streak: int
+    longest_blue_streak: int
+    lunch_matches: int
+    middag_matches: int
+    matches_per_day: list[DayCount]
+
+
+class LeaderboardEntryRead(BaseModel):
+    player_id: int
+    name: str
+    elo: int
+    elo_precise: float
+    rank: int
+    wins: int
+    losses: int
+    winrate: float
+    recent_form: list[Literal["W", "L"]]
+
+
+class HeadToHeadMatchupRead(BaseModel):
+    player1_id: int
+    player1_name: str
+    player2_id: int
+    player2_name: str
+    player1_wins: int
+    player2_wins: int
+    total: int
+
+
+class DuoStatRead(BaseModel):
+    player1_id: int
+    player1_name: str
+    player2_id: int
+    player2_name: str
+    wins: int
+    total: int
+    winrate: float
+
+
+class HeadToHeadRead(BaseModel):
+    # `matchups` remains the combined legacy view.
+    matchups: list[HeadToHeadMatchupRead]
+    matchups_1v1: list[HeadToHeadMatchupRead]
+    matchups_2v2: list[HeadToHeadMatchupRead]
+    duos: list[DuoStatRead]
+
+
+class RecordItemRead(BaseModel):
+    key: str
+    label: str
+    emoji: str
+    description: str
+    value: str
+    detail: str
+
+
+class StatsRead(BaseModel):
+    players: list[PlayerStatsRead]
+    global_: GlobalStatsRead = Field(alias="global")
+    leaderboard: list[LeaderboardEntryRead]
+    head_to_head: HeadToHeadRead
+    records: list[RecordItemRead]
+
+    model_config = {"populate_by_name": True}

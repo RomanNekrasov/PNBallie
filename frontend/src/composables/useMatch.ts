@@ -54,12 +54,12 @@ export function useMatch() {
   function rotatePlayers() {
     const s = selectedPlayers.value
     if (playerCount.value === 4) {
-      // Clockwise: OF→BF→BB→OB→OF
-      const temp = s.orange_front
-      s.orange_front = s.orange_back
-      s.orange_back = s.blue_back
-      s.blue_back = s.blue_front
-      s.blue_front = temp
+      // Clockwise on the table: BB → OF → OB → BF → BB
+      const { orange_front, orange_back, blue_front, blue_back } = s
+      s.orange_front = blue_back
+      s.orange_back = orange_front
+      s.blue_front = orange_back
+      s.blue_back = blue_front
     } else if (playerCount.value === 2) {
       // 1v1: swap team AND position (mirrored sides)
       const orangeId = s.orange_front ?? s.orange_back

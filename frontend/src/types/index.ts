@@ -30,8 +30,12 @@ export interface PlayerStats {
   player_id: number
   name: string
   elo: number
+  elo_precise: number
+  rank: number | null
+  matches: number
   wins: number
   losses: number
+  winrate: number | null
   wins_1v1: number
   losses_1v1: number
   wins_2v2: number
@@ -50,7 +54,12 @@ export interface PlayerStats {
   winrate_achter: number | null
   color_delta: number | null
   position_delta: number | null
+  average_goals_for: number | null
+  average_goals_against: number | null
+  average_goal_difference: number | null
+  recent_form: MatchResult[]
   biggest_victory_margin: number
+  biggest_victory_score: string | null
   current_winstreak: number
   longest_winstreak: number
   current_losestreak: number
@@ -64,6 +73,9 @@ export interface DayCount {
 
 export interface GlobalStats {
   total_matches: number
+  total_1v1: number
+  total_2v2: number
+  average_goals_per_match: number | null
   orange_wins: number
   blue_wins: number
   orange_wins_1v1: number
@@ -83,10 +95,15 @@ export interface LeaderboardEntry {
   player_id: number
   name: string
   elo: number
+  elo_precise: number
   rank: number
   wins: number
   losses: number
+  winrate: number
+  recent_form: MatchResult[]
 }
+
+export type MatchResult = 'W' | 'L'
 
 export interface HeadToHeadMatchup {
   player1_id: number
@@ -123,6 +140,8 @@ export interface StatsResponse {
   leaderboard: LeaderboardEntry[]
   head_to_head: {
     matchups: HeadToHeadMatchup[]
+    matchups_1v1: HeadToHeadMatchup[]
+    matchups_2v2: HeadToHeadMatchup[]
     duos: DuoStat[]
   }
   records: RecordItem[]

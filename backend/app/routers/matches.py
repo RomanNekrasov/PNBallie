@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from app.database import get_session
-from app.models import Match, MatchCreate, MatchPlayer, MatchPlayerOut, MatchRead
+from app.models import Match, MatchCreate, MatchPlayer, MatchPlayerOut, MatchRead, Player
 
 router = APIRouter(prefix="/api/matches", tags=["matches"])
 
@@ -10,9 +10,9 @@ VALID_SIDES = {"orange", "blue"}
 VALID_POSITIONS = {"voor", "achter", "solo"}
 
 
-def _validate_match(match: MatchCreate):
-    if not match.players:
-        raise HTTPException(status_code=422, detail="At least 2 players required")
+def _validate_match(match: MatchCreate, session: Session):
+    if len(match.players) not in {2, 4}:
+        raise HTTPException(status_code=422, detail="A match must be 1v1 or 2v2")
 
     for mp in match.players:
         if mp.side not in VALID_SIDES:
@@ -23,16 +23,30 @@ def _validate_match(match: MatchCreate):
     orange = [p for p in match.players if p.side == "orange"]
     blue = [p for p in match.players if p.side == "blue"]
 
-    if not orange:
-        raise HTTPException(status_code=422, detail="At least 1 orange player required")
-    if not blue:
-        raise HTTPException(status_code=422, detail="At least 1 blue player required")
     if len(orange) != len(blue):
         raise HTTPException(status_code=422, detail="Teams must have equal number of players")
+
+    if len(match.players) == 2:
+        if any(player.position != "solo" for player in match.players):
+            raise HTTPException(status_code=422, detail="1v1 players must use the solo position")
+    else:
+        for side, team in (("orange", orange), ("blue", blue)):
+            if {player.position for player in team} != {"voor", "achter"}:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"{side.capitalize()} must have one voor and one achter player",
+                )
 
     all_ids = [p.player_id for p in match.players]
     if len(all_ids) != len(set(all_ids)):
         raise HTTPException(status_code=422, detail="Duplicate players across positions")
+
+    existing_ids = set(
+        session.exec(select(Player.id).where(Player.id.in_(all_ids))).all()
+    )
+    missing_ids = sorted(set(all_ids) - existing_ids)
+    if missing_ids:
+        raise HTTPException(status_code=422, detail=f"Unknown player IDs: {missing_ids}")
 
     if match.orange_score != 10 and match.blue_score != 10:
         raise HTTPException(status_code=422, detail="One team must have a score of 10")
@@ -61,7 +75,7 @@ def list_matches(session: Session = Depends(get_session)):
 
 @router.post("", response_model=MatchRead, status_code=201)
 def create_match(match: MatchCreate, session: Session = Depends(get_session)):
-    _validate_match(match)
+    _validate_match(match, session)
     db_match = Match(
         orange_score=match.orange_score,
         blue_score=match.blue_score,

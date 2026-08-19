@@ -1,18 +1,22 @@
 <template>
   <div
-    class="w-[90px] h-[90px] rounded-xl text-white font-semibold text-sm leading-tight flex flex-col items-center justify-center transition-all select-none"
+    ref="rootEl"
+    class="player-box w-[90px] h-[90px] rounded-xl text-white font-semibold text-sm leading-tight flex flex-col items-center justify-center transition-all select-none"
     :class="{ 'ring-2 ring-white/50 scale-105': dragOver, 'opacity-40 scale-95': dragging }"
-    :style="glassStyle"
+    :style="[glassStyle, { touchAction: playerName ? 'none' : 'manipulation' }]"
     :draggable="!!playerName"
-    @click="handleClick"
+    @click.stop="handleClick"
     @dragstart="onDragStart"
     @dragend="onDragEnd"
     @dragover.prevent="onDragOver"
     @dragleave="onDragLeave"
     @drop.prevent="onDrop"
-    @touchstart="onTouchStart"
-    @touchmove.prevent="onTouchMove"
-    @touchend="onTouchEnd"
+    @pointerdown="onPointerDown"
+    @pointermove="onPointerMove"
+    @pointerup="onPointerUp"
+    @pointercancel="onPointerCancel"
+    @lostpointercapture="onLostPointerCapture"
+    @touchstart.stop
     :data-position="position"
   >
     <span class="text-[10px] uppercase tracking-wider opacity-75">{{ label }}</span>
@@ -21,8 +25,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import type { Position } from '../types'
+
+const TOUCH_DRAG_THRESHOLD = 8
 
 const props = defineProps<{
   team: 'orange' | 'blue'
@@ -38,11 +44,18 @@ const emit = defineEmits<{
   dropped: [from: Position, to: Position]
 }>()
 
+const rootEl = ref<HTMLElement | null>(null)
 const dragOver = ref(false)
 const dragging = ref(false)
-let touchTimeout: ReturnType<typeof setTimeout> | null = null
-let isDraggingTouch = false
+
+let activePointerId: number | null = null
+let pointerStart = { x: 0, y: 0 }
+let pointerPosition = { x: 0, y: 0 }
 let ghost: HTMLElement | null = null
+let highlightedTarget: HTMLElement | null = null
+let animationFrame: number | null = null
+let suppressNextClick = false
+let clickResetTimer: ReturnType<typeof setTimeout> | null = null
 
 const glassStyle = computed(() => {
   const color = props.team === 'orange' ? '217, 124, 46' : '45, 95, 161'
@@ -56,21 +69,25 @@ const glassStyle = computed(() => {
 })
 
 function handleClick() {
-  if (!isDraggingTouch) {
-    emit('tap')
+  if (suppressNextClick) {
+    suppressNextClick = false
+    return
   }
+  emit('tap')
 }
 
-// HTML5 drag (desktop)
+// Native HTML drag remains the desktop interaction.
 function onDragStart(e: DragEvent) {
+  if (!props.playerName || !e.dataTransfer) return
   dragging.value = true
-  e.dataTransfer!.effectAllowed = 'move'
-  e.dataTransfer!.setData('text/plain', props.position)
+  e.dataTransfer.effectAllowed = 'move'
+  e.dataTransfer.setData('text/plain', props.position)
   emit('dragstart', props.position)
 }
 
 function onDragEnd() {
   dragging.value = false
+  dragOver.value = false
   emit('dragend')
 }
 
@@ -84,73 +101,130 @@ function onDragLeave() {
 
 function onDrop(e: DragEvent) {
   dragOver.value = false
-  const from = e.dataTransfer!.getData('text/plain') as Position
-  if (from && from !== props.position) {
-    emit('dropped', from, props.position)
-  }
+  const from = e.dataTransfer?.getData('text/plain') as Position | undefined
+  if (from && from !== props.position) emit('dropped', from, props.position)
 }
 
-// Touch drag (mobile)
-function onTouchStart(e: TouchEvent) {
-  isDraggingTouch = false
-  touchTimeout = setTimeout(() => {
-    if (!props.playerName) return
-    isDraggingTouch = true
-    dragging.value = true
-    emit('dragstart', props.position)
+function onPointerDown(e: PointerEvent) {
+  if (e.pointerType === 'mouse' || !props.playerName || activePointerId !== null) return
 
-    // Create floating ghost
-    const touch = e.touches[0]!
-    ghost = document.createElement('div')
-    ghost.textContent = props.playerName
-    ghost.className = 'touch-drag-ghost'
-    ghost.style.left = `${touch.clientX}px`
-    ghost.style.top = `${touch.clientY}px`
-    document.body.appendChild(ghost)
-
-    // Haptic feedback if available
-    if (navigator.vibrate) navigator.vibrate(30)
-  }, 300)
+  activePointerId = e.pointerId
+  pointerStart = { x: e.clientX, y: e.clientY }
+  pointerPosition = { ...pointerStart }
+  rootEl.value?.setPointerCapture?.(e.pointerId)
 }
 
-function onTouchMove(e: TouchEvent) {
-  if (!isDraggingTouch) {
-    if (touchTimeout) { clearTimeout(touchTimeout); touchTimeout = null }
-    return
-  }
-  const touch = e.touches[0]!
-  if (ghost) {
-    ghost.style.left = `${touch.clientX}px`
-    ghost.style.top = `${touch.clientY}px`
+function onPointerMove(e: PointerEvent) {
+  if (e.pointerId !== activePointerId) return
+  pointerPosition = { x: e.clientX, y: e.clientY }
+
+  if (!dragging.value) {
+    const distance = Math.hypot(
+      pointerPosition.x - pointerStart.x,
+      pointerPosition.y - pointerStart.y,
+    )
+    if (distance < TOUCH_DRAG_THRESHOLD) return
+    beginPointerDrag()
   }
 
-  // Highlight drop target
-  const el = document.elementFromPoint(touch.clientX, touch.clientY)
-  const target = el?.closest('[data-position]') as HTMLElement | null
-  document.querySelectorAll('[data-position]').forEach(n => n.classList.remove('ring-2', 'ring-white/50', 'scale-105'))
-  if (target && target.dataset.position !== props.position) {
-    target.classList.add('ring-2', 'ring-white/50', 'scale-105')
-  }
+  e.preventDefault()
+  scheduleGhostMove()
+  updateHighlightedTarget(e.clientX, e.clientY)
 }
 
-function onTouchEnd(e: TouchEvent) {
-  if (touchTimeout) { clearTimeout(touchTimeout); touchTimeout = null }
-  if (ghost) { ghost.remove(); ghost = null }
+function beginPointerDrag() {
+  if (!props.playerName) return
+  dragging.value = true
+  suppressNextClick = true
+  emit('dragstart', props.position)
 
-  if (!isDraggingTouch) return
-  dragging.value = false
+  ghost = document.createElement('div')
+  ghost.className = 'touch-drag-ghost'
+  ghost.textContent = props.playerName
+  document.body.appendChild(ghost)
+  scheduleGhostMove()
+}
 
-  const touch = e.changedTouches[0]!
-  const el = document.elementFromPoint(touch.clientX, touch.clientY)
-  const target = el?.closest('[data-position]') as HTMLElement | null
-  document.querySelectorAll('[data-position]').forEach(n => n.classList.remove('ring-2', 'ring-white/50', 'scale-105'))
+function scheduleGhostMove() {
+  if (!ghost || animationFrame !== null) return
+  animationFrame = requestAnimationFrame(() => {
+    animationFrame = null
+    if (!ghost) return
+    ghost.style.transform = `translate3d(${pointerPosition.x}px, ${pointerPosition.y}px, 0) translate(-50%, -120%)`
+  })
+}
 
-  if (target && target.dataset.position && target.dataset.position !== props.position) {
+function dropTargetAt(x: number, y: number): HTMLElement | null {
+  const element = document.elementFromPoint(x, y)
+  const target = element?.closest('[data-position]') as HTMLElement | null
+  if (!target || target.dataset.position === props.position) return null
+  return target
+}
+
+function updateHighlightedTarget(x: number, y: number) {
+  const target = dropTargetAt(x, y)
+  if (target === highlightedTarget) return
+  highlightedTarget?.classList.remove('player-drop-target')
+  highlightedTarget = target
+  highlightedTarget?.classList.add('player-drop-target')
+}
+
+function onPointerUp(e: PointerEvent) {
+  if (e.pointerId !== activePointerId) return
+  const wasDragging = dragging.value
+  const target = wasDragging ? dropTargetAt(e.clientX, e.clientY) : null
+
+  cleanupPointer(wasDragging)
+  if (target?.dataset.position) {
     emit('dropped', props.position, target.dataset.position as Position)
   }
-
-  emit('dragend')
-  // Prevent the click that follows touchend
-  setTimeout(() => { isDraggingTouch = false }, 100)
 }
+
+function onPointerCancel(e: PointerEvent) {
+  if (e.pointerId === activePointerId) cleanupPointer(dragging.value)
+}
+
+function onLostPointerCapture(e: PointerEvent) {
+  if (e.pointerId === activePointerId) cleanupPointer(dragging.value)
+}
+
+function cleanupPointer(emitDragEnd: boolean) {
+  const pointerId = activePointerId
+  activePointerId = null
+
+  if (pointerId !== null && rootEl.value?.hasPointerCapture?.(pointerId)) {
+    rootEl.value.releasePointerCapture(pointerId)
+  }
+  if (animationFrame !== null) {
+    cancelAnimationFrame(animationFrame)
+    animationFrame = null
+  }
+  ghost?.remove()
+  ghost = null
+  highlightedTarget?.classList.remove('player-drop-target')
+  highlightedTarget = null
+
+  if (emitDragEnd) {
+    dragging.value = false
+    emit('dragend')
+    if (clickResetTimer) clearTimeout(clickResetTimer)
+    clickResetTimer = setTimeout(() => { suppressNextClick = false }, 350)
+  }
+}
+
+onBeforeUnmount(() => cleanupPointer(dragging.value))
 </script>
+
+<style scoped>
+.player-box {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.player-box.player-drop-target {
+  outline: 2px solid rgba(255, 255, 255, 0.82);
+  outline-offset: 3px;
+  transform: scale(1.06);
+}
+</style>

@@ -184,6 +184,9 @@ const cursorLastPointer = ref<{ x: number; y: number; t: number } | null>(null)
 const cursorSuppressedByTouch = ref(false)
 
 function spawnBounce(e: MouseEvent | TouchEvent) {
+  const target = e.target as Element | null
+  if (target?.closest('[data-position]')) return
+
   if ('touches' in e) {
     suppressCustomCursor()
   }
@@ -373,19 +376,21 @@ body.football-cursor * {
 
 .touch-drag-ghost {
   position: fixed;
+  left: 0;
+  top: 0;
   pointer-events: none;
   z-index: 9999;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(18, 21, 24, 0.94);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 10px;
   padding: 8px 16px;
   color: white;
   font-size: 14px;
   font-weight: 600;
-  transform: translate(-50%, -120%);
+  transform: translate3d(0, 0, 0) translate(-50%, -120%);
   white-space: nowrap;
+  will-change: transform;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.34);
 }
 
 .fade-enter-active, .fade-leave-active {
