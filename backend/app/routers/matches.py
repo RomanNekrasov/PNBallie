@@ -69,7 +69,9 @@ def _match_to_read(match: Match) -> MatchRead:
 
 @router.get("", response_model=list[MatchRead])
 def list_matches(session: Session = Depends(get_session)):
-    matches = session.exec(select(Match).order_by(Match.played_at.desc()).limit(50)).all()
+    matches = session.exec(
+        select(Match).order_by(Match.played_at.desc(), Match.id.desc()).limit(50)
+    ).all()
     return [_match_to_read(m) for m in matches]
 
 

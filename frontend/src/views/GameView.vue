@@ -4,6 +4,19 @@
       <!-- SVG Table Background -->
       <FoosballTable class="absolute inset-0 w-full h-full" :wiggle="wiggleTeam" />
 
+      <button
+        class="stats-nav-button absolute top-[3%] right-[4%] z-20"
+        aria-label="Naar clubstatistieken"
+        title="Clubstatistieken"
+        @click="router.push('/stats')"
+      >
+        <svg viewBox="0 0 32 32" width="25" height="25" fill="none" aria-hidden="true">
+          <path d="M5 15 16 6l11 9v11H5V15Z" fill="currentColor" opacity=".2" />
+          <path d="m3.5 16 12.5-10 12.5 10M6 14.5V27h20V14.5M12 27v-8h8v8" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M10 14h3m6 0h3" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" />
+        </svg>
+      </button>
+
       <!-- Orange Score (top center) -->
       <div class="absolute top-[2%] left-1/2 -translate-x-1/2 z-10">
         <ScoreBox
@@ -169,6 +182,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref, onMounted, onUnmounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import type { Position } from '../types'
 import { usePlayers } from '../composables/usePlayers'
 import { useStats } from '../composables/useStats'
@@ -181,6 +195,7 @@ import SubmitButton from '../components/SubmitButton.vue'
 import MatchHistoryModal from '../components/MatchHistoryModal.vue'
 import { playerAvatar } from '../playerAvatar'
 
+const router = useRouter()
 const { players, fetchPlayers } = usePlayers()
 const { stats, fetchStats } = useStats()
 const {
@@ -217,7 +232,7 @@ const canRotatePlayers = computed(() => {
 
 function spawnBounce(e: MouseEvent | TouchEvent) {
   const target = e.target as Element | null
-  if (target?.closest('[data-position]')) return
+  if (target?.closest('[data-position], [data-score-control]')) return
 
   if ('touches' in e) {
     suppressCustomCursor()
@@ -517,6 +532,24 @@ body.football-cursor * {
 
 .glass-btn:disabled {
   cursor: default;
+}
+
+.stats-nav-button {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #6c593e;
+  border-radius: 14px;
+  color: #f2c36d;
+  background: #29231c;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.34);
+  transition: transform 0.15s, background-color 0.15s;
+}
+
+.stats-nav-button:active {
+  transform: scale(0.92);
+  background: #3a3024;
 }
 
 .rotation-button-active svg {

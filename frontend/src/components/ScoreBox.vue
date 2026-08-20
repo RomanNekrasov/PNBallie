@@ -1,10 +1,10 @@
 <template>
-  <div class="select-none rounded-2xl" :style="teamStyle">
+  <div class="score-box select-none rounded-2xl" :style="teamStyle" data-score-control>
     <!-- Touch: horizontal scroll-snap picker -->
     <div v-if="isTouch" class="relative">
       <div
         ref="scrollEl"
-        class="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+        class="score-strip flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory scrollbar-hide"
         :style="{ width: itemSize * 3 + 'px' }"
         @scroll="onScroll"
       >
@@ -115,5 +115,11 @@ const teamStyle = computed(() => {
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+.score-strip {
+  touch-action: pan-x;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 </style>

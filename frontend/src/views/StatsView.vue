@@ -103,6 +103,41 @@
             </article>
           </div>
 
+          <article class="broadcast-panel recent-panel">
+            <div class="section-title">
+              <span>Recente uitslagen</span>
+              <small>laatste {{ recentMatches.length }}</small>
+            </div>
+            <div v-if="recentMatches.length" class="recent-match-list">
+              <article v-for="match in recentMatches" :key="match.id" class="recent-match">
+                <div class="recent-match-head">
+                  <time :datetime="match.played_at">{{ formatMatchTime(match.played_at) }}</time>
+                  <span>{{ match.players.length === 2 ? '1 tegen 1' : '2 tegen 2' }}</span>
+                </div>
+                <div class="recent-score" :aria-label="`Oranje ${match.orange_score}, Blauw ${match.blue_score}`">
+                  <strong class="orange-text" :class="{ winner: match.orange_score > match.blue_score }">{{ match.orange_score }}</strong>
+                  <span>–</span>
+                  <strong class="blue-text" :class="{ winner: match.blue_score > match.orange_score }">{{ match.blue_score }}</strong>
+                </div>
+                <div class="recent-teams">
+                  <div class="recent-team orange-team">
+                    <div v-for="player in matchPlayers(match, 'orange')" :key="player.id" class="recent-player">
+                      <StatsPlayerAvatar :name="player.name" :size="34" :crowned="isRankOne(player.id)" />
+                      <div><strong>{{ player.name }}</strong><small>{{ positionLabel(player.position) }}</small></div>
+                    </div>
+                  </div>
+                  <div class="recent-team blue-team">
+                    <div v-for="player in matchPlayers(match, 'blue')" :key="player.id" class="recent-player">
+                      <StatsPlayerAvatar :name="player.name" :size="34" :crowned="isRankOne(player.id)" />
+                      <div><strong>{{ player.name }}</strong><small>{{ positionLabel(player.position) }}</small></div>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            </div>
+            <p v-else class="empty-copy">Nog geen uitslagen.</p>
+          </article>
+
           <article class="broadcast-panel highlights-panel">
             <div class="section-title">
               <span>Clubhighlights</span>
@@ -305,7 +340,8 @@ import { useRouter } from 'vue-router'
 import FormDots from '../components/FormDots.vue'
 import StatsPlayerAvatar from '../components/StatsPlayerAvatar.vue'
 import { useStats } from '../composables/useStats'
-import type { DuoStat, HeadToHeadMatchup } from '../types'
+import { api } from '../composables/useApi'
+import type { DuoStat, HeadToHeadMatchup, Match } from '../types'
 
 const router = useRouter()
 const { stats, loading, error, fetchStats } = useStats()
@@ -318,8 +354,11 @@ const selectedPlayerId = ref<number | null>(null)
 const h2hPlayer1 = ref<number | null>(null)
 const h2hPlayer2 = ref<number | null>(null)
 const showAllRecords = ref(false)
+const recentMatches = ref<Match[]>([])
 
-onMounted(fetchStats)
+onMounted(async () => {
+  await Promise.all([fetchStats(), fetchRecentMatches()])
+})
 
 watch(stats, value => {
   if (!value) return
@@ -438,6 +477,40 @@ function playerName(id: number): string {
   return stats.value?.players.find(player => player.player_id === id)?.name ?? '?'
 }
 
+async function fetchRecentMatches() {
+  try {
+    recentMatches.value = (await api<Match[]>('/api/matches')).slice(0, 5)
+  } catch {
+    recentMatches.value = []
+  }
+}
+
+function matchPlayers(match: Match, side: 'orange' | 'blue') {
+  return match.players
+    .filter(player => player.side === side)
+    .map(player => ({
+      id: player.player_id,
+      name: playerName(player.player_id),
+      position: player.position,
+    }))
+}
+
+function positionLabel(position: 'voor' | 'achter' | 'solo'): string {
+  if (position === 'solo') return 'Solo'
+  return position === 'voor' ? 'Voor' : 'Achter'
+}
+
+function formatMatchTime(value: string): string {
+  return new Intl.DateTimeFormat('nl-NL', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Europe/Amsterdam',
+  }).format(new Date(value))
+}
+
 function isRankOne(id: number): boolean {
   return stats.value?.leaderboard.some(player => player.player_id === id && player.rank === 1) ?? false
 }
@@ -540,6 +613,25 @@ function selectPair(first: number, second: number) {
 .day-track div { width: 100%; background: linear-gradient(180deg, var(--orange), #cc3f21); border-radius: 7px 7px 2px 2px; }
 .day-column b { color: white; font-size: 10px; }
 
+.recent-panel { border-radius: 18px; padding: 17px; }
+.recent-match-list { display: grid; gap: 9px; }
+.recent-match { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 14px; padding: 13px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel-soft); }
+.recent-match-head { min-width: 0; display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .05em; }
+.recent-match-head time { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recent-match-head span { flex: 0 0 auto; padding: 3px 6px; border-radius: 6px; color: #cad4e2; background: #111822; }
+.recent-score { grid-row: 1 / 3; grid-column: 2; display: flex; align-items: center; gap: 6px; align-self: center; }
+.recent-score strong { min-width: 25px; text-align: center; font: 900 27px/1 'Barlow Condensed', system-ui, sans-serif; opacity: .72; }
+.recent-score strong.winner { opacity: 1; }
+.recent-score span { color: #596578; }
+.recent-teams { min-width: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.recent-team { min-width: 0; display: grid; gap: 5px; padding: 7px; border-radius: 10px; }
+.orange-team { border-left: 3px solid var(--orange); background: #302016; }
+.blue-team { border-left: 3px solid var(--blue); background: #172741; }
+.recent-player { min-width: 0; display: flex; align-items: center; gap: 6px; }
+.recent-player > div { min-width: 0; display: grid; }
+.recent-player strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 750 14px/1 'Barlow Condensed', system-ui, sans-serif; }
+.recent-player small { margin-top: 3px; color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: .09em; }
+
 .highlights-grid { display: grid; gap: 8px; }
 .highlight-card { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 11px; border: 1px solid var(--line); border-radius: 13px; background: var(--panel-soft); }
 .highlight-icon { width: 38px; height: 38px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 11px; font-size: 20px; background: #30394a; }
@@ -638,6 +730,7 @@ function selectPair(first: number, second: number) {
   .leader-form { grid-column: auto; display: grid; justify-items: end; border: 0; padding: 0; gap: 8px; }
   .metric-grid { grid-template-columns: repeat(4, 1fr); }
   .overview-columns, .player-columns, .matchup-lists { grid-template-columns: repeat(2, 1fr); }
+  .recent-match-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .highlights-grid { grid-template-columns: repeat(2, 1fr); }
   .matchup-cards { grid-template-columns: repeat(3, 1fr); }
   .player-metrics { grid-template-columns: repeat(4, 1fr); }
