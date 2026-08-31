@@ -1,0 +1,102 @@
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.8.13"
+          enable-cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: uv sync --locked
+        working-directory: backend
+      - run: uv run ruff check app tests
+        working-directory: backend
+      - run: uv run pytest
+        working-directory: backend
+      - name: Verify migration from an empty database
+        run: DATABASE_URL=sqlite:///${RUNNER_TEMP}/migration.db uv run alembic upgrade head
+        working-directory: backend
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.19.0"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run lint
+        working-directory: frontend
+      - run: npm test
+        working-directory: frontend
+      - run: npm run type-check
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  containers:
+    runs-on: ubuntu-latest
+    env:
+      ENTRA_TENANT_ID: 11111111-1111-1111-1111-111111111111
+      ENTRA_AUDIENCE: api://pnballie-ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Create non-secret smoke configuration
+        run: cp frontend/public/config.example.json frontend/public/config.json
+      - name: Build and start hardened stack
+        run: docker compose up --build --wait
+      - name: Smoke test proxies, authentication and hardening
+        run: |
+          curl --fail http://127.0.0.1:8080/healthz
+          curl --fail http://127.0.0.1:8080/config.json
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8080/api/players)" = 401
+          test "$(docker compose exec -T backend id -u)" != 0
+          test "$(docker compose exec -T frontend id -u)" != 0
+          ! docker compose exec -T backend touch /root-filesystem-is-read-only
+          ! docker compose exec -T frontend touch /root-filesystem-is-read-only
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs
+      - if: always()
+        run: docker compose down --volumes
+      - name: Validate multi-architecture backend build
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          platforms: linux/amd64,linux/arm64
+          push: false
+          outputs: type=cacheonly
+      - name: Validate multi-architecture frontend build
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          platforms: linux/amd64,linux/arm64
+          push: false
+          outputs: type=cacheonly

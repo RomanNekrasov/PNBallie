@@ -1,17 +1,66 @@
 services:
+  migrate:
+    build: ./backend
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: sqlite:////data/pnballie.db
+    volumes:
+      - db-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
   backend:
     build: ./backend
+    environment:
+      APP_ENV: production
+      DATABASE_URL: sqlite:////data/pnballie.db
+      ENTRA_TENANT_ID: ${ENTRA_TENANT_ID:?ENTRA_TENANT_ID is required}
+      ENTRA_AUDIENCE: ${ENTRA_AUDIENCE:?ENTRA_AUDIENCE is required}
+      ENTRA_REQUIRED_SCOPE: ${ENTRA_REQUIRED_SCOPE:-user}
     volumes:
-      - db-data:/app
+      - db-data:/data
     expose:
       - "8000"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
 
   frontend:
     build: ./frontend
     ports:
-      - "80:80"
+      - "8080:8080"
+    volumes:
+      - ./frontend/public/config.json:/usr/share/nginx/html/config.json:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   db-data:
