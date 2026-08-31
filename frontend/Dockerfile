@@ -1,4 +1,6 @@
-FROM node:22.19.0-alpine3.22@sha256:d2166de198f26e17e5a442f537754dd616ab069c47cc57b889310a717e0abbf9 AS build
+# The frontend output is static and architecture-independent. Building it on the
+# runner platform avoids executing Node under slow target-architecture emulation.
+FROM --platform=$BUILDPLATFORM node:22.19.0-alpine3.22@sha256:d2166de198f26e17e5a442f537754dd616ab069c47cc57b889310a717e0abbf9 AS build
 
 WORKDIR /app
 
