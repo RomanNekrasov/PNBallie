@@ -5,8 +5,11 @@ import jwt
 import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
+from sqlalchemy.pool import StaticPool
+from sqlmodel import Session, SQLModel, create_engine
 
 from app import auth
+from app.database import get_session
 from app.main import app
 
 TENANT = "11111111-1111-1111-1111-111111111111"
@@ -35,6 +38,25 @@ def entra(monkeypatch, keys):
     monkeypatch.setenv("ENTRA_REQUIRED_SCOPE", "user")
     monkeypatch.setattr(auth, "_openid_configuration", lambda _: {"issuer": ISSUER, "jwks_uri": "https://entra.test/keys"})
     monkeypatch.setattr(auth, "_jwks", lambda _: {"keys": [keys[1]]})
+
+
+@pytest.fixture(autouse=True)
+def isolated_database():
+    test_engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    SQLModel.metadata.create_all(test_engine)
+
+    def test_session():
+        with Session(test_engine) as session:
+            yield session
+
+    app.dependency_overrides[get_session] = test_session
+    yield
+    app.dependency_overrides.pop(get_session, None)
+    test_engine.dispose()
 
 
 def token(private_key, **overrides) -> str:
