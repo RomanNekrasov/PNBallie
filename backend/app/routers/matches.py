@@ -2,7 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from app.database import get_session
-from app.models import Match, MatchCreate, MatchPlayer, MatchPlayerOut, MatchRead, Player
+from app.models import (
+    Match,
+    MatchCreate,
+    MatchPlayer,
+    MatchPlayerOut,
+    MatchRead,
+    Player,
+)
 
 router = APIRouter(prefix="/api/matches", tags=["matches"])
 

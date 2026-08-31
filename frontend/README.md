@@ -1,26 +1,12 @@
-# PNBallie Frontend
+# PNBallie frontend
 
-## Development
-
-1. Create `frontend/.env.local` (or copy from `.env.example`) with:
-
-```dotenv
-VITE_AZURE_CLIENT_ID=your-azure-client-id
-VITE_AZURE_TENANT_ID=your-azure-tenant-id
-VITE_AZURE_SCOPE=api://your-azure-client-id/user
-```
-
-2. Install dependencies:
+De frontend leest de Entra-configuratie tijdens het starten uit `/config.json`. Kopieer voor lokale ontwikkeling het voorbeeld:
 
 ```bash
-npm install
-```
-
-3. Start local development:
-
-```bash
+cp public/config.example.json public/config.json
 npm run dev
 ```
 
-The app uses MSAL redirect login and requires authentication before loading routes.
-After login, the frontend auto-provisions a player using the signed-in account name.
+`public/config.json` wordt niet gecommit en wordt uitgesloten van de containerbuild. Vul `azureClientId`, `azureTenantId` en `azureScope` in volgens het contract in de hoofd-README.
+
+Beschikbare controles: `npm run lint`, `npm test`, `npm run type-check` en `npm run build`.

@@ -3,28 +3,26 @@ import {
   PublicClientApplication,
   type AccountInfo,
 } from '@azure/msal-browser'
+import { loadRuntimeConfig } from './runtimeConfig'
 
-const clientId = import.meta.env.VITE_AZURE_CLIENT_ID as string | undefined
-const tenantId = import.meta.env.VITE_AZURE_TENANT_ID as string | undefined
-const configuredScope = import.meta.env.VITE_AZURE_SCOPE as string | undefined
+let msalInstance: PublicClientApplication | null = null
+let scopes: string[] = []
 
-if (!clientId || !tenantId) {
-  throw new Error('Missing MSAL env vars: VITE_AZURE_CLIENT_ID and VITE_AZURE_TENANT_ID are required')
+function instance(): PublicClientApplication {
+  if (!msalInstance) throw new Error('Authenticatie is nog niet geïnitialiseerd')
+  return msalInstance
 }
-
-const msalConfig = {
-  auth: {
-    clientId,
-    authority: `https://login.microsoftonline.com/${tenantId}`,
-    redirectUri: window.location.origin,
-  },
-}
-
-export const msalInstance = new PublicClientApplication(msalConfig)
-
-const SCOPES = [configuredScope || 'User.Read']
 
 export async function initAuth(): Promise<void> {
+  const config = await loadRuntimeConfig()
+  msalInstance = new PublicClientApplication({
+    auth: {
+      clientId: config.azureClientId,
+      authority: `https://login.microsoftonline.com/${config.azureTenantId}`,
+      redirectUri: window.location.origin,
+    },
+  })
+  scopes = [config.azureScope]
   await msalInstance.initialize()
   const result = await msalInstance.handleRedirectPromise()
   if (result?.account) {
@@ -38,26 +36,26 @@ export async function initAuth(): Promise<void> {
 }
 
 export function getActiveAccount(): AccountInfo | null {
-  return msalInstance.getActiveAccount()
+  return instance().getActiveAccount()
 }
 
 export async function login(): Promise<void> {
-  await msalInstance.loginRedirect({ scopes: SCOPES })
+  await instance().loginRedirect({ scopes })
 }
 
 export async function logout(): Promise<void> {
-  await msalInstance.logoutRedirect()
+  await instance().logoutRedirect()
 }
 
 export async function getAccessToken(): Promise<string | null> {
-  const account = msalInstance.getActiveAccount()
+  const account = instance().getActiveAccount()
   if (!account) return null
   try {
-    const response = await msalInstance.acquireTokenSilent({ scopes: SCOPES, account })
+    const response = await instance().acquireTokenSilent({ scopes, account })
     return response.accessToken
   } catch (error) {
     if (error instanceof InteractionRequiredAuthError) {
-      await msalInstance.acquireTokenRedirect({ scopes: SCOPES })
+      await instance().acquireTokenRedirect({ scopes })
     }
     return null
   }

@@ -39,6 +39,7 @@ htmlcov/
 *.db
 .claude
 node_modules
+frontend/public/config.json
 *.log
 .ruff_cache/
 .mypy_cache/
