@@ -17,6 +17,7 @@ jobs:
     env:
       IMAGE_SHA: ${{ github.event.workflow_run.head_sha }}
     strategy:
+      fail-fast: false
       matrix:
         service: [backend, frontend]
     steps:
@@ -46,10 +47,15 @@ jobs:
           jq -e '.manifests | any(.platform.os == "linux" and .platform.architecture == "amd64")' manifest.json
           jq -e '.manifests | any(.platform.os == "linux" and .platform.architecture == "arm64")' manifest.json
       - name: Ensure package remains private
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          visibility="$(gh api "/users/${{ github.repository_owner }}/packages/container/pnballie-${{ matrix.service }}" --jq .visibility)"
-          test "$visibility" = private
+          token="$(curl --silent --fail "https://ghcr.io/token?scope=repository:romannekrasov/pnballie-${{ matrix.service }}:pull" | jq -r '.token // empty' || true)"
+          if [ -n "$token" ] && curl --silent --fail --output /dev/null \
+            --header "Authorization: Bearer ${token}" \
+            --header "Accept: application/vnd.oci.image.index.v1+json" \
+            "https://ghcr.io/v2/romannekrasov/pnballie-${{ matrix.service }}/manifests/sha-${IMAGE_SHA}"; then
+            echo "Package pnballie-${{ matrix.service }} is publicly pullable; expected private visibility."
+            exit 1
+          fi
+          echo "Package pnballie-${{ matrix.service }} rejects anonymous pulls."
       - name: Add immutable digest to workflow summary
         run: echo "- \`ghcr.io/romannekrasov/pnballie-${{ matrix.service }}:sha-${IMAGE_SHA}\` → \`${{ steps.build.outputs.digest }}\`" >> "$GITHUB_STEP_SUMMARY"
