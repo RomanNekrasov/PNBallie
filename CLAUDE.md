@@ -73,8 +73,9 @@ encrypted database backup was verified. The retained Azure backend passed a
 restart/rollback rehearsal and is stopped again.
 `https://pnballie.nl` now serves the frontend and runtime configuration over
 HTTPS, and the public health check passes. The operator confirmed public
-Entra sign-in and existing player/score visibility. Authenticated score entry
-still needs confirmation, so Phase 6 remains in progress. The current
-acceptance checklist and evidence live in
+Entra sign-in, existing player/score visibility and authenticated score creation
+and deletion; the deleted score disappeared from statistics. A fresh encrypted
+database backup is verified. Every migration acceptance gate is demonstrated,
+and Phase 6 is complete. The checklist and evidence live in
 `spark-homelab/docs/phase-6-pnballie.md`. Preserve SQLite and the Azure rollback
-set; do not mark the migration complete until every acceptance gate is demonstrated.
+set pending separately reviewed cleanup; no Azure resources have been deleted.
