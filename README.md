@@ -2,11 +2,19 @@
 
 PNBallie bestaat uit een FastAPI-backend, een Vue-frontend en een SQLite-database. De applicatie wordt als twee private multi-architecture images gepubliceerd voor gebruik vanuit k3s. Kubernetes- en homelabconfiguratie horen in `spark-homelab`, niet in deze repository.
 
+## Migratiestatus
+
+Stand 9 september 2026: de k3s-applicatievoorbereiding is afgerond. De private deployment is getest met herstelde scores, werkende Entra-login, back-ups en behoud van gegevens na een herstart. SQLite blijft de database.
+
+De publieke overschakeling naar `pnballie.nl` wacht op DNS en de definitieve gegevensoverdracht. Azure blijft tot die overschakeling de bron voor productiescores. De actuele checklist en uitvoeringsinstructies staan in de [Phase 6-documentatie](https://github.com/RomanNekrasov/spark-homelab/blob/main/docs/phase-6-pnballie.md) en het [migratierunbook](https://github.com/RomanNekrasov/spark-homelab/blob/main/docs/runbooks/pnballie-migration.md) in de private homelabrepository.
+
 ## Lokale ontwikkeling
 
 Vereisten: Python 3.11, [uv](https://docs.astral.sh/uv/), Node.js 22, npm en optioneel Docker Compose.
 
 ```bash
+uv sync --project backend
+npm ci --prefix frontend
 cp .env.example .env
 cp frontend/public/config.example.json frontend/public/config.json
 ```
@@ -21,15 +29,26 @@ Vul lokale Entra-waarden in beide genegeerde bestanden in. Het frontendcontract 
 }
 ```
 
-Start zonder containers met `make dev` of start de geharde stack met `make docker-up`. De frontend is dan beschikbaar op `http://localhost:8080`. Compose voert Alembic eerst eenmalig uit, bewaart alleen `/data` in het SQLite-volume en start daarna backend en frontend als non-root met read-only rootfilesystems.
+Voor native ontwikkeling moet je de backendvariabelen exporteren; `make dev` leest `.env` niet automatisch:
+
+```bash
+set -a
+. ./.env
+set +a
+make dev
+```
+
+De native frontend draait op `http://localhost:5173`, de backend op `http://localhost:8000`. Docker Compose leest `.env` wel automatisch: start met `make docker-up` en open `http://localhost:8080`. Compose voert Alembic eerst eenmalig uit, bewaart alleen `/data` in het SQLite-volume en start daarna backend en frontend als non-root met read-only rootfilesystems.
 
 ## Runtimeconfiguratie en endpoints
 
 De backend gebruikt `ENTRA_TENANT_ID`, `ENTRA_AUDIENCE` en `ENTRA_REQUIRED_SCOPE` (standaard in Compose: `user`). In productie (`APP_ENV=production`) stopt de backend direct als een instelling ontbreekt. Alle `/api/*`-routes vereisen een geldig RS256 Entra-token met de juiste issuer, tenant, audience, vervaldatum en scope.
 
-- `GET /health/live`: publieke livenessprobe.
-- `GET /health/ready`: publieke database-readinessprobe.
-- `GET /healthz`: frontendproxy naar backend-readiness.
+Stel in de API-appregistratie `api.requestedAccessTokenVersion` in op `2`. `ENTRA_AUDIENCE` moet overeenkomen met de `aud` van het v2-access-token: normaal de client-ID-GUID van de API-applicatie. De frontend vraagt de scope `api://<API-client-id>/user` aan. Registreer iedere gebruikte frontend-origin als **SPA**-redirect-URI; MSAL gebruikt `window.location.origin`. Behoud de bestaande Azure-redirect tijdens de migratie.
+
+- `GET /health/live`: backend-livenessprobe zonder authenticatie.
+- `GET /health/ready`: backend-database-readinessprobe zonder authenticatie.
+- `GET /healthz`: Nginx-frontendproxy naar backend-readiness; deze proxy bestaat niet in de Vite-devserver.
 - `GET /config.json`: gemounte frontendconfiguratie met caching uitgeschakeld.
 
 Commit nooit `.env`, `frontend/public/config.json`, tokens of databasebestanden.
@@ -47,6 +66,8 @@ Elke merge naar `main` publiceert zonder `latest`-alias:
 
 De workflow gebruikt alleen `GITHUB_TOKEN` met `packages: write`, verifieert beide architecturen en de private packagezichtbaarheid, en toont de immutable digests in de workflowsamenvatting.
 
+Publicatie volgt pas nadat de `Validate`-workflow op `main` slaagt. Een nieuw image wordt niet automatisch uitgerold: de geselecteerde digest wordt afzonderlijk bijgewerkt in `spark-homelab`.
+
 ## Tijdelijk Azure-rollbackpad
 
-`docker-compose.prod.yml`, Terraform en de bestaande Azure-resources blijven bevroren beschikbaar als tijdelijk rollbackpad. De Azure Pipeline is verwijderd; wijzigingen of verwijdering van Azure-resources vallen buiten deze migratie.
+`docker-compose.prod.yml`, Terraform, de bestaande Azure-images en gegevens blijven behouden. Azure blijft tot de definitieve overschakeling actief en dient daarna als tijdelijk rollbackpad. De Azure Pipeline is verwijderd. De huidige images passen niet zonder aanpassingen in de oude productiestack: poorten, runtimeconfiguratie en migratiestappen verschillen. Volg het homelabrunbook voor overschakeling en terugval; lees [infra/prod/README.md](infra/prod/README.md) voor de grenzen van de historische Azure-configuratie.

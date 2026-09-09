@@ -1,12 +1,17 @@
 # PNBallie v2 — CLAUDE.md
 
 ## Project
-Office foosball score tracker. Mobile-first single-screen webapp.
+Office foosball score tracker. Mobile-first webapp with game and statistics views.
+
+PNBallie is a personal project. Follow `K3S_APP_MIGRATION_PLAN.md` and the
+current README; provincial development and visual standards do not apply.
 
 ## Stack
 - **Backend:** FastAPI + SQLModel + SQLite + Alembic, managed with `uv` (never write deps manually)
 - **Frontend:** Vue 3 (Composition API) + Tailwind CSS + Vite + TypeScript, managed with `npm`
-- **Deploy:** Docker Compose (nginx serves frontend + proxies `/api/` to backend)
+- **Local containers:** Docker Compose; Nginx serves the frontend on port 8080 and proxies `/api/` to the backend on port 8000.
+- **Release/deployment:** private multi-architecture GHCR images; Flux/k3s desired state belongs in `spark-homelab`.
+- **Azure:** retained legacy production deployment until final cutover, then a rollback set.
 
 ## Dev Commands
 ```bash
@@ -16,7 +21,12 @@ make dev              # both
 make migrate          # run Alembic migrations only
 make docker-up        # docker compose up --build -d
 make docker-down      # docker compose down
+make check            # lint, tests, type check and production build
 ```
+
+Install dependencies and configure runtime authentication as described in
+README.md. Native development needs exported `ENTRA_*` variables; Compose
+loads `.env` automatically. Frontend configuration is loaded from `/config.json`.
 
 ## Migrations (Alembic)
 ```bash
@@ -31,30 +41,34 @@ uv run alembic downgrade -1                                # rollback one step
 ## Local Dev URLs
 - Frontend (dev): http://localhost:5173
 - Backend API docs: http://localhost:8000/docs
-- Docker (prod-like): http://localhost
+- Docker (prod-like): http://localhost:8080
 
 ## Phone Testing
-Mac IP: `192.168.1.120`
-- Docker: http://192.168.1.120
-- Dev: `npm run dev -- --host` then http://192.168.1.120:5173
+Use an HTTPS origin registered as an Entra SPA redirect. The homelab runbook
+provides the private test URL. Verify phone layouts separately; do not infer
+phone acceptance from backend or desktop checks.
 
 ## Key Rules
 - Never manually edit `pyproject.toml` deps — use `uv add`
 - Never manually edit `package.json` deps — use `npm install`
-- No vue-router, no Pinia — composables only
+- Vue Router owns `/` and `/stats`; keep shared state in composables, without Pinia.
 - Backend runs from `backend/` dir with `uv run`
+- Require Entra v2 access tokens; `ENTRA_AUDIENCE` is the API client-ID GUID, while the frontend scope is `api://<API-client-id>/user`.
+- Keep credentials, local configuration and database files out of Git and image contexts.
+- Do not place Kubernetes resources here or redeploy current images into the frozen Azure stack.
 
 ## Architecture
-- No router: single-screen app
-- Composables: `useApi`, `usePlayers`, `useMatch`
+- Router: authenticated game (`/`) and statistics (`/stats`) views.
+- Composables: `useApi`, `usePlayers`, `useMatch`, `useStats`
 - SVG table in `FoosballTable.vue` — inline, scales on any screen
 - DB: `match` table (scores, played_at) + `match_player` table (match_id, player_id, side, position)
 - Frontend positions: `orange_front`, `orange_back`, `blue_front`, `blue_back` — mapped to side/position on submit
 - Validation: scores 0–10, ≥1 player per team, no duplicate players
 
-## Status
-- [x] Backend scaffolded + API working
-- [x] Frontend scaffolded + builds clean
-- [x] Docker + nginx + Makefile
-- [ ] Tested on phone
-- [ ] Any polish / tweaks needed
+## Migration status
+
+Application preparation and private deployment validation are complete.
+Public cutover is still pending; Azure remains authoritative until the final
+score transfer. The current acceptance checklist and evidence live in
+`spark-homelab/docs/phase-6-pnballie.md`. Preserve SQLite and the Azure rollback
+set; do not mark the migration complete based only on image publication or DNS.
