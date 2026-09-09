@@ -6,7 +6,9 @@ PNBallie bestaat uit een FastAPI-backend, een Vue-frontend en een SQLite-databas
 
 Stand 9 september 2026: PNBallie draait op k3s met de definitieve Azure-gegevens in SQLite. Schema en volledige inhoud zijn gecontroleerd, ook na het vervangen van de backendpod. Een nieuwe versleutelde back-up is gecontroleerd; de private Entra-login werkt.
 
-PNBallie is publiek bereikbaar via [https://pnballie.nl](https://pnballie.nl). De HTTPS-controles voor de frontend, `/healthz` en `/config.json` slagen. De gebruiker heeft publiek aanmelden met Entra en het bekijken van de bestaande spelers en scores bevestigd. Het opslaan van een score via de publieke URL moet nog worden bevestigd. De Azure-backend is gestopt en blijft na een geslaagde terugvaltest beschikbaar als rollbackpad. De migratie blijft in uitvoering; de actuele checklist en uitvoeringsinstructies staan in de [Phase 6-documentatie](https://github.com/RomanNekrasov/spark-homelab/blob/main/docs/phase-6-pnballie.md) en het [migratierunbook](https://github.com/RomanNekrasov/spark-homelab/blob/main/docs/runbooks/pnballie-migration.md) in de private homelabrepository.
+PNBallie is publiek bereikbaar via [https://pnballie.nl](https://pnballie.nl). De HTTPS-controles voor de frontend, `/healthz` en `/config.json` slagen. De gebruiker heeft publiek aanmelden met Entra, het bekijken van bestaande spelers en scores, en het aanmaken en verwijderen van een score bevestigd. De verwijderde score verdween ook uit de statistieken. Daarmee is de migratie (Phase 6) afgerond; een nieuwe versleutelde databaseback-up is gecontroleerd.
+
+De Azure-backend is gestopt en blijft na een geslaagde terugvaltest beschikbaar als rollbackpad. Azure opruimen wordt afzonderlijk beoordeeld; er zijn nog geen resources verwijderd. De acceptatie en uitvoeringsinstructies staan in de [Phase 6-documentatie](https://github.com/RomanNekrasov/spark-homelab/blob/main/docs/phase-6-pnballie.md) en het [migratierunbook](https://github.com/RomanNekrasov/spark-homelab/blob/main/docs/runbooks/pnballie-migration.md) in de private homelabrepository.
 
 ## Lokale ontwikkeling
 

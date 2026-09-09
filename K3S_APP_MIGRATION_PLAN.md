@@ -16,9 +16,11 @@ terugvaltest weer gestopt en blijft als rollbackpad behouden.
 De HTTPS-controles voor de frontend, runtimeconfiguratie en healthcheck op
 [https://pnballie.nl](https://pnballie.nl) slagen. De gebruiker heeft publiek
 aanmelden met Entra en het bekijken van de bestaande spelers en scores
-bevestigd. Het opslaan van een score via de publieke URL moet nog worden
-bevestigd; Phase 6 blijft in uitvoering. De actuele uitvoering, back-ups en
-acceptatie staan in
+bevestigd, evenals het aanmaken en verwijderen van een score. De verwijderde
+score verdween ook uit de statistieken. Een nieuwe versleutelde databaseback-up
+is gecontroleerd; Phase 6 is afgerond. Azure opruimen wordt afzonderlijk
+beoordeeld: de oude omgeving blijft behouden en er zijn geen resources
+verwijderd. De uitvoering, back-ups en acceptatie staan in
 [Phase 6 van spark-homelab](https://github.com/RomanNekrasov/spark-homelab/blob/main/docs/phase-6-pnballie.md)
 en het bijbehorende migratierunbook; toegang tot die private repository is nodig.
 
