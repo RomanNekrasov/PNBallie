@@ -71,8 +71,10 @@ The k3s application and tunnel are active with the final Azure data. Full
 source comparison passed after replacing the backend pod, and a fresh
 encrypted database backup was verified. The retained Azure backend passed a
 restart/rollback rehearsal and is stopped again.
-Public availability still needs the tunnel's HTTP origin corrected, followed
-by public HTTPS, Entra login and authenticated scoring checks. Phase 6 remains
-in progress. The current acceptance checklist and evidence live in
+`https://pnballie.nl` now serves the frontend and runtime configuration over
+HTTPS, and the public health check passes. The operator confirmed public
+Entra sign-in and existing player/score visibility. Authenticated score entry
+still needs confirmation, so Phase 6 remains in progress. The current
+acceptance checklist and evidence live in
 `spark-homelab/docs/phase-6-pnballie.md`. Preserve SQLite and the Azure rollback
 set; do not mark the migration complete until every acceptance gate is demonstrated.

@@ -13,10 +13,12 @@ gecontroleerd; een nieuwe versleutelde back-up is geverifieerd. De private
 Entra v2-login werkt. De bestaande Azure-backend is na een geslaagde
 terugvaltest weer gestopt en blijft als rollbackpad behouden.
 
-Publieke beschikbaarheid wacht op correctie van de HTTP-origin in de
-tunnelroute. Daarna moeten publieke HTTPS-controles, Entra-login en het
-opslaan van een score na aanmelden worden bevestigd; Phase 6 blijft in
-uitvoering. De actuele uitvoering, back-ups en acceptatie staan in
+De HTTPS-controles voor de frontend, runtimeconfiguratie en healthcheck op
+[https://pnballie.nl](https://pnballie.nl) slagen. De gebruiker heeft publiek
+aanmelden met Entra en het bekijken van de bestaande spelers en scores
+bevestigd. Het opslaan van een score via de publieke URL moet nog worden
+bevestigd; Phase 6 blijft in uitvoering. De actuele uitvoering, back-ups en
+acceptatie staan in
 [Phase 6 van spark-homelab](https://github.com/RomanNekrasov/spark-homelab/blob/main/docs/phase-6-pnballie.md)
 en het bijbehorende migratierunbook; toegang tot die private repository is nodig.
 
