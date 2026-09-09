@@ -6,7 +6,7 @@ PNBallie bestaat uit een FastAPI-backend, een Vue-frontend en een SQLite-databas
 
 Stand 9 september 2026: de k3s-applicatievoorbereiding is afgerond. De private deployment is getest met herstelde scores, werkende Entra-login, back-ups en behoud van gegevens na een herstart. SQLite blijft de database.
 
-De publieke overschakeling naar `pnballie.nl` wacht op DNS en de definitieve gegevensoverdracht. Azure blijft tot die overschakeling de bron voor productiescores. De actuele checklist en uitvoeringsinstructies staan in de [Phase 6-documentatie](https://github.com/RomanNekrasov/spark-homelab/blob/main/docs/phase-6-pnballie.md) en het [migratierunbook](https://github.com/RomanNekrasov/spark-homelab/blob/main/docs/runbooks/pnballie-migration.md) in de private homelabrepository.
+Cloudflare is nu autoritatief voor `pnballie.nl`. De publieke tunnelroute en definitieve gegevensoverdracht zijn nog niet afgerond. Azure blijft tot de publieke overschakeling de bron voor productiescores. De actuele checklist en uitvoeringsinstructies staan in de [Phase 6-documentatie](https://github.com/RomanNekrasov/spark-homelab/blob/main/docs/phase-6-pnballie.md) en het [migratierunbook](https://github.com/RomanNekrasov/spark-homelab/blob/main/docs/runbooks/pnballie-migration.md) in de private homelabrepository.
 
 ## Lokale ontwikkeling
 
