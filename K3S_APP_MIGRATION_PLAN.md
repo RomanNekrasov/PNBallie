@@ -1,12 +1,26 @@
 # PNBallie gereedmaken voor k3s
 
+## Voortgang en overdracht
+
+Stand 9 september 2026: de applicatievoorbereiding in dit plan is uitgevoerd.
+De `Validate`- en `Publish images`-workflows slagen voor applicatierevisie
+`5970d3e14883d73ae88ec06a718706cb1f0f2988`; beide private images ondersteunen
+AMD64 en ARM64. Het onderstaande plan blijft het applicatiecontract.
+
+De private k3s-deployment is inmiddels getest met herstelde gegevens, Entra
+v2-login en behoud van gegevens na een herstart. De definitieve overdracht en
+publieke overschakeling zijn nog niet afgerond. Azure blijft tot die stap de
+productieschrijver. De actuele uitvoering, back-ups en acceptatie staan in
+[Phase 6 van spark-homelab](https://github.com/RomanNekrasov/spark-homelab/blob/main/docs/phase-6-pnballie.md)
+en het bijbehorende migratierunbook; toegang tot die private repository is nodig.
+
 ## Samenvatting
 
 Maak PNBallie een zelfstandig bouwbare en beveiligde applicatie die twee private
 multi-arch GHCR-images publiceert. Deze repository bevat geen Kubernetes-, Flux-,
 Tailscale-, Cloudflare- of Spark-configuratie. De bestaande Azure-infrastructuur
-blijft tijdelijk als bevroren rollbackpad; `azure-pipelines.yml` wordt vervangen
-door GitHub Actions.
+blijft tot de definitieve overschakeling actief en daarna als bevroren
+rollbackpad; GitHub Actions heeft `azure-pipelines.yml` vervangen.
 
 PNBallie is een persoonlijk project. De provinciale huisstijl en bijbehorende
 ontwikkelstandaarden zijn daarom niet van toepassing. De huidige Entra-login via
@@ -18,6 +32,8 @@ de PNB-tenant blijft voorlopig behouden.
 
 - Voeg Entra JWT-validatie toe met runtimevariabelen `ENTRA_TENANT_ID`,
   `ENTRA_AUDIENCE` en `ENTRA_REQUIRED_SCOPE=user`.
+- Gebruik v2-access-tokens (`api.requestedAccessTokenVersion=2`). De audience
+  is de API-client-ID-GUID; de frontendscope blijft `api://<API-client-id>/user`.
 - Valideer de RS256-handtekening via Entra JWKS, issuer, tenant, audience,
   verloopdatum en scope.
 - Bescherm alle `/api/*`-routes. Ontbrekende of ongeldige tokens geven `401`;
@@ -129,11 +145,11 @@ de PNB-tenant blijft voorlopig behouden.
 ## Aannames en grenzen
 
 - De hele ingestelde PNB Entra-tenant mag de app voorlopig gebruiken.
-- GHCR-images blijven privé. Het pull-secret wordt later in `spark-homelab`
-  geregeld.
+- GHCR-images blijven privé. Het pull-secret wordt in `spark-homelab` beheerd.
 - Frontendconfiguratie wordt bij deployment gemount en niet in het image
   ingebakken.
-- Azure blijft uitsluitend als tijdelijk rollbackpad beschikbaar.
+- Azure blijft tot de definitieve overschakeling de productieschrijver en
+  daarna als tijdelijk rollbackpad beschikbaar.
 - Kubernetesopslag, SOPS, Flux, monitoring, back-ups en migratierunbooks vallen
   buiten deze repository en worden in `spark-homelab` uitgewerkt.
 - Er worden in deze fase geen functionele of visuele wijzigingen aan de
