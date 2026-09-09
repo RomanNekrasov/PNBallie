@@ -4,9 +4,9 @@ PNBallie bestaat uit een FastAPI-backend, een Vue-frontend en een SQLite-databas
 
 ## Migratiestatus
 
-Stand 9 september 2026: de k3s-applicatievoorbereiding is afgerond. De private deployment is getest met herstelde scores, werkende Entra-login, back-ups en behoud van gegevens na een herstart. SQLite blijft de database.
+Stand 9 september 2026: PNBallie draait op k3s met de definitieve Azure-gegevens in SQLite. Schema en volledige inhoud zijn gecontroleerd, ook na het vervangen van de backendpod. Een nieuwe versleutelde back-up is gecontroleerd; de private Entra-login werkt.
 
-Cloudflare is nu autoritatief voor `pnballie.nl`. De publieke tunnelroute en definitieve gegevensoverdracht zijn nog niet afgerond. Azure blijft tot de publieke overschakeling de bron voor productiescores. De actuele checklist en uitvoeringsinstructies staan in de [Phase 6-documentatie](https://github.com/RomanNekrasov/spark-homelab/blob/main/docs/phase-6-pnballie.md) en het [migratierunbook](https://github.com/RomanNekrasov/spark-homelab/blob/main/docs/runbooks/pnballie-migration.md) in de private homelabrepository.
+De tunnel is actief, maar publieke toegang via `https://pnballie.nl` wacht nog op correctie van de HTTP-origin in de tunnelroute. Daarna moeten publieke HTTPS-controles, Entra-login en het opslaan van een score na aanmelden worden bevestigd. De Azure-backend is gestopt en blijft na een geslaagde terugvaltest beschikbaar als rollbackpad. De migratie blijft in uitvoering; de actuele checklist en uitvoeringsinstructies staan in de [Phase 6-documentatie](https://github.com/RomanNekrasov/spark-homelab/blob/main/docs/phase-6-pnballie.md) en het [migratierunbook](https://github.com/RomanNekrasov/spark-homelab/blob/main/docs/runbooks/pnballie-migration.md) in de private homelabrepository.
 
 ## Lokale ontwikkeling
 
@@ -44,7 +44,7 @@ De native frontend draait op `http://localhost:5173`, de backend op `http://loca
 
 De backend gebruikt `ENTRA_TENANT_ID`, `ENTRA_AUDIENCE` en `ENTRA_REQUIRED_SCOPE` (standaard in Compose: `user`). In productie (`APP_ENV=production`) stopt de backend direct als een instelling ontbreekt. Alle `/api/*`-routes vereisen een geldig RS256 Entra-token met de juiste issuer, tenant, audience, vervaldatum en scope.
 
-Stel in de API-appregistratie `api.requestedAccessTokenVersion` in op `2`. `ENTRA_AUDIENCE` moet overeenkomen met de `aud` van het v2-access-token: normaal de client-ID-GUID van de API-applicatie. De frontend vraagt de scope `api://<API-client-id>/user` aan. Registreer iedere gebruikte frontend-origin als **SPA**-redirect-URI; MSAL gebruikt `window.location.origin`. Behoud de bestaande Azure-redirect tijdens de migratie.
+Stel in de API-appregistratie `api.requestedAccessTokenVersion` in op `2`. `ENTRA_AUDIENCE` moet overeenkomen met de `aud` van het v2-access-token: normaal de client-ID-GUID van de API-applicatie. De frontend vraagt de scope `api://<API-client-id>/user` aan. Registreer iedere gebruikte frontend-origin als **SPA**-redirect-URI; MSAL gebruikt `window.location.origin`. Behoud de bestaande Azure-redirect zolang het rollbackpad beschikbaar blijft.
 
 - `GET /health/live`: backend-livenessprobe zonder authenticatie.
 - `GET /health/ready`: backend-database-readinessprobe zonder authenticatie.
@@ -70,4 +70,4 @@ Publicatie volgt pas nadat de `Validate`-workflow op `main` slaagt. Een nieuw im
 
 ## Tijdelijk Azure-rollbackpad
 
-`docker-compose.prod.yml`, Terraform, de bestaande Azure-images en gegevens blijven behouden. Azure blijft tot de definitieve overschakeling actief en dient daarna als tijdelijk rollbackpad. De Azure Pipeline is verwijderd. De huidige images passen niet zonder aanpassingen in de oude productiestack: poorten, runtimeconfiguratie en migratiestappen verschillen. Volg het homelabrunbook voor overschakeling en terugval; lees [infra/prod/README.md](infra/prod/README.md) voor de grenzen van de historische Azure-configuratie.
+De Azure-backend is gestopt. De VM, `docker-compose.prod.yml`, Terraform, de bestaande Azure-images, configuratie en gegevens blijven behouden als tijdelijk rollbackpad. Na nieuwe schrijfacties op k3s moet bij terugval eerst de actuele database worden overgedragen; start Azure nooit met een verouderde kopie. De Azure Pipeline is verwijderd. De huidige images passen niet zonder aanpassingen in de oude productiestack: poorten, runtimeconfiguratie en migratiestappen verschillen. Volg het homelabrunbook voor terugval; lees [infra/prod/README.md](infra/prod/README.md) voor de grenzen van de historische Azure-configuratie.
