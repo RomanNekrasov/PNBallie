@@ -1,8 +1,9 @@
 # Retained Azure deployment
 
 This directory preserves the Terraform configuration for the existing Azure
-VM deployment. Until the final k3s cutover, Azure remains the authoritative
-score writer. After cutover, retain it as the rollback set.
+VM deployment. Its final database has been restored and verified on k3s.
+The retained Azure backend passed a restart/rollback rehearsal and is stopped
+again. Keep the VM, configuration, existing images and data as the rollback set.
 
 New releases use GitHub Actions and private GHCR images. Kubernetes resources,
 score transfer, backups and cutover are managed in `spark-homelab`; follow its

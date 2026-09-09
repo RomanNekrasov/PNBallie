@@ -11,7 +11,7 @@ current README; provincial development and visual standards do not apply.
 - **Frontend:** Vue 3 (Composition API) + Tailwind CSS + Vite + TypeScript, managed with `npm`
 - **Local containers:** Docker Compose; Nginx serves the frontend on port 8080 and proxies `/api/` to the backend on port 8000.
 - **Release/deployment:** private multi-architecture GHCR images; Flux/k3s desired state belongs in `spark-homelab`.
-- **Azure:** retained legacy production deployment until final cutover, then a rollback set.
+- **Azure:** retained VM, configuration, images and data for rollback; the legacy backend is stopped.
 
 ## Dev Commands
 ```bash
@@ -67,8 +67,12 @@ phone acceptance from backend or desktop checks.
 
 ## Migration status
 
-Application preparation and private deployment validation are complete.
-Public cutover is still pending; Azure remains authoritative until the final
-score transfer. The current acceptance checklist and evidence live in
+The k3s application and tunnel are active with the final Azure data. Full
+source comparison passed after replacing the backend pod, and a fresh
+encrypted database backup was verified. The retained Azure backend passed a
+restart/rollback rehearsal and is stopped again.
+Public availability still needs the tunnel's HTTP origin corrected, followed
+by public HTTPS, Entra login and authenticated scoring checks. Phase 6 remains
+in progress. The current acceptance checklist and evidence live in
 `spark-homelab/docs/phase-6-pnballie.md`. Preserve SQLite and the Azure rollback
-set; do not mark the migration complete based only on image publication or DNS.
+set; do not mark the migration complete until every acceptance gate is demonstrated.
