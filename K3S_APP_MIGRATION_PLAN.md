@@ -14,8 +14,9 @@ Entra v2-login werkt. De bestaande Azure-backend is na een geslaagde
 terugvaltest weer gestopt en blijft als rollbackpad behouden.
 
 De HTTPS-controles voor de frontend, runtimeconfiguratie en healthcheck op
-[https://pnballie.nl](https://pnballie.nl) slagen. Aanmelden met Entra, bestaande
-scores bekijken en een score opslaan via de publieke URL moeten nog worden
+[https://pnballie.nl](https://pnballie.nl) slagen. De gebruiker heeft publiek
+aanmelden met Entra en het bekijken van de bestaande spelers en scores
+bevestigd. Het opslaan van een score via de publieke URL moet nog worden
 bevestigd; Phase 6 blijft in uitvoering. De actuele uitvoering, back-ups en
 acceptatie staan in
 [Phase 6 van spark-homelab](https://github.com/RomanNekrasov/spark-homelab/blob/main/docs/phase-6-pnballie.md)
