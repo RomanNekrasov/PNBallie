@@ -92,6 +92,9 @@ De virtuele schermen zijn `/app/game`, `/app/stats_overview`,
 `/app/groups`, `/app/admin` en `/app/login`. Statistiektabs melden zelfstandig
 schermwisselingen; de URL hoeft daarvoor niet te veranderen. Een uitnodiging
 wordt alleen als het scherm `groups` gezien. Titels zijn vaste labels.
+De app wacht bij het starten op routerguards en redirects voordat schermmetingen
+beginnen. Een anonieme bezoeker telt daardoor alleen het zichtbare inlogscherm,
+zonder een tijdelijke meting van de initiële routerlocatie.
 
 | Event | Toegestane properties |
 | --- | --- |

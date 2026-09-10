@@ -3,10 +3,17 @@
 Alle relevante wijzigingen aan deze uitbreiding worden hier bijgehouden.
 Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 
-## Unreleased — 2026-09-09
+## Unreleased — 2026-09-10
 
 ### Observability en gebruiksanalytics
 
+- De private Spark-preview draait met gedeeld Umami en echte Prometheus-,
+  Loki- en Tempo-records. De browserproef bevestigt virtuele statistiektabs,
+  toegestane acties, gevoelige-datafiltering en geen verzameling bij DNT.
+- De eerste schermmeting wacht op routerguards en redirects. Een bezoek aan
+  het inlogscherm telt daardoor geen tijdelijk, ongezien speelveld meer mee.
+- Op verzoek is extra rollbackwerk voor de hobbyanalytics-migratie vervallen;
+  de al geverifieerde kopie wordt gebruikt. PNBallie-productiescores blijven apart.
 - Optionele OpenTelemetry-traces en OTLP/JSON-logs toegevoegd voor API,
   avatarwachtrij, worker en private modelservice. Prometheus meet requestlatency,
   fouten, wachtrij en job-/provideruitkomsten zonder gebruikers-ID-labels.
