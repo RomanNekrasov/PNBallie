@@ -154,5 +154,11 @@ publieke PNBallie-bezoekers vereist de gedocumenteerde productie-ingressconfigur
 
 De exacte infrastructuurrevisies, aanvullende dashboard-/migratieproeven en
 definitieve acceptatie staan in het Phase 7-document in `spark-homelab`.
+De laatste browserproef bevestigt 17 daadwerkelijk opgeslagen events en alle
+negen schermpaden in Grafana SQL. De 12 operationele en 16 gebruikspanelen
+renderen en voeren hun queries succesvol uit. Bij browserautomatisering is een
+normale browser-User-Agent nodig: Umami negeert bots bewust en HTTP 200 betekent
+dan niet dat een event is opgeslagen. De gebruikssamenvattingen zijn per dag;
+gebruik kalenderdagbereiken voor die panelen.
 OIDC vereist nog de eerder beschreven echte providerconfiguratie; dat staat
 los van deze werkende telemetry- en analyticsaansluiting.

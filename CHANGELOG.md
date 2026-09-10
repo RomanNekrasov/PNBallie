@@ -7,6 +7,10 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 
 ### Observability en gebruiksanalytics
 
+- Spark-acceptatie afgerond op de private preview: 17 opgeslagen browsertestevents,
+  alle negen schermen, DNT en privacygrenzen, 12 operationele en 16 gebruikspanelen
+  met werkende Grafana-queries. Vijf koude routes uit de productiebuild worden
+  voortaan ook in CI gecontroleerd. De publieke app behoudt haar bestaande release.
 - De private Spark-preview draait met gedeeld Umami en echte Prometheus-,
   Loki- en Tempo-records. De browserproef bevestigt virtuele statistiektabs,
   toegestane acties, gevoelige-datafiltering en geen verzameling bij DNT.
