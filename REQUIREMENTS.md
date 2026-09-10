@@ -111,7 +111,9 @@ Vervolgopdracht van 9 september 2026; uitwerking en Spark-acceptatie staan ook i
       applicatie niet blokkeren bij uitval.
 - [ ] Verzameling via dezelfde origin, beheer-/rapportage- en observability-
       endpoints alleen privaat; previewdata gescheiden van productiegebruik.
-- [ ] Bestaande analyticsdata en PNBallie-historie behouden met migratie-/rollbackbewijs.
+- [ ] De geverifieerde analyticskopie activeren en PNBallie-productiehistorie behouden.
+      Op 10 september accepteert de gebruiker eventueel verlies van hobbyanalytics;
+      extra rollbackwerk voor Jan Doorlopen is daarom geen vereiste.
 - [ ] Beide repositories documenteren en pushen; echte verificatie op de Spark.
 
 ## Uitvoering en randvoorwaarden

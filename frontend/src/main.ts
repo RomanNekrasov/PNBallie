@@ -7,8 +7,12 @@ import { initAnalytics } from './analytics'
 
 try {
   await initAuth()
+  const app = createApp(App).use(router)
+  // Resolve guards and redirects before screen watchers run. Vue Router's
+  // initial location is '/', which otherwise creates a phantom game view.
+  await router.isReady()
   void initAnalytics()
-  createApp(App).use(router).mount('#app')
+  app.mount('#app')
 } catch (error) {
   console.error('Applicatie kon niet starten', error)
   const root = document.querySelector<HTMLDivElement>('#app')
