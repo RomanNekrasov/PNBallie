@@ -114,7 +114,7 @@ Vervolgopdracht van 9 september 2026; uitwerking en Spark-acceptatie staan ook i
 - [x] De geverifieerde analyticskopie activeren en PNBallie-productiehistorie behouden.
       Op 10 september accepteert de gebruiker eventueel verlies van hobbyanalytics;
       extra rollbackwerk voor Jan Doorlopen is daarom geen vereiste.
-- [ ] Beide repositories documenteren en pushen; echte verificatie op de Spark.
+- [x] Beide repositories documenteren en pushen; echte verificatie op de Spark.
 
 ## Uitvoering en randvoorwaarden
 
@@ -136,10 +136,12 @@ en schemadriftcontrole. Nieuwe gebruikersflows ook lokaal in de browser bekijken
 Uitrollen naar productie en een echte GPU-generatieproef zijn afzonderlijke
 verificatiestappen en worden niet afgeleid uit alleen geslaagde unittests.
 
-## Eindstatus lokale implementatie — 9 september 2026
+## Eindstatus implementatie — 10 september 2026
 
-Alle appfuncties zijn geïmplementeerd op de featurebranch. Vinkjes geven de
-implementatie en lokale verificatie aan; ze betekenen geen productie-uitrol.
+Alle appfuncties zijn geïmplementeerd en via pull requests in `main` gepubliceerd.
+De private Spark-preview is live geverifieerd, inclusief vastgelegde SPA-events,
+Grafana-dashboards en een doorlopende API→worker→modelservice-trace.
+Vinkjes betekenen geen upgrade van de publieke authenticatie/productiedata.
 Er slagen 100 backendtests en 75 frontendtests. Lint, TypeScript, productiebuild,
 Alembic-upgrade en schemadriftcontrole slagen. De Docker-stack start non-root en
 read-only; een smokecheck via Nginx bewijst registratie, uitnodigingen,
