@@ -21,4 +21,4 @@ ENV PATH="/app/.venv/bin:$PATH" \
     UV_CACHE_DIR=/tmp/uv-cache
 USER 10001:10001
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]

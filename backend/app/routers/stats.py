@@ -1,13 +1,16 @@
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, time, timedelta, timezone
 from math import isclose
+from typing import Literal
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
 
+from app.auth import GroupContext, require_group
+from app.avatar_models import PlayerAvatar
 from app.database import get_session
-from app.models import Match, Player, StatsRead
+from app.models import Match, MatchPlayerOut, MatchRead, Player, StatsRead
 
 router = APIRouter(prefix="/api/stats", tags=["stats"])
 
@@ -15,6 +18,8 @@ AMS = ZoneInfo("Europe/Amsterdam")
 DAYS_NL = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"]
 ELO_INITIAL = 1000.0
 ELO_K = 32
+MatchMode = Literal["all", "1v1", "2v2"]
+StatsPeriod = Literal["all", "30d", "50"]
 
 
 def _played_at_utc(match: Match) -> datetime:
@@ -30,6 +35,56 @@ def _match_sort_key(match: Match) -> tuple[datetime, int]:
 
 def _ordered_matches(matches: list[Match]) -> list[Match]:
     return sorted(matches, key=_match_sort_key)
+
+
+def _filter_matches(
+    matches: list[Match], mode: MatchMode, period: StatsPeriod, *, now: datetime | None = None
+) -> list[Match]:
+    selected = [match for match in _ordered_matches(matches) if mode == "all" or _match_type(match) == mode]
+    if period == "50":
+        return selected[-50:]
+    if period == "30d":
+        current = now or datetime.now(timezone.utc)
+        if current.tzinfo is None:
+            current = current.replace(tzinfo=timezone.utc)
+        local_date = current.astimezone(AMS).date()
+        # Include today and the preceding 29 local calendar days, across DST changes.
+        start = datetime.combine(local_date - timedelta(days=29), time.min, AMS)
+        end = datetime.combine(local_date + timedelta(days=1), time.min, AMS)
+        return [match for match in selected if start <= _played_at_utc(match) < end]
+    return selected
+
+
+def _compute_badges(matches: list[Match], players: list[Player]) -> dict[int, list[dict]]:
+    """Permanent achievements use the complete group history, never a statistics filter."""
+    badges: dict[int, dict[str, dict]] = {player.id: {} for player in players if player.id is not None}
+    wins: defaultdict[int, int] = defaultdict(int)
+    games: defaultdict[int, int] = defaultdict(int)
+    streaks: defaultdict[int, int] = defaultdict(int)
+    for match in _ordered_matches(matches):
+        for entry in match.players:
+            if entry.player_id not in badges:
+                continue
+            player_id = entry.player_id
+            won = entry.side == _winner(match)
+            games[player_id] += 1
+            wins[player_id] += int(won)
+            streaks[player_id] = streaks[player_id] + 1 if won else 0
+            earned = []
+            if wins[player_id] == 1 and won:
+                earned.append(("first_win", "Eerste winst", "⭐", "Je eerste wedstrijd gewonnen."))
+            if streaks[player_id] == 5:
+                earned.append(("win_streak_5", "Vijf op rij", "🏅", "Vijf wedstrijden achter elkaar gewonnen."))
+            if streaks[player_id] == 10:
+                earned.append(("win_streak_10", "Tien op rij", "🏆", "Tien wedstrijden achter elkaar gewonnen."))
+            if games[player_id] == 50:
+                earned.append(("matches_50", "Vaste speler", "🦾", "Vijftig wedstrijden gespeeld."))
+            for key, label, emoji, description in earned:
+                badges[player_id].setdefault(key, {
+                    "key": key, "label": label, "emoji": emoji, "description": description,
+                    "earned_at": _played_at_utc(match),
+                })
+    return {player_id: list(earned.values()) for player_id, earned in badges.items()}
 
 
 def _match_type(match: Match) -> str:
@@ -58,6 +113,7 @@ def _compute_player_stats(matches: list[Match], players: list[Player]) -> list[d
         stats[player.id] = {
             "player_id": player.id,
             "name": player.name,
+            "avatar_url": getattr(player, "avatar_url", None),
             "wins": 0,
             "losses": 0,
             "wins_1v1": 0,
@@ -173,7 +229,10 @@ def _compute_global_stats(matches: list[Match]) -> dict:
     ordered_matches = _ordered_matches(matches)
     counts: defaultdict[str, int] = defaultdict(int)
     day_counts: defaultdict[int, int] = defaultdict(int)
+    before_14: defaultdict[int, int] = defaultdict(int)
+    from_14: defaultdict[int, int] = defaultdict(int)
     total_goals = 0
+    total_difference = 0
 
     for match in ordered_matches:
         winner = _winner(match)
@@ -182,10 +241,12 @@ def _compute_global_stats(matches: list[Match]) -> dict:
         counts[f"{winner}_wins_{match_type}"] += 1
         counts[f"total_{match_type}"] += 1
         total_goals += match.orange_score + match.blue_score
+        total_difference += abs(match.orange_score - match.blue_score)
 
         amsterdam_time = _played_at_utc(match).astimezone(AMS)
         counts["lunch_matches" if amsterdam_time.hour < 14 else "middag_matches"] += 1
         day_counts[amsterdam_time.weekday()] += 1
+        (before_14 if amsterdam_time.hour < 14 else from_14)[amsterdam_time.weekday()] += 1
 
     current_streak = {"orange": 0, "blue": 0}
     longest_streak = {"orange": 0, "blue": 0}
@@ -202,6 +263,7 @@ def _compute_global_stats(matches: list[Match]) -> dict:
         "total_1v1": counts["total_1v1"],
         "total_2v2": counts["total_2v2"],
         "average_goals_per_match": round(total_goals / total_matches, 1) if total_matches else None,
+        "average_goal_difference": round(total_difference / total_matches, 1) if total_matches else None,
         "orange_wins": counts["orange_wins"],
         "blue_wins": counts["blue_wins"],
         "orange_wins_1v1": counts["orange_wins_1v1"],
@@ -215,7 +277,10 @@ def _compute_global_stats(matches: list[Match]) -> dict:
         "lunch_matches": counts["lunch_matches"],
         "middag_matches": counts["middag_matches"],
         "matches_per_day": [
-            {"day": DAYS_NL[index], "count": day_counts[index]}
+            {
+                "day": DAYS_NL[index], "count": day_counts[index],
+                "before_14": before_14[index], "from_14": from_14[index],
+            }
             for index in range(7)
         ],
     }
@@ -226,6 +291,7 @@ def _compute_elo(
 ) -> tuple[list[dict], dict[int, int], dict[int, float], dict[int, int]]:
     elo = {player.id: ELO_INITIAL for player in players if player.id is not None}
     names = {player.id: player.name for player in players if player.id is not None}
+    avatars = {player.id: getattr(player, "avatar_url", None) for player in players}
     wins: defaultdict[int, int] = defaultdict(int)
     losses: defaultdict[int, int] = defaultdict(int)
     results: defaultdict[int, list[str]] = defaultdict(list)
@@ -259,6 +325,7 @@ def _compute_elo(
         {
             "player_id": player_id,
             "name": names[player_id],
+            "avatar_url": avatars[player_id],
             "elo": elo_int[player_id],
             "elo_precise": elo_precise[player_id],
             "wins": wins[player_id],
@@ -332,6 +399,8 @@ def _compute_head_to_head(matches: list[Match]) -> dict:
 
         if match_type == "2v2":
             for side, player_ids in teams.items():
+                if len(player_ids) != 2:
+                    continue  # Older versions allowed an incomplete team.
                 key = tuple(sorted(player_ids))
                 duo_stats[key]["total"] += 1
                 duo_stats[key]["wins"] += int(side == winner)
@@ -453,9 +522,9 @@ def _compute_records(
     if longest_streak:
         records.append({
             "key": "langste_reeks",
-            "label": "Langste Reeks Ooit",
+            "label": "Langste Reeks",
             "emoji": "🏆",
-            "description": "Langste winstreak aller tijden",
+            "description": "Langste winstreak binnen de selectie",
             "value": _joined_names([player["name"] for player in leaders]),
             "detail": f"{int(longest_streak)} op rij",
         })
@@ -511,26 +580,35 @@ def _compute_records(
             "detail": f"{winner_score}-{loser_score}",
         })
 
-        highest = max(
-            ordered_matches,
-            key=lambda match: (match.orange_score + match.blue_score, _match_sort_key(match)),
-        )
-        records.append({
-            "key": "hoogste_score",
-            "label": "Hoogste Score",
-            "emoji": "🎯",
-            "description": "Meeste goals in één wedstrijd",
-            "value": f"{highest.orange_score}-{highest.blue_score}",
-            "detail": f"{highest.orange_score + highest.blue_score} goals totaal",
-        })
-
     return records
 
 
 @router.get("", response_model=StatsRead, response_model_by_alias=True)
-def get_stats(session: Session = Depends(get_session)):
-    matches = list(session.exec(select(Match)).all())
-    players = list(session.exec(select(Player)).all())
+def get_stats(
+    mode: MatchMode = "all",
+    period: StatsPeriod = "all",
+    session: Session = Depends(get_session),
+    group: GroupContext = Depends(require_group),
+):
+    history = list(session.exec(select(Match).where(Match.group_id == group.id)).all())
+    players = list(session.exec(select(Player).where(Player.group_id == group.id)).all())
+    result = _build_stats(history, players, mode, period)
+    # Fetch only metadata; PNG blobs can be large and do not belong in the stats query.
+    avatar_versions = session.exec(
+        select(PlayerAvatar.player_id, PlayerAvatar.version).where(PlayerAvatar.group_id == group.id)
+    ).all()
+    avatars = {player_id: f"/api/avatars/players/{player_id}.png?v={version}" for player_id, version in avatar_versions}
+    for bucket in (result["players"], result["leaderboard"]):
+        for player in bucket:
+            player["avatar_url"] = avatars.get(player["player_id"])
+    return result
+
+
+def _build_stats(
+    history: list[Match], players: list[Player], mode: MatchMode = "all", period: StatsPeriod = "all",
+    *, now: datetime | None = None,
+) -> dict:
+    matches = _filter_matches(history, mode, period, now=now)
 
     player_stats = _compute_player_stats(matches, players)
     global_stats = _compute_global_stats(matches)
@@ -545,10 +623,25 @@ def get_stats(session: Session = Depends(get_session)):
         player["rank"] = rank_map.get(player_id)
 
     records = _compute_records(matches, player_stats, head_to_head, players)
+    badges = _compute_badges(history, players)
+    lifetime_stats = {player["player_id"]: player for player in _compute_player_stats(history, players)}
+    for player in player_stats:
+        player["badges"] = badges[player["player_id"]]
+        # Current flames must describe the actual streak, even when looking at older/subset results.
+        for field in ("current_winstreak", "longest_winstreak", "current_losestreak", "longest_losestreak"):
+            player[field] = lifetime_stats[player["player_id"]][field]
     return {
+        "filters": {"mode": mode, "period": period},
         "players": player_stats,
         "global": global_stats,
         "leaderboard": leaderboard,
         "head_to_head": head_to_head,
         "records": records,
+        "recent_matches": [
+            MatchRead(
+                id=match.id, orange_score=match.orange_score, blue_score=match.blue_score,
+                played_at=_played_at_utc(match),
+                players=[MatchPlayerOut.model_validate(entry, from_attributes=True) for entry in match.players],
+            ) for match in reversed(matches[-5:])
+        ],
     }

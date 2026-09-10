@@ -1,17 +1,26 @@
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { currentGroup } from '../auth'
 import type { Player } from '../types'
 import { api } from './useApi'
 
 const players = ref<Player[]>([])
 const loading = ref(false)
+let requestId = 0
+watch(() => currentGroup.value?.id, () => {
+  players.value = []
+  loading.value = false
+  requestId++
+}, { flush: 'sync' })
 
 export function usePlayers() {
   async function fetchPlayers() {
+    const request = ++requestId
     loading.value = true
     try {
-      players.value = await api<Player[]>('/api/players')
+      const result = await api<Player[]>('/api/players')
+      if (request === requestId) players.value = result
     } finally {
-      loading.value = false
+      if (request === requestId) loading.value = false
     }
   }
 

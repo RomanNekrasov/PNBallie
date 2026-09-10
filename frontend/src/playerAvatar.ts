@@ -5,7 +5,8 @@ const PLAYER_AVATARS: Record<string, string> = {
   brent: '/avatars/brent.png',
 }
 
-export function playerAvatar(name: string | null | undefined): string | null {
+export function playerAvatar(name: string | null | undefined, customUrl?: string | null): string | null {
+  if (customUrl?.startsWith('/api/avatars/players/')) return customUrl
   if (!name) return null
   return PLAYER_AVATARS[name.trim().toLocaleLowerCase('nl-NL')] ?? null
 }

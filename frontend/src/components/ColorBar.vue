@@ -7,12 +7,16 @@
         <span class="team-blue">Blauw {{ blue }}</span>
       </span>
     </div>
-    <div class="bar-shell">
-      <div class="bar-orange" :style="{ width: orangePct }"></div>
-      <div class="bar-blue" :style="{ width: bluePct }"></div>
+    <div class="bar-line" :aria-label="`${label}: ${conclusion}`">
+      <div class="bar-shell" :class="{ empty: !total }">
+        <div class="bar-orange" :style="{ width: orangePct }"></div>
+        <div class="bar-blue" :style="{ width: bluePct }"></div>
+      </div>
+      <span class="leader-dot" :class="leader" :style="{ left: orangePct }" aria-hidden="true"></span>
     </div>
     <div class="colorbar-bottom">
       <span class="team-orange">{{ orangeShare }}</span>
+      <span class="colorbar-conclusion">{{ conclusion }}</span>
       <span class="team-blue">{{ blueShare }}</span>
     </div>
   </div>
@@ -30,13 +34,15 @@ const props = defineProps<{
 const total = computed(() => props.orange + props.blue)
 const orangePct = computed(() => total.value ? `${(props.orange / total.value) * 100}%` : '50%')
 const bluePct = computed(() => total.value ? `${(props.blue / total.value) * 100}%` : '50%')
-const orangeShare = computed(() => total.value ? `${Math.round((props.orange / total.value) * 100)}%` : '50%')
-const blueShare = computed(() => total.value ? `${Math.round((props.blue / total.value) * 100)}%` : '50%')
+const orangeShare = computed(() => total.value ? `${Math.round((props.orange / total.value) * 100)}%` : '–')
+const blueShare = computed(() => total.value ? `${Math.round((props.blue / total.value) * 100)}%` : '–')
+const leader = computed(() => props.orange > props.blue ? 'orange' : props.blue > props.orange ? 'blue' : 'tie')
+const conclusion = computed(() => !total.value ? 'Nog geen wedstrijden' : leader.value === 'tie' ? 'Gelijke stand' : `${leader.value === 'orange' ? 'Oranje' : 'Blauw'} leidt`)
 </script>
 
 <style scoped>
 .colorbar {
-  border: 1px solid rgba(171, 133, 84, 0.28);
+  border: 1px solid #303b4b;
   border-radius: 10px;
   padding: 9px 10px;
   background: rgba(0, 0, 0, 0.18);
@@ -63,7 +69,7 @@ const blueShare = computed(() => total.value ? `${Math.round((props.blue / total
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(243, 230, 214, 0.58);
+  color: #aeb9c9;
 }
 
 .colorbar-score {
@@ -74,12 +80,20 @@ const blueShare = computed(() => total.value ? `${Math.round((props.blue / total
 }
 
 .bar-shell {
-  height: 12px;
+  height: 8px;
   border-radius: 9999px;
   overflow: hidden;
   display: flex;
   background: rgba(243, 230, 214, 0.06);
 }
+
+.bar-line { position: relative; margin: 11px 5px 9px; }
+.bar-shell.empty { opacity: .25; }
+.leader-dot { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #17202c; transform: translate(-50%, -50%); box-shadow: 0 0 0 1px currentColor; }
+.leader-dot.orange { color: #ff904f; background: #ff904f; }
+.leader-dot.blue { color: #75adff; background: #75adff; }
+.leader-dot.tie { color: #aeb9c9; background: #aeb9c9; }
+.colorbar-conclusion { color: #aeb9c9; text-align: center; font-size: 10px; }
 
 .bar-orange {
   background: linear-gradient(90deg, rgba(232, 125, 47, 1), rgba(232, 125, 47, 0.82));

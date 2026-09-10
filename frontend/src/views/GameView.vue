@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-dvh flex items-center justify-center bg-[#1a1510] overflow-hidden">
+  <div class="w-full h-dvh min-h-[500px] flex items-center justify-center bg-[#1a1510] overflow-hidden">
     <div class="relative w-full max-w-[420px] h-full max-h-[800px]">
       <!-- SVG Table Background -->
       <FoosballTable class="absolute inset-0 w-full h-full" :wiggle="wiggleTeam" />
@@ -161,7 +161,7 @@
       :open="historyOpen"
       :matches="sessionMatches"
       :players="players"
-      :can-delete="!sessionExpired"
+      :can-delete="isGroupAdmin && !sessionExpired"
       @close="historyOpen = false"
       @delete="handleDeleteMatch"
     />
@@ -194,6 +194,7 @@ import PlayerSelectModal from '../components/PlayerSelectModal.vue'
 import SubmitButton from '../components/SubmitButton.vue'
 import MatchHistoryModal from '../components/MatchHistoryModal.vue'
 import { playerAvatar } from '../playerAvatar'
+import { isGroupAdmin } from '../auth'
 
 const router = useRouter()
 const { players, fetchPlayers } = usePlayers()
@@ -327,7 +328,7 @@ function disableCustomCursor() {
 }
 
 onMounted(() => {
-  fetchPlayers()
+  fetchPlayers().catch(error => { feedback.value = error instanceof Error ? error.message : 'Spelers laden is niet gelukt.' })
   fetchStats()
   enableCustomCursor()
   document.addEventListener('click', spawnBounce)
@@ -358,7 +359,8 @@ function playerId(position: Position): number | null {
 }
 
 function playerAvatarAt(position: Position): string | null {
-  return playerAvatar(playerName(position))
+  const player = players.value.find(p => p.id === playerId(position))
+  return playerAvatar(player?.name, player?.avatar_url)
 }
 
 function isLeader(position: Position): boolean {
@@ -429,8 +431,12 @@ function handlePlayerSelect(playerId: number | null) {
 }
 
 async function handleDeleteMatch(id: number) {
-  await deleteMatch(id)
-  await fetchStats()
+  try {
+    await deleteMatch(id)
+    await fetchStats()
+  } catch (error) {
+    feedback.value = error instanceof Error ? error.message : 'Verwijderen is niet gelukt.'
+  }
 }
 
 async function handleSubmit() {

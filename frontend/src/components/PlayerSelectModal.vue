@@ -28,8 +28,8 @@
             <span class="choice-avatar-wrap">
               <CrownIcon v-if="leaderIds.has(player.id)" class="choice-crown" />
               <img
-                v-if="playerAvatar(player.name)"
-                :src="playerAvatar(player.name)!"
+                v-if="playerAvatar(player.name, player.avatar_url)"
+                :src="playerAvatar(player.name, player.avatar_url)!"
                 :alt="`Avatar van ${player.name}`"
                 class="choice-avatar"
                 draggable="false"

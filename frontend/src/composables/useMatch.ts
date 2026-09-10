@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import type { Match, MatchCreate, MatchPlayerEntry, Position } from '../types'
 import { api } from './useApi'
+import { trackEvent } from '../analytics'
 
 export function useMatch() {
   const orangeScore = ref(10)
@@ -127,13 +128,14 @@ export function useMatch() {
         method: 'POST',
         body: JSON.stringify(payload),
       })
-      feedback.value = 'Match saved!'
+      trackEvent('match_saved', { mode: payload.players.length === 2 ? '1v1' : '2v2' })
+      feedback.value = 'Wedstrijd opgeslagen!'
       if (sessionStart.value === null) sessionStart.value = Date.now()
       sessionMatches.value.unshift(match)
       resetScores()
       return match
     } catch (e: any) {
-      feedback.value = e.message || 'Failed to save match'
+      feedback.value = e.message || 'De wedstrijd kon niet worden opgeslagen.'
       throw e
     } finally {
       submitting.value = false
@@ -142,6 +144,7 @@ export function useMatch() {
 
   async function deleteMatch(id: number) {
     await api('/api/matches/' + id, { method: 'DELETE' })
+    trackEvent('match_deleted')
     sessionMatches.value = sessionMatches.value.filter(m => m.id !== id)
   }
 
