@@ -1,0 +1,4 @@
+# Exact historical false positive: UUID lease_token is generated at runtime;
+# the flagged text is the Python expression "leased_until=now", not a credential.
+# Keep all other commits, files, lines and rules subject to the normal scan.
+279ae912e17fbf631def5b6845d185d364305de3:backend/app/avatar_worker.py:generic-api-key:72
