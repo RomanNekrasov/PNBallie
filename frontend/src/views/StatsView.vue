@@ -12,11 +12,30 @@
           </svg>
         </button>
         <div>
-          <p class="eyebrow">PNBALLIE · ALL-TIME</p>
+          <p class="eyebrow">PNBALLIE · {{ periodLabel }}</p>
           <h1>Clubstatistieken</h1>
         </div>
-        <div v-if="stats" class="live-badge"><span></span>{{ stats.global.total_matches }} duels</div>
+        <div class="page-header-actions"><div v-if="stats" class="live-badge"><span></span>{{ stats.global.total_matches }} duels</div><SettingsMenu /></div>
       </header>
+
+      <div class="stats-filters" aria-label="Statistiekfilters">
+        <label>Spelvorm
+          <select v-model="mode" aria-label="Spelvorm">
+            <option value="all">Alles samen</option>
+            <option value="1v1">Alleen 1v1</option>
+            <option value="2v2">Alleen 2v2</option>
+          </select>
+        </label>
+        <label>Periode
+          <select v-model="period" aria-label="Periode">
+            <option value="all">All-time</option>
+            <option value="30d">Laatste 30 dagen</option>
+            <option value="50">Laatste 50 wedstrijden</option>
+          </select>
+        </label>
+      </div>
+      <p v-if="period === '30d'" class="filter-description">Vandaag en de vorige 29 dagen, volgens de Nederlandse kalender.</p>
+      <p v-else-if="period === '50'" class="filter-description">De laatste 50 wedstrijden van de gekozen spelvorm.</p>
 
       <section v-if="loading" class="state-panel">Statistieken worden geladen…</section>
       <section v-else-if="error" class="state-panel state-error">
@@ -37,9 +56,9 @@
         <!-- Overview -->
         <section v-if="activeTab === 'Overzicht'" class="tab-content overview-grid">
           <article v-if="leader" class="leader-card broadcast-panel">
-            <div class="leader-kicker">Huidige nummer één</div>
+            <div class="leader-kicker">Nummer één in deze selectie</div>
             <div class="leader-main">
-              <StatsPlayerAvatar :name="leader.name" :size="84" crowned />
+              <StatsPlayerAvatar :name="leader.name" :avatar-url="leader.avatar_url" :size="84" crowned />
               <div class="leader-copy">
                 <h2><span class="rank-inline">#{{ leader.rank }}</span>{{ leader.name }}</h2>
                 <div class="leader-rating">{{ formatElo(leader.elo_precise) }} <span>ELO</span></div>
@@ -57,7 +76,7 @@
 
           <div class="metric-grid">
             <article class="metric-card broadcast-panel orange-edge">
-              <span>Wedstrijden</span><strong>{{ stats.global.total_matches }}</strong><small>all-time</small>
+              <span>Wedstrijden</span><strong>{{ stats.global.total_matches }}</strong><small>{{ periodLabel }}</small>
             </article>
             <article class="metric-card broadcast-panel">
               <span>1 tegen 1</span><strong>{{ stats.global.total_1v1 }}</strong><small>{{ share(stats.global.total_1v1, stats.global.total_matches) }}</small>
@@ -66,37 +85,34 @@
               <span>2 tegen 2</span><strong>{{ stats.global.total_2v2 }}</strong><small>{{ share(stats.global.total_2v2, stats.global.total_matches) }}</small>
             </article>
             <article class="metric-card broadcast-panel">
-              <span>Goals per duel</span><strong>{{ decimal(stats.global.average_goals_per_match) }}</strong><small>gemiddeld</small>
+              <span>Doelverschil per duel</span><strong>{{ decimal(stats.global.average_goal_difference) }}</strong><small>gemiddelde winstmarge</small>
             </article>
           </div>
 
           <div class="overview-columns">
             <article class="broadcast-panel section-card">
-              <div class="section-title"><span>Kleurverdeling</span><small>winnaars</small></div>
-              <div class="color-score">
-                <div class="color-team orange-text"><strong>{{ stats.global.orange_wins }}</strong><span>Oranje</span></div>
-                <div class="color-versus">VS</div>
-                <div class="color-team blue-text"><strong>{{ stats.global.blue_wins }}</strong><span>Blauw</span></div>
-              </div>
-              <div class="split-bar" aria-label="Verdeling gewonnen wedstrijden">
-                <div class="orange-fill" :style="{ width: shareRaw(stats.global.orange_wins, stats.global.total_matches) }"></div>
-                <div class="blue-fill" :style="{ width: shareRaw(stats.global.blue_wins, stats.global.total_matches) }"></div>
-              </div>
+              <div class="section-title"><span>Wins per kleur</span><small>gewonnen wedstrijden</small></div>
               <div class="format-lines">
-                <div><span>1v1</span><b class="orange-text">{{ stats.global.orange_wins_1v1 }}</b><i></i><b class="blue-text">{{ stats.global.blue_wins_1v1 }}</b></div>
-                <div><span>2v2</span><b class="orange-text">{{ stats.global.orange_wins_2v2 }}</b><i></i><b class="blue-text">{{ stats.global.blue_wins_2v2 }}</b></div>
+                <ColorBar label="Totaal" :orange="stats.global.orange_wins" :blue="stats.global.blue_wins" />
+                <ColorBar v-if="mode !== '2v2'" label="1v1" :orange="stats.global.orange_wins_1v1" :blue="stats.global.blue_wins_1v1" />
+                <ColorBar v-if="mode !== '1v1'" label="2v2" :orange="stats.global.orange_wins_2v2" :blue="stats.global.blue_wins_2v2" />
               </div>
             </article>
 
             <article class="broadcast-panel section-card">
-              <div class="section-title"><span>Speelactiviteit</span><small>Europe/Amsterdam</small></div>
+              <div class="section-title"><span>Speelactiviteit</span><small>wedstrijden per dag</small></div>
               <div class="activity-summary">
-                <div><strong>{{ stats.global.lunch_matches }}</strong><span>voor 14:00</span></div>
-                <div><strong>{{ stats.global.middag_matches }}</strong><span>na 14:00</span></div>
+                <div class="activity-before"><strong>{{ stats.global.lunch_matches }}</strong><span><i></i>voor 14:00</span></div>
+                <div class="activity-after"><strong>{{ stats.global.middag_matches }}</strong><span><i></i>vanaf 14:00</span></div>
               </div>
               <div class="day-chart">
                 <div v-for="day in stats.global.matches_per_day" :key="day.day" class="day-column">
-                  <div class="day-track"><div :style="{ height: dayHeight(day.count) }"></div></div>
+                  <div class="day-track" :aria-label="`${day.day}: ${day.before_14} voor 14:00, ${day.from_14} vanaf 14:00`" :title="`${day.before_14} voor 14:00 · ${day.from_14} vanaf 14:00`">
+                    <div class="activity-stack" :style="{ height: dayHeight(day.count) }">
+                      <div class="activity-after-fill" :style="{ flex: day.from_14 }"></div>
+                      <div class="activity-before-fill" :style="{ flex: day.before_14 }"></div>
+                    </div>
+                  </div>
                   <b>{{ day.count }}</b><span>{{ shortDay(day.day) }}</span>
                 </div>
               </div>
@@ -114,21 +130,21 @@
                   <time :datetime="match.played_at">{{ formatMatchTime(match.played_at) }}</time>
                   <span>{{ match.players.length === 2 ? '1 tegen 1' : '2 tegen 2' }}</span>
                 </div>
-                <div class="recent-score" :aria-label="`Oranje ${match.orange_score}, Blauw ${match.blue_score}`">
-                  <strong class="orange-text" :class="{ winner: match.orange_score > match.blue_score }">{{ match.orange_score }}</strong>
-                  <span>–</span>
-                  <strong class="blue-text" :class="{ winner: match.blue_score > match.orange_score }">{{ match.blue_score }}</strong>
-                </div>
                 <div class="recent-teams">
                   <div class="recent-team orange-team">
                     <div v-for="player in matchPlayers(match, 'orange')" :key="player.id" class="recent-player">
-                      <StatsPlayerAvatar :name="player.name" :size="34" :crowned="isRankOne(player.id)" />
+                      <StatsPlayerAvatar :name="player.name" :avatar-url="player.avatarUrl" :size="34" :crowned="isRankOne(player.id)" />
                       <div><strong>{{ player.name }}</strong><small>{{ positionLabel(player.position) }}</small></div>
                     </div>
                   </div>
+                  <div class="recent-score" :aria-label="`Oranje ${match.orange_score}, Blauw ${match.blue_score}`">
+                    <strong class="orange-text" :class="{ winner: match.orange_score > match.blue_score }">{{ match.orange_score }}</strong>
+                    <span>–</span>
+                    <strong class="blue-text" :class="{ winner: match.blue_score > match.orange_score }">{{ match.blue_score }}</strong>
+                  </div>
                   <div class="recent-team blue-team">
                     <div v-for="player in matchPlayers(match, 'blue')" :key="player.id" class="recent-player">
-                      <StatsPlayerAvatar :name="player.name" :size="34" :crowned="isRankOne(player.id)" />
+                      <StatsPlayerAvatar :name="player.name" :avatar-url="player.avatarUrl" :size="34" :crowned="isRankOne(player.id)" />
                       <div><strong>{{ player.name }}</strong><small>{{ positionLabel(player.position) }}</small></div>
                     </div>
                   </div>
@@ -160,8 +176,8 @@
         <section v-if="activeTab === 'Ranglijst'" class="tab-content">
           <article class="broadcast-panel ranking-panel">
             <div class="section-intro">
-              <div><p class="eyebrow">Gecombineerde ELO</p><h2>Ranglijst</h2></div>
-              <p>1v1 en 2v2 · K-factor 32</p>
+              <div><p class="eyebrow">{{ modeLabel }} · ELO</p><h2>Ranglijst</h2></div>
+              <p>Vanaf 1000 binnen deze selectie</p>
             </div>
             <div v-if="stats.leaderboard.length" class="ranking-list">
               <div class="ranking-head ranking-row">
@@ -175,7 +191,7 @@
               >
                 <div class="rank-number">{{ entry.rank }}</div>
                 <div class="ranking-player">
-                  <StatsPlayerAvatar :name="entry.name" :size="42" :crowned="entry.rank === 1" />
+                  <StatsPlayerAvatar :name="entry.name" :avatar-url="entry.avatar_url" :size="42" :crowned="entry.rank === 1" />
                   <div>
                     <strong>{{ entry.name }}</strong>
                     <div class="mobile-form"><FormDots :results="entry.recent_form" /></div>
@@ -200,17 +216,17 @@
               @click="selectedPlayerId = player.player_id"
               :class="{ active: selectedPlayerId === player.player_id }"
             >
-              <StatsPlayerAvatar :name="player.name" :size="30" :crowned="player.rank === 1" />
+              <StatsPlayerAvatar :name="player.name" :avatar-url="player.avatar_url" :size="30" :crowned="player.rank === 1" />
               <span>{{ player.name }}</span>
             </button>
           </div>
 
           <template v-if="selectedPlayer">
             <article class="broadcast-panel player-hero">
-              <StatsPlayerAvatar :name="selectedPlayer.name" :size="72" :crowned="selectedPlayer.rank === 1" />
+              <StatsPlayerAvatar :name="selectedPlayer.name" :avatar-url="selectedPlayer.avatar_url" :size="72" :crowned="selectedPlayer.rank === 1" />
               <div class="player-hero-copy">
                 <p class="eyebrow">SPELERSPROFIEL</p>
-                <h2>{{ selectedPlayer.name }}</h2>
+                <h2>{{ selectedPlayer.name }} <span v-if="selectedPlayer.current_winstreak >= 3" class="streak-flame" :aria-label="`${selectedPlayer.current_winstreak} overwinningen op rij`">🔥</span></h2>
                 <FormDots :results="selectedPlayer.recent_form" />
               </div>
               <div class="player-rank"><span>#{{ selectedPlayer.rank ?? '–' }}</span><strong>{{ formatElo(selectedPlayer.elo_precise) }}</strong><small>ELO</small></div>
@@ -218,10 +234,15 @@
 
             <div class="metric-grid player-metrics">
               <article class="metric-card broadcast-panel"><span>Duels</span><strong>{{ selectedPlayer.matches }}</strong><small>{{ selectedPlayer.wins }}W · {{ selectedPlayer.losses }}V</small></article>
-              <article class="metric-card broadcast-panel"><span>Winrate</span><strong>{{ formatPct(selectedPlayer.winrate) }}</strong><small>all-time</small></article>
+              <article class="metric-card broadcast-panel"><span>Winrate</span><strong>{{ formatPct(selectedPlayer.winrate) }}</strong><small>{{ periodLabel }}</small></article>
               <article class="metric-card broadcast-panel"><span>Actieve reeks</span><strong>{{ activePlayerStreak.value }}</strong><small>{{ activePlayerStreak.label }}</small></article>
               <article class="metric-card broadcast-panel"><span>Grootste zege</span><strong>{{ selectedPlayer.biggest_victory_score ?? '–' }}</strong><small>{{ selectedPlayer.biggest_victory_margin ? `+${selectedPlayer.biggest_victory_margin}` : 'geen' }}</small></article>
             </div>
+
+            <article class="broadcast-panel section-card">
+              <div class="section-title"><span>Verdiende badges</span><small>blijven bij je profiel</small></div>
+              <PlayerBadges :badges="selectedPlayer.badges" />
+            </article>
 
             <div class="player-columns">
               <article class="broadcast-panel section-card">
@@ -287,9 +308,9 @@
 
           <template v-if="h2hPlayer1 && h2hPlayer2">
             <article class="versus-banner broadcast-panel">
-              <div class="versus-player"><StatsPlayerAvatar :name="playerName(h2hPlayer1)" :size="52" :crowned="isRankOne(h2hPlayer1)" /><strong>{{ playerName(h2hPlayer1) }}</strong></div>
+              <div class="versus-player"><StatsPlayerAvatar :name="playerName(h2hPlayer1)" :avatar-url="playerAvatarUrl(h2hPlayer1)" :size="52" :crowned="isRankOne(h2hPlayer1)" /><strong>{{ playerName(h2hPlayer1) }}</strong></div>
               <span>TEGEN</span>
-              <div class="versus-player"><StatsPlayerAvatar :name="playerName(h2hPlayer2)" :size="52" :crowned="isRankOne(h2hPlayer2)" /><strong>{{ playerName(h2hPlayer2) }}</strong></div>
+              <div class="versus-player"><StatsPlayerAvatar :name="playerName(h2hPlayer2)" :avatar-url="playerAvatarUrl(h2hPlayer2)" :size="52" :crowned="isRankOne(h2hPlayer2)" /><strong>{{ playerName(h2hPlayer2) }}</strong></div>
             </article>
             <div class="matchup-cards">
               <article class="broadcast-panel matchup-card">
@@ -338,31 +359,44 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import FormDots from '../components/FormDots.vue'
+import SettingsMenu from '../components/SettingsMenu.vue'
+import ColorBar from '../components/ColorBar.vue'
+import PlayerBadges from '../components/PlayerBadges.vue'
 import StatsPlayerAvatar from '../components/StatsPlayerAvatar.vue'
 import { useStats } from '../composables/useStats'
-import { api } from '../composables/useApi'
+import { currentGroup } from '../auth'
+import { formatLocalDateTime } from '../dateTime'
 import type { DuoStat, HeadToHeadMatchup, Match } from '../types'
+import { trackEvent, trackScreen } from '../analytics'
 
 const router = useRouter()
-const { stats, loading, error, fetchStats } = useStats()
+const { stats, loading, error, mode, period, fetchStats } = useStats()
 
 const tabs = ['Overzicht', 'Ranglijst', 'Spelers', 'Onderling'] as const
 type Tab = typeof tabs[number]
 
 const activeTab = ref<Tab>('Overzicht')
+watch(activeTab, tab => trackScreen(({ Overzicht: 'stats_overview', Ranglijst: 'stats_ranking', Spelers: 'stats_players', Onderling: 'stats_matchups' } as const)[tab]), { immediate: true })
 const selectedPlayerId = ref<number | null>(null)
 const h2hPlayer1 = ref<number | null>(null)
 const h2hPlayer2 = ref<number | null>(null)
 const showAllRecords = ref(false)
-const recentMatches = ref<Match[]>([])
+const recentMatches = computed(() => stats.value?.recent_matches ?? [])
+const periodLabel = computed(() => ({ all: 'All-time', '30d': 'Laatste 30 dagen', '50': 'Laatste 50 wedstrijden' })[period.value])
+const modeLabel = computed(() => mode.value === 'all' ? '1v1 en 2v2' : mode.value)
 
-onMounted(async () => {
-  await Promise.all([fetchStats(), fetchRecentMatches()])
+onMounted(fetchStats)
+watch([mode, period], () => {
+  trackEvent('stats_filters_changed', { mode: mode.value, period: period.value })
+  void fetchStats()
 })
+watch([h2hPlayer1, h2hPlayer2], ([first, second]) => { if (first && second) trackEvent('comparison_selected') })
 
 watch(stats, value => {
   if (!value) return
-  selectedPlayerId.value ??= value.leaderboard[0]?.player_id ?? value.players[0]?.player_id ?? null
+  if (!value.players.some(player => player.player_id === selectedPlayerId.value)) {
+    selectedPlayerId.value = currentGroup.value?.player_id ?? value.leaderboard[0]?.player_id ?? value.players[0]?.player_id ?? null
+  }
 }, { immediate: true })
 
 const leader = computed(() => stats.value?.leaderboard[0] ?? null)
@@ -446,12 +480,8 @@ function share(part: number, total: number): string {
   return total ? `${Math.round(part / total * 100)}%` : '0%'
 }
 
-function shareRaw(part: number, total: number): string {
-  return total ? `${part / total * 100}%` : '50%'
-}
-
 function dayHeight(count: number): string {
-  return count ? `${Math.max(8, count / maxDayCount.value * 100)}%` : '3px'
+  return `${count / maxDayCount.value * 100}%`
 }
 
 function shortDay(day: string): string {
@@ -477,12 +507,8 @@ function playerName(id: number): string {
   return stats.value?.players.find(player => player.player_id === id)?.name ?? '?'
 }
 
-async function fetchRecentMatches() {
-  try {
-    recentMatches.value = (await api<Match[]>('/api/matches')).slice(0, 5)
-  } catch {
-    recentMatches.value = []
-  }
+function playerAvatarUrl(id: number): string | null {
+  return stats.value?.players.find(player => player.player_id === id)?.avatar_url ?? null
 }
 
 function matchPlayers(match: Match, side: 'orange' | 'blue') {
@@ -491,6 +517,7 @@ function matchPlayers(match: Match, side: 'orange' | 'blue') {
     .map(player => ({
       id: player.player_id,
       name: playerName(player.player_id),
+      avatarUrl: playerAvatarUrl(player.player_id),
       position: player.position,
     }))
 }
@@ -501,14 +528,7 @@ function positionLabel(position: 'voor' | 'achter' | 'solo'): string {
 }
 
 function formatMatchTime(value: string): string {
-  return new Intl.DateTimeFormat('nl-NL', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'Europe/Amsterdam',
-  }).format(new Date(value))
+  return formatLocalDateTime(value)
 }
 
 function isRankOne(id: number): boolean {
@@ -548,7 +568,8 @@ function selectPair(first: number, second: number) {
 .eyebrow { margin: 0 0 5px; color: var(--orange); font: 800 10px/1 'Barlow Condensed', system-ui, sans-serif; letter-spacing: .18em; text-transform: uppercase; }
 .back-button { width: 44px; height: 44px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 14px; border: 1px solid var(--line); background: #202a38; color: white; }
 .back-button:active { transform: scale(.94); }
-.live-badge { margin-left: auto; display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; }
+.page-header-actions { margin-left: auto; display: flex; align-items: center; gap: 15px; flex: 0 0 auto; }
+.live-badge { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; }
 .live-badge span { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 12px var(--green); }
 
 .state-panel, .broadcast-panel { border: 1px solid var(--line); background: var(--panel); box-shadow: 0 12px 28px #05070b; }
@@ -559,6 +580,14 @@ function selectPair(first: number, second: number) {
 .tab-bar { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 5px; margin-bottom: 20px; border: 1px solid var(--line); border-radius: 15px; background: #101722; position: sticky; top: 8px; z-index: 20; }
 .tab-bar button { min-width: 0; padding: 10px 5px; border-radius: 10px; color: var(--muted); font: 800 14px/1 'Barlow Condensed', system-ui, sans-serif; letter-spacing: .02em; transition: .18s ease; }
 .tab-bar button.active { color: white; background: #d95b26; box-shadow: 0 5px 12px #070a0f; }
+.tab-bar button:hover, .player-picker button:hover { color: white; background: #34435a; }
+.tab-bar button.active:hover { background: #ed7038; }
+.stats-shell button:focus-visible, .stats-shell select:focus-visible { outline: 2px solid #ffbd8c; outline-offset: 3px; }
+.stats-filters { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 15px; }
+.stats-filters label { flex: 1 1 140px; display: grid; gap: 6px; color: var(--muted); font-size: 11px; }
+.stats-filters select { width: 100%; min-height: 44px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 11px; background: var(--panel-soft); color: white; font-size: 13px; }
+.filter-description { margin: -5px 0 15px; color: var(--muted); font-size: 11px; }
+.streak-flame { font-size: .6em; vertical-align: middle; }
 .tab-content { animation: enter .22s ease-out both; }
 
 .overview-grid { display: grid; gap: 14px; }
@@ -601,32 +630,36 @@ function selectPair(first: number, second: number) {
 .orange-fill { background: linear-gradient(90deg, #ff6425, #ff9a4d); }
 .blue-fill { background: linear-gradient(90deg, #5da0ff, #2675e8); }
 .format-lines { display: grid; gap: 8px; }
-.format-lines > div { display: grid; grid-template-columns: 34px auto 1fr auto; align-items: center; gap: 9px; color: var(--muted); font-size: 11px; }
-.format-lines i { height: 1px; background: var(--line); }
 .activity-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
 .activity-summary div { padding: 10px; border-radius: 12px; background: var(--panel-soft); display: flex; justify-content: space-between; align-items: baseline; }
 .activity-summary strong { font: 800 24px/1 'Barlow Condensed', system-ui, sans-serif; }
 .activity-summary span { color: var(--muted); font-size: 10px; }
+.activity-summary span i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; }
+.activity-before strong { color: #ffb078; }
+.activity-after strong { color: #86b5ff; }
+.activity-before span i, .activity-before-fill { background: var(--orange); }
+.activity-after span i, .activity-after-fill { background: var(--blue); }
 .day-chart { height: 100px; display: grid; grid-template-columns: repeat(7, 1fr); align-items: end; gap: 5px; margin-top: 14px; }
 .day-column { min-width: 0; display: grid; grid-template-rows: 64px 13px 12px; text-align: center; gap: 2px; color: var(--muted); font-size: 9px; }
 .day-track { display: flex; align-items: end; justify-content: center; height: 64px; border-radius: 7px; background: #101722; overflow: hidden; }
-.day-track div { width: 100%; background: linear-gradient(180deg, var(--orange), #cc3f21); border-radius: 7px 7px 2px 2px; }
+.activity-stack { width: 100%; display: flex; flex-direction: column; overflow: hidden; border-radius: 7px 7px 2px 2px; }
 .day-column b { color: white; font-size: 10px; }
 
 .recent-panel { border-radius: 18px; padding: 17px; }
 .recent-match-list { display: grid; gap: 9px; }
-.recent-match { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 14px; padding: 13px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel-soft); }
+.recent-match { display: grid; gap: 10px; padding: 13px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel-soft); }
 .recent-match-head { min-width: 0; display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .05em; }
 .recent-match-head time { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .recent-match-head span { flex: 0 0 auto; padding: 3px 6px; border-radius: 6px; color: #cad4e2; background: #111822; }
-.recent-score { grid-row: 1 / 3; grid-column: 2; display: flex; align-items: center; gap: 6px; align-self: center; }
-.recent-score strong { min-width: 25px; text-align: center; font: 900 27px/1 'Barlow Condensed', system-ui, sans-serif; opacity: .72; }
+.recent-score { display: flex; align-items: center; gap: 4px; align-self: center; }
+.recent-score strong { min-width: 20px; text-align: center; font: 900 25px/1 'Barlow Condensed', system-ui, sans-serif; opacity: .72; }
 .recent-score strong.winner { opacity: 1; }
 .recent-score span { color: #596578; }
-.recent-teams { min-width: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.recent-teams { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 6px; }
 .recent-team { min-width: 0; display: grid; gap: 5px; padding: 7px; border-radius: 10px; }
 .orange-team { border-left: 3px solid var(--orange); background: #302016; }
-.blue-team { border-left: 3px solid var(--blue); background: #172741; }
+.blue-team { border-right: 3px solid var(--blue); background: #172741; }
+.blue-team .recent-player { flex-direction: row-reverse; text-align: right; }
 .recent-player { min-width: 0; display: flex; align-items: center; gap: 6px; }
 .recent-player > div { min-width: 0; display: grid; }
 .recent-player strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 750 14px/1 'Barlow Condensed', system-ui, sans-serif; }

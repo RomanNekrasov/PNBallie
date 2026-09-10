@@ -24,9 +24,10 @@ make docker-down      # docker compose down
 make check            # lint, tests, type check and production build
 ```
 
-Install dependencies and configure runtime authentication as described in
-README.md. Native development needs exported `ENTRA_*` variables; Compose
-loads `.env` automatically. Frontend configuration is loaded from `/config.json`.
+Install dependencies as described in README.md. Email/password works locally
+without an external identity provider. Native defaults use localhost:5173;
+Compose loads `.env` and uses localhost:8080. Configure AUTH_APP_ORIGIN and
+optional OIDC_* only on the backend; the frontend reads /api/auth/providers.
 
 ## Migrations (Alembic)
 ```bash
@@ -44,8 +45,8 @@ uv run alembic downgrade -1                                # rollback one step
 - Docker (prod-like): http://localhost:8080
 
 ## Phone Testing
-Use an HTTPS origin registered as an Entra SPA redirect. The homelab runbook
-provides the private test URL. Verify phone layouts separately; do not infer
+Use the configured HTTPS AUTH_APP_ORIGIN. The homelab runbook provides the
+private test URL. Verify phone layouts separately; do not infer
 phone acceptance from backend or desktop checks.
 
 ## Key Rules
@@ -53,12 +54,15 @@ phone acceptance from backend or desktop checks.
 - Never manually edit `package.json` deps — use `npm install`
 - Vue Router owns `/` and `/stats`; keep shared state in composables, without Pinia.
 - Backend runs from `backend/` dir with `uv run`
-- Require Entra v2 access tokens; `ENTRA_AUDIENCE` is the API client-ID GUID, while the frontend scope is `api://<API-client-id>/user`.
+- Use HttpOnly cookie sessions, CSRF checks and group membership authorization.
+  Email/password is the portable default; standard OIDC is optional. Never infer
+  account ownership or legacy access from a name or unverified e-mail address.
 - Keep credentials, local configuration and database files out of Git and image contexts.
 - Do not place Kubernetes resources here or redeploy current images into the frozen Azure stack.
 
 ## Architecture
-- Router: authenticated game (`/`) and statistics (`/stats`) views.
+- Router: authenticated game (`/`), statistics (`/stats`), groups (`/groups`),
+  own profile (`/profile`) and administrator (`/admin`) views, plus login and invitations.
 - Composables: `useApi`, `usePlayers`, `useMatch`, `useStats`
 - SVG table in `FoosballTable.vue` — inline, scales on any screen
 - DB: `match` table (scores, played_at) + `match_player` table (match_id, player_id, side, position)

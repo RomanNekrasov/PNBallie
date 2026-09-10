@@ -1,12 +1,16 @@
 # PNBallie frontend
 
-De frontend leest de Entra-configuratie tijdens het starten uit `/config.json`. Kopieer voor lokale ontwikkeling het voorbeeld:
+De Vue-frontend vraagt inlogopties op bij `/api/auth/providers`. Lokale accounts
+werken zonder frontendconfiguratie; een optionele OIDC-provider wordt uitsluitend
+op de backend ingesteld. Start vanuit deze map met:
 
 ```bash
-cp public/config.example.json public/config.json
+npm ci
 npm run dev
 ```
 
-`public/config.json` wordt niet gecommit en wordt uitgesloten van de containerbuild. Vul `azureClientId`, `azureTenantId` en `azureScope` in volgens het contract in de hoofd-README.
+De Vite-proxy stuurt `/api` naar `http://localhost:8000`. De browserorigin voor de
+backend is bij native ontwikkeling `http://localhost:5173`. Zie de hoofd-README
+voor installatie, groepsbeheer en de migratie van de oude Entra-authenticatie.
 
 Beschikbare controles: `npm run lint`, `npm test`, `npm run type-check` en `npm run build`.

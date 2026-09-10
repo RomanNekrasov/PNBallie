@@ -19,22 +19,21 @@
             class="history-card rounded-2xl p-4 flex items-center justify-between"
           >
             <div class="flex-1 min-w-0">
-              <!-- Score line -->
-              <div class="flex items-center gap-2 text-lg font-bold">
-                <span class="text-[#e87d2f]">{{ match.orange_score }}</span>
-                <span class="text-white/40">-</span>
-                <span class="text-[#4a90d9]">{{ match.blue_score }}</span>
-              </div>
-              <!-- Players -->
-              <div class="text-xs text-white/50 mt-1 leading-relaxed">
-                <span class="text-[#e87d2f]/70">{{ orangeNames(match) }}</span>
-                <span class="text-white/30"> vs </span>
-                <span class="text-[#4a90d9]/70">{{ blueNames(match) }}</span>
+              <time class="history-time" :datetime="match.played_at">{{ formatLocalDateTime(match.played_at) }}</time>
+              <div class="history-result">
+                <span class="history-team text-[#e87d2f]">{{ orangeNames(match) }}</span>
+                <div class="history-score text-lg font-bold" :aria-label="`Oranje ${match.orange_score}, Blauw ${match.blue_score}`">
+                  <span class="text-[#e87d2f]">{{ match.orange_score }}</span>
+                  <span class="text-white/40">–</span>
+                  <span class="text-[#4a90d9]">{{ match.blue_score }}</span>
+                </div>
+                <span class="history-team history-team-blue text-[#4a90d9]">{{ blueNames(match) }}</span>
               </div>
             </div>
             <button
               v-if="canDelete"
               @click="$emit('delete', match.id)"
+              :aria-label="`Wedstrijd ${orangeNames(match)} tegen ${blueNames(match)} verwijderen`"
               class="ml-3 w-9 h-9 rounded-full flex items-center justify-center text-red-400/60 active:text-red-400 active:scale-90 transition-all shrink-0"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -61,6 +60,7 @@
 <script setup lang="ts">
 import type { Match } from '../types'
 import type { Player } from '../types'
+import { formatLocalDateTime } from '../dateTime'
 
 const props = defineProps<{
   open: boolean
@@ -98,6 +98,11 @@ function blueNames(match: Match): string {
   border: 1px solid #46515f;
   background: #252d37;
 }
+.history-time { display: block; margin-bottom: 9px; color: #b2bcc9; font-size: 10px; }
+.history-result { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
+.history-team { overflow-wrap: anywhere; font-size: 12px; line-height: 1.4; }
+.history-team-blue { text-align: right; }
+.history-score { display: flex; align-items: center; gap: 5px; }
 
 .close-button {
   border: 1px solid #46515f;

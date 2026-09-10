@@ -1,4 +1,4 @@
-.PHONY: check dev-backend dev-frontend dev docker-up docker-down migrate
+.PHONY: check dev-backend dev-frontend dev docker-up docker-down migrate avatar-worker
 
 check:
 	cd backend && uv run ruff check app tests && uv run pytest
@@ -21,3 +21,6 @@ docker-up:
 
 docker-down:
 	docker compose down
+
+avatar-worker:
+	cd backend && uv run python -m app.avatar_worker

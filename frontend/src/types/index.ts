@@ -2,6 +2,10 @@ export interface Player {
   id: number
   name: string
   created_at: string
+  group_id: number
+  user_id: number | null
+  is_active: boolean
+  avatar_url: string | null
 }
 
 export interface MatchPlayerEntry {
@@ -26,9 +30,22 @@ export interface MatchCreate {
 
 export type Position = 'orange_front' | 'orange_back' | 'blue_front' | 'blue_back'
 
+export type StatsMode = 'all' | '1v1' | '2v2'
+export type StatsPeriod = 'all' | '30d' | '50'
+
+export interface PlayerBadge {
+  key: string
+  label: string
+  emoji: string
+  description: string
+  earned_at: string
+}
+
 export interface PlayerStats {
   player_id: number
   name: string
+  avatar_url?: string | null
+  badges: PlayerBadge[]
   elo: number
   elo_precise: number
   rank: number | null
@@ -69,6 +86,8 @@ export interface PlayerStats {
 export interface DayCount {
   day: string
   count: number
+  before_14: number
+  from_14: number
 }
 
 export interface GlobalStats {
@@ -76,6 +95,7 @@ export interface GlobalStats {
   total_1v1: number
   total_2v2: number
   average_goals_per_match: number | null
+  average_goal_difference: number | null
   orange_wins: number
   blue_wins: number
   orange_wins_1v1: number
@@ -94,6 +114,7 @@ export interface GlobalStats {
 export interface LeaderboardEntry {
   player_id: number
   name: string
+  avatar_url?: string | null
   elo: number
   elo_precise: number
   rank: number
@@ -135,6 +156,7 @@ export interface RecordItem {
 }
 
 export interface StatsResponse {
+  filters: { mode: StatsMode; period: StatsPeriod }
   players: PlayerStats[]
   global: GlobalStats
   leaderboard: LeaderboardEntry[]
@@ -145,4 +167,5 @@ export interface StatsResponse {
     duos: DuoStat[]
   }
   records: RecordItem[]
+  recent_matches: Match[]
 }

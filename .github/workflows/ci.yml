@@ -31,7 +31,10 @@ jobs:
       - run: uv run pytest
         working-directory: backend
       - name: Verify migration from an empty database
-        run: DATABASE_URL=sqlite:///${RUNNER_TEMP}/migration.db uv run alembic upgrade head
+        run: |
+          export DATABASE_URL=sqlite:///${RUNNER_TEMP}/migration.db
+          uv run alembic upgrade head
+          uv run alembic check
         working-directory: backend
 
   frontend:
@@ -66,25 +69,25 @@ jobs:
 
   containers:
     runs-on: ubuntu-latest
-    env:
-      ENTRA_TENANT_ID: 11111111-1111-1111-1111-111111111111
-      ENTRA_AUDIENCE: api://pnballie-ci
     steps:
       - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
-      - name: Create non-secret smoke configuration
-        run: cp frontend/public/config.example.json frontend/public/config.json
       - name: Build and start hardened stack
         run: docker compose up --build --wait
       - name: Smoke test proxies, authentication and hardening
         run: |
           curl --fail http://127.0.0.1:8080/healthz
-          curl --fail http://127.0.0.1:8080/config.json
+          curl --fail http://127.0.0.1:8080/api/auth/providers
           test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8080/api/players)" = 401
           test "$(docker compose exec -T backend id -u)" != 0
           test "$(docker compose exec -T frontend id -u)" != 0
           ! docker compose exec -T backend touch /root-filesystem-is-read-only
           ! docker compose exec -T frontend touch /root-filesystem-is-read-only
+      - name: Exercise signup, groups and invitation isolation
+        run: python scripts/smoke_groups.py http://localhost:8080
+      - name: Check analytics proxy isolation and privacy
+        run: python scripts/check_analytics_proxy.py --image "$(docker compose images --quiet frontend)"
       - name: Show logs on failure
         if: failure()
         run: docker compose logs

@@ -2,8 +2,8 @@
   <span class="stats-avatar" :style="avatarStyle">
     <CrownIcon v-if="crowned" class="stats-avatar-crown" />
     <img
-      v-if="avatarUrl"
-      :src="avatarUrl"
+      v-if="resolvedAvatarUrl"
+      :src="resolvedAvatarUrl"
       :alt="`Avatar van ${name}`"
       draggable="false"
     />
@@ -18,6 +18,7 @@ import CrownIcon from './CrownIcon.vue'
 
 const props = withDefaults(defineProps<{
   name: string
+  avatarUrl?: string | null
   size?: number
   crowned?: boolean
 }>(), {
@@ -25,13 +26,14 @@ const props = withDefaults(defineProps<{
   crowned: false,
 })
 
-const avatarUrl = computed(() => playerAvatar(props.name))
+const resolvedAvatarUrl = computed(() => props.avatarUrl || playerAvatar(props.name))
 const initials = computed(() => playerInitials(props.name))
 const avatarStyle = computed(() => ({
   width: `${props.size}px`,
   height: `${props.size}px`,
   '--crown-size': `${Math.round(props.size * 0.4)}px`,
   '--crown-top': `${Math.round(props.size * -0.24)}px`,
+  '--initials-size': `${Math.round(props.size * 0.34)}px`,
 }))
 </script>
 
@@ -61,7 +63,7 @@ const avatarStyle = computed(() => ({
   border-radius: 50%;
   color: #f4f7fb;
   background: #273244;
-  font: 800 0.34em/1 system-ui, sans-serif;
+  font: 800 var(--initials-size)/1 system-ui, sans-serif;
 }
 
 .stats-avatar-crown {

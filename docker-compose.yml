@@ -1,3 +1,10 @@
+x-telemetry-environment: &telemetry-environment
+  OTEL_ENABLED: ${OTEL_ENABLED:-false}
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector.monitoring.svc.cluster.local:4318}
+  OTEL_TRACES_SAMPLER_ARG: ${OTEL_TRACES_SAMPLER_ARG:-0.1}
+  DEPLOYMENT_ENVIRONMENT: ${DEPLOYMENT_ENVIRONMENT:-development}
+  METRICS_ENABLED: ${METRICS_ENABLED:-false}
+
 services:
   migrate:
     build: ./backend
@@ -17,11 +24,20 @@ services:
   backend:
     build: ./backend
     environment:
-      APP_ENV: production
+      <<: *telemetry-environment
+      APP_ENV: ${APP_ENV:-development}
       DATABASE_URL: sqlite:////data/pnballie.db
-      ENTRA_TENANT_ID: ${ENTRA_TENANT_ID:?ENTRA_TENANT_ID is required}
-      ENTRA_AUDIENCE: ${ENTRA_AUDIENCE:?ENTRA_AUDIENCE is required}
-      ENTRA_REQUIRED_SCOPE: ${ENTRA_REQUIRED_SCOPE:-user}
+      AUTH_APP_ORIGIN: ${AUTH_APP_ORIGIN:-http://localhost:8080}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
+      AUTH_ALLOW_REGISTRATION: ${AUTH_ALLOW_REGISTRATION:-true}
+      OIDC_ISSUER: ${OIDC_ISSUER:-}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      OIDC_NAME: ${OIDC_NAME:-Single sign-on}
+      AVATAR_LOCAL_URL: ${AVATAR_LOCAL_URL:-}
+      AVATAR_SERVICE_TOKEN: ${AVATAR_SERVICE_TOKEN:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_IMAGE_MODEL: ${OPENAI_IMAGE_MODEL:-}
     volumes:
       - db-data:/data
     expose:
@@ -43,10 +59,13 @@ services:
 
   frontend:
     build: ./frontend
+    environment:
+      ANALYTICS_ENABLED: ${ANALYTICS_ENABLED:-false}
+      ANALYTICS_WEBSITE_ID: ${ANALYTICS_WEBSITE_ID:-}
+      ANALYTICS_UPSTREAM: ${ANALYTICS_UPSTREAM:-umami.analytics.svc.cluster.local:3000}
+      ANALYTICS_TRUSTED_PROXY_CIDRS: ${ANALYTICS_TRUSTED_PROXY_CIDRS:-}
     ports:
       - "8080:8080"
-    volumes:
-      - ./frontend/public/config.json:/usr/share/nginx/html/config.json:ro
     read_only: true
     tmpfs:
       - /tmp
@@ -61,6 +80,32 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+
+  avatar-worker:
+    profiles: [avatars]
+    build: ./backend
+    command: ["python", "-m", "app.avatar_worker"]
+    environment:
+      <<: *telemetry-environment
+      METRICS_PORT: "9101"
+      DATABASE_URL: sqlite:////data/pnballie.db
+      AVATAR_LOCAL_URL: ${AVATAR_LOCAL_URL:-}
+      AVATAR_SERVICE_TOKEN: ${AVATAR_SERVICE_TOKEN:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_IMAGE_MODEL: ${OPENAI_IMAGE_MODEL:-}
+      AVATAR_TIMEOUT_SECONDS: ${AVATAR_TIMEOUT_SECONDS:-3600}
+    volumes:
+      - db-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   db-data:

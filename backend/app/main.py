@@ -1,19 +1,24 @@
-import os
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException
 from sqlalchemy import text
 
-from app.auth import require_entra_token, validate_auth_configuration
+from app.auth import validate_auth_configuration
 from app.database import engine
-from app.routers import matches, players, stats
+from app.routers import auth, avatars, groups, matches, players, stats
+from app.telemetry import API_SERVICE, Runtime, install_http
+
+telemetry = Runtime(API_SERVICE, engine)
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    if os.getenv("APP_ENV", "development").lower() == "production":
+    telemetry.configure()
+    try:
         validate_auth_configuration()
-    yield
+        yield
+    finally:
+        telemetry.close()
 
 
 app = FastAPI(title="PNBallie", lifespan=lifespan)
@@ -34,7 +39,12 @@ def ready():
     return {"status": "ok"}
 
 
-auth_dependencies = [Depends(require_entra_token)]
-app.include_router(players.router, dependencies=auth_dependencies)
-app.include_router(matches.router, dependencies=auth_dependencies)
-app.include_router(stats.router, dependencies=auth_dependencies)
+app.include_router(auth.router)
+app.include_router(groups.router)
+app.include_router(players.router)
+app.include_router(matches.router)
+app.include_router(stats.router)
+
+app.include_router(avatars.router, prefix="/api")
+
+install_http(app, telemetry)

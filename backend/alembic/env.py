@@ -1,12 +1,11 @@
 import os
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
 
 from alembic import context
-
+from app import avatar_models  # noqa: F401 – register avatar tables
 from app.models import Match, MatchPlayer, Player  # noqa: F401 – register tables
 
 config = context.config
