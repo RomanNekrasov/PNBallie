@@ -117,3 +117,42 @@ Zie ook [authenticatie en groepen](AUTH_AND_GROUPS.md).
 Grafana blijft privé op `https://grafana.tail67de92.ts.net`:
 `/d/pnballie-operations` voor applicatiegedrag en `/d/pnballie-analytics` voor gebruik.
 Open een JSON-logrecord om naar de bijbehorende trace te gaan.
+
+## Spark-verificatie — 10 september 2026
+
+De private preview draait op
+<https://pnballie-preview.tail67de92.ts.net>, met een eigen SQLite-volume en
+Umami-website. De publieke app behoudt haar bestaande images en scores.
+De gedeelde Umami-interface staat op <https://analytics.tail67de92.ts.net>.
+
+De echte API-proef vindt requestmetrics in Prometheus, gestructureerde logs in
+Loki en de trace met hetzelfde ID in Tempo. API, worker en modelservice hebben
+gezonde Prometheus-scrapes. De private modelservice is ook afzonderlijk getest
+met HTTP-foutpaden vóór modelgeneratie: tracecontext en native logcorrelatie
+komen aan, terwijl querystrings en het testtoken buiten de telemetry blijven.
+
+Een aanvullende synthetische opdracht doorloopt de echte duurzame wachtrij en
+de normale worker. Alleen de bronbytes van die testopdracht worden vóór verwerking
+ongeldig gemaakt. De modelservice weigert ze vóór GPU-generatie. Tempo bevat vier
+spans met de juiste ouderrelaties; Loki bevat zes bijbehorende events van alle
+drie services. De opdracht eindigt na één poging, wist haar bron en laat de
+wachtrij leeg achter. Workerreplica's en Flux-reconciliatie zijn hersteld.
+
+Browsercontroles op desktop en mobiel bevestigen de negen virtuele schermen,
+statistiektabs zonder URL-wijziging, filters en profielacties. Umami accepteert
+de toegestane payloads; uitnodigingscodes, querystrings, fragmenten en appcookies
+ontbreken. Een nieuwe mobiele context met DNT verstuurt geen tracker- of
+collectoraanvragen. De lokale database is bijgewerkt naar
+`20260910_telemetry`; frontend, API, avatarworker en Spark-tunnel draaien weer.
+
+Jan behoudt 752 events en 20 sessies. Een test via Jans echte collectproxy is
+alleen zichtbaar in de previewrapportage; beide andere websiterapportages blijven
+leeg voor dat testevent. Expliciet synthetische locatieproeven leveren land,
+regio en stad op via Umami's lokale geodatabase. Ze zijn geen echte bezoekers.
+De private preview geeft geen publiek bezoekers-IP door; geolocatie voor echte
+publieke PNBallie-bezoekers vereist de gedocumenteerde productie-ingressconfiguratie.
+
+De exacte infrastructuurrevisies, aanvullende dashboard-/migratieproeven en
+definitieve acceptatie staan in het Phase 7-document in `spark-homelab`.
+OIDC vereist nog de eerder beschreven echte providerconfiguratie; dat staat
+los van deze werkende telemetry- en analyticsaansluiting.

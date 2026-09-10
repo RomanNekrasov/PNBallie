@@ -77,7 +77,9 @@ De publieke app op https://pnballie.nl draait op k3s met de definitief uit Azure
 overgedragen SQLite-gegevens. Publieke Entra-login en het bekijken van bestaande
 scores zijn bevestigd; de actuele acceptatiestatus staat in
 `spark-homelab/docs/phase-6-pnballie.md`. De portable authenticatie, groepen en
-analytics uit deze release worden eerst op de aparte private preview getest.
+analytics uit deze release draaien op de aparte
+[private Spark-preview](https://pnballie-preview.tail67de92.ts.net).
+Je kunt daar een eigen account en testcompetitie maken.
 Imagepublicatie en de private preview staan los van de publieke upgrade.
 Kubernetes-/Flux-configuratie hoort in
 `spark-homelab`; de historische Azure/Terraform-bestanden blijven als terugvalset.

@@ -136,6 +136,20 @@ virtuele tabwisselingen, payloadsanitatie, mislukte saves, nieuwe avataruitkomst
 onzichtbare schermen en falende trackers. Renderertests controleren veilige
 runtimeconfiguratie, ongeldige input en de proxygrens.
 
+De productiebuild wordt ook in een echte browser gestart. Dit vangt circulaire
+modulewachten tussen de entrymodule en lazy routes, die componenttests niet zien:
+
+```bash
+cd frontend
+npx playwright install chromium
+npm run build
+npm run test:startup
+```
+
+Vijf koude routes, inclusief een uitnodigingspad, moeten het inlogscherm tonen
+en uitsluitend die veilige schermmeting uitsturen. De test gebruikt vaste
+auth-/trackerfixtures en verzendt geen events naar de live analyticsomgeving.
+
 De daadwerkelijke nginx-container wordt daarnaast geïsoleerd gecontroleerd met:
 
 ```bash
