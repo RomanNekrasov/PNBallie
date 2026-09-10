@@ -98,20 +98,20 @@ scope en houdt de acceptatiestatus bij. Wijzigingen en controles staan in
 Vervolgopdracht van 9 september 2026; uitwerking en Spark-acceptatie staan ook in
 `spark-homelab/docs/phase-7-shared-observability.md`.
 
-- [ ] Grafana uitbreiden met applicatiemetrics, doorlopende traces en gecorreleerde logs.
+- [x] Grafana uitbreiden met applicatiemetrics, doorlopende traces en gecorreleerde logs.
 - [x] API, avatarworker en private modelservice instrumenteren, met behoud van
       de asynchrone tracecontext en zonder gevoelige inhoud te loggen.
-- [ ] Umami aansluiten op een gedeelde analyticsomgeving met afzonderlijke
+- [x] Umami aansluiten op een gedeelde analyticsomgeving met afzonderlijke
       websites en rapportages voor Jan Doorlopen en PNBallie.
 - [x] SPA-schermen, statistiektabs en belangrijke interacties expliciet meten,
       ook als de browser-URL niet verandert.
-- [ ] Geschatte land/regio/stad van bezoekers ondersteunen via vertrouwde
+- [x] Geschatte land/regio/stad van bezoekers ondersteunen via vertrouwde
       IP-doorgifte; geen GPS, opgeslagen IP-adressen, replay of formulierinhoud.
 - [x] Tracking uitschakelen bij Do Not Track; analytics en telemetry mogen de
       applicatie niet blokkeren bij uitval.
-- [ ] Verzameling via dezelfde origin, beheer-/rapportage- en observability-
+- [x] Verzameling via dezelfde origin, beheer-/rapportage- en observability-
       endpoints alleen privaat; previewdata gescheiden van productiegebruik.
-- [ ] De geverifieerde analyticskopie activeren en PNBallie-productiehistorie behouden.
+- [x] De geverifieerde analyticskopie activeren en PNBallie-productiehistorie behouden.
       Op 10 september accepteert de gebruiker eventueel verlies van hobbyanalytics;
       extra rollbackwerk voor Jan Doorlopen is daarom geen vereiste.
 - [ ] Beide repositories documenteren en pushen; echte verificatie op de Spark.

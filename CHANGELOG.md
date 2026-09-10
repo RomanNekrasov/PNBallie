@@ -12,6 +12,15 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
   toegestane acties, gevoelige-datafiltering en geen verzameling bij DNT.
 - De eerste schermmeting wacht op routerguards en redirects. Een bezoek aan
   het inlogscherm telt daardoor geen tijdelijk, ongezien speelveld meer mee.
+- Asynchroon opstarten houdt de entrymodule vrij voor lazy routes. Een nieuwe
+  Chromium-controle laadt vijf routes vanuit de productiebuild en voorkomt een
+  leeg inlogscherm door een circulaire modulewacht; deze controle draait ook in CI.
+- Op Spark de volledige API→opgeslagen job→worker→modelservice-trace bewezen
+  met vier spans, zes gecorreleerde logs en een synthetisch foutpad vóór GPU-werk.
+  De bron wordt gewist en de wachtrij en worker zijn na de proef hersteld.
+- Gedeeld Umami bewaart Jans 752 events en 20 sessies. Rapportages zijn per
+  website afgeschermd; synthetische previewproeven bevestigen land/regio/stad
+  zonder IP-kolommen. Echte private previewbezoeken hebben meestal geen locatie.
 - Op verzoek is extra rollbackwerk voor de hobbyanalytics-migratie vervallen;
   de al geverifieerde kopie wordt gebruikt. PNBallie-productiescores blijven apart.
 - Optionele OpenTelemetry-traces en OTLP/JSON-logs toegevoegd voor API,
