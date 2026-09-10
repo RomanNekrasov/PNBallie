@@ -73,11 +73,18 @@ OIDC, back-up, verificatie en terugval. Productie vereist
 `APP_ENV=production`, een expliciete HTTPS-`AUTH_APP_ORIGIN` en
 `AUTH_COOKIE_SECURE=true`.
 
-De bestaande k3s-migratie en publieke overschakeling blijven aparte werkzaamheden.
-Azure blijft volgens het migratierunbook de bron tot de definitieve overdracht.
+De publieke app op https://pnballie.nl draait op k3s met de definitief uit Azure
+overgedragen SQLite-gegevens. Publieke Entra-login en het bekijken van bestaande
+scores zijn bevestigd; de actuele acceptatiestatus staat in
+`spark-homelab/docs/phase-6-pnballie.md`. De portable authenticatie, groepen en
+analytics uit deze release worden eerst op de aparte private preview getest.
 Imagepublicatie en de private preview staan los van de publieke upgrade.
 Kubernetes-/Flux-configuratie hoort in
 `spark-homelab`; de historische Azure/Terraform-bestanden blijven als terugvalset.
+De Azure-backend is gestopt en de Azure Pipeline is verwijderd. Start een oude
+backend nooit met verouderde scores: draag bij terugval eerst de actuele database
+over volgens het homelabrunbook. De huidige images passen niet rechtstreeks in
+de oude Azure-stack; zie [de historische configuratie](infra/prod/README.md).
 
 ## Statistieken
 

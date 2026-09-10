@@ -7,10 +7,18 @@ De `Validate`- en `Publish images`-workflows slagen voor applicatierevisie
 `5970d3e14883d73ae88ec06a718706cb1f0f2988`; beide private images ondersteunen
 AMD64 en ARM64. Het onderstaande plan blijft het applicatiecontract.
 
-De private k3s-deployment is inmiddels getest met herstelde gegevens, Entra
-v2-login en behoud van gegevens na een herstart. De definitieve overdracht en
-publieke overschakeling zijn nog niet afgerond. Azure blijft tot die stap de
-productieschrijver. De actuele uitvoering, back-ups en acceptatie staan in
+De k3s-deployment en tunnel zijn actief met de definitieve Azure-database.
+Schema en volledige inhoud zijn ook na het vervangen van de backendpod
+gecontroleerd; een nieuwe versleutelde back-up is geverifieerd. De private
+Entra v2-login werkt. De bestaande Azure-backend is na een geslaagde
+terugvaltest weer gestopt en blijft als rollbackpad behouden.
+
+De HTTPS-controles voor de frontend, runtimeconfiguratie en healthcheck op
+[https://pnballie.nl](https://pnballie.nl) slagen. De gebruiker heeft publiek
+aanmelden met Entra en het bekijken van de bestaande spelers en scores
+bevestigd. Het opslaan van een score via de publieke URL moet nog worden
+bevestigd; Phase 6 blijft in uitvoering. De actuele uitvoering, back-ups en
+acceptatie staan in
 [Phase 6 van spark-homelab](https://github.com/RomanNekrasov/spark-homelab/blob/main/docs/phase-6-pnballie.md)
 en het bijbehorende migratierunbook; toegang tot die private repository is nodig.
 
@@ -19,8 +27,8 @@ en het bijbehorende migratierunbook; toegang tot die private repository is nodig
 Maak PNBallie een zelfstandig bouwbare en beveiligde applicatie die twee private
 multi-arch GHCR-images publiceert. Deze repository bevat geen Kubernetes-, Flux-,
 Tailscale-, Cloudflare- of Spark-configuratie. De bestaande Azure-infrastructuur
-blijft tot de definitieve overschakeling actief en daarna als bevroren
-rollbackpad; GitHub Actions heeft `azure-pipelines.yml` vervangen.
+blijft als bevroren rollbackpad behouden met een gestopte backend;
+GitHub Actions heeft `azure-pipelines.yml` vervangen.
 
 PNBallie is een persoonlijk project. De provinciale huisstijl en bijbehorende
 ontwikkelstandaarden zijn daarom niet van toepassing. De huidige Entra-login via
@@ -148,8 +156,9 @@ de PNB-tenant blijft voorlopig behouden.
 - GHCR-images blijven privé. Het pull-secret wordt in `spark-homelab` beheerd.
 - Frontendconfiguratie wordt bij deployment gemount en niet in het image
   ingebakken.
-- Azure blijft tot de definitieve overschakeling de productieschrijver en
-  daarna als tijdelijk rollbackpad beschikbaar.
+- De Azure-backend blijft gestopt en de oude omgeving blijft als tijdelijk
+  rollbackpad beschikbaar. Na nieuwe schrijfacties op k3s moet bij terugval
+  eerst de actuele database worden overgedragen.
 - Kubernetesopslag, SOPS, Flux, monitoring, back-ups en migratierunbooks vallen
   buiten deze repository en worden in `spark-homelab` uitgewerkt.
 - Er worden in deze fase geen functionele of visuele wijzigingen aan de
