@@ -122,4 +122,31 @@ describe('allowlisted Umami analytics', () => {
     expect(() => analytics.trackScreen('game')).not.toThrow()
     expect(() => analytics.trackEvent('match_saved', { mode: '1v1' })).not.toThrow()
   })
+
+  it('attributes a viewed statistics block to its fixed screen and strips selected-player data', async () => {
+    const { track } = await enable()
+    analytics.trackScreen('game')
+    analytics.trackStatsBlockView('player_goals')
+    expect(track.mock.calls[1]?.[0]).toMatchObject({
+      url: '/app/stats_players', name: 'stats_block_viewed', data: { block: 'player_goals' },
+    })
+    expect(window.pnballieAnalyticsBeforeSend?.('event', {
+      url: '/app/stats_players', name: 'stats_block_viewed',
+      data: { block: 'player_goals', player_id: 912, name: 'Private Name', group: 'Private group', mode: '1v1' },
+    })).toMatchObject({ data: { block: 'player_goals' } })
+    for (const block of ['private-player', '__proto__', 912, undefined]) {
+      expect(window.pnballieAnalyticsBeforeSend?.('event', { url: '/app/stats_players', name: 'stats_block_viewed', data: { block } })).toBeNull()
+    }
+    expect(window.pnballieAnalyticsBeforeSend?.('event', { url: '/app/game', name: 'stats_block_viewed', data: { block: 'player_goals' } })).toBeNull()
+  })
+
+  it.each(['dnt', 'gpc', 'optout'])('also respects %s when block collection is already configured', async choice => {
+    const { track } = await enable()
+    if (choice === 'dnt') Object.defineProperty(navigator, 'doNotTrack', { value: '1', configurable: true })
+    if (choice === 'gpc') Object.defineProperty(navigator, 'globalPrivacyControl', { value: true, configurable: true })
+    if (choice === 'optout') localStorage.setItem('umami.disabled', '1')
+    analytics.trackStatsBlockView('ranking')
+    expect(track).not.toHaveBeenCalled()
+    Reflect.deleteProperty(navigator, 'globalPrivacyControl')
+  })
 })

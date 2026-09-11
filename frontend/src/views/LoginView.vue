@@ -2,9 +2,7 @@
   <main class="account-page login-page">
     <div class="login-art" aria-hidden="true"><span>⚽</span><i></i></div>
     <section class="account-panel login-panel">
-      <p class="account-kicker">JOUW GROEP. JULLIE COMPETITIE.</p>
       <h1 class="account-title">PNBallie</h1>
-      <p class="account-muted">Houd de scores bij. Pak je plek op de ranglijst.</p>
       <p v-if="route.query.redirect?.toString().startsWith('/join/')" class="account-notice">Je bent uitgenodigd voor een groep. Log in of maak een account om mee te doen.</p>
       <div v-if="authProviders?.registration_enabled" class="account-tabs" aria-label="Accountkeuze">
         <button :aria-pressed="!creating" :class="{ active: !creating }" @click="creating = false">Inloggen</button>
@@ -22,7 +20,6 @@
         <div class="account-divider">of</div>
         <a :href="oidcLoginUrl" class="secondary-button">Doorgaan met {{ authProviders.oidc.name }}</a>
       </template>
-      <AnalyticsNotice />
     </section>
   </main>
 </template>
@@ -31,7 +28,6 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authProviders, login, register, safeReturnPath } from '../auth'
-import AnalyticsNotice from '../components/AnalyticsNotice.vue'
 
 const route = useRoute()
 const router = useRouter()

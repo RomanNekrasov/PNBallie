@@ -12,7 +12,6 @@
           </svg>
         </button>
         <div>
-          <p class="eyebrow">PNBALLIE · {{ periodLabel }}</p>
           <h1>Clubstatistieken</h1>
         </div>
         <div class="page-header-actions"><div v-if="stats" class="live-badge"><span></span>{{ stats.global.total_matches }} duels</div><SettingsMenu /></div>
@@ -34,7 +33,7 @@
           </select>
         </label>
       </div>
-      <p v-if="period === '30d'" class="filter-description">Vandaag en de vorige 29 dagen, volgens de Nederlandse kalender.</p>
+      <p v-if="period === '30d'" class="filter-description">Vandaag en de vorige 29 dagen, volgens de Nederlandse tijd.</p>
       <p v-else-if="period === '50'" class="filter-description">De laatste 50 wedstrijden van de gekozen spelvorm.</p>
 
       <section v-if="loading" class="state-panel">Statistieken worden geladen…</section>
@@ -55,8 +54,7 @@
 
         <!-- Overview -->
         <section v-if="activeTab === 'Overzicht'" class="tab-content overview-grid">
-          <article v-if="leader" class="leader-card broadcast-panel">
-            <div class="leader-kicker">Nummer één in deze selectie</div>
+          <article v-if="leader" v-stats-block="'overview_leader'" class="leader-card broadcast-panel">
             <div class="leader-main">
               <StatsPlayerAvatar :name="leader.name" :avatar-url="leader.avatar_url" :size="84" crowned />
               <div class="leader-copy">
@@ -74,9 +72,9 @@
             </div>
           </article>
 
-          <div class="metric-grid">
+          <div v-stats-block="'overview_totals'" class="metric-grid">
             <article class="metric-card broadcast-panel orange-edge">
-              <span>Wedstrijden</span><strong>{{ stats.global.total_matches }}</strong><small>{{ periodLabel }}</small>
+              <span>Wedstrijden</span><strong>{{ stats.global.total_matches }}</strong>
             </article>
             <article class="metric-card broadcast-panel">
               <span>1 tegen 1</span><strong>{{ stats.global.total_1v1 }}</strong><small>{{ share(stats.global.total_1v1, stats.global.total_matches) }}</small>
@@ -90,8 +88,8 @@
           </div>
 
           <div class="overview-columns">
-            <article class="broadcast-panel section-card">
-              <div class="section-title"><span>Wins per kleur</span><small>gewonnen wedstrijden</small></div>
+            <article v-stats-block="'colour_wins'" class="broadcast-panel section-card">
+              <div class="section-title"><span>Wins per kleur</span></div>
               <div class="format-lines">
                 <ColorBar label="Totaal" :orange="stats.global.orange_wins" :blue="stats.global.blue_wins" />
                 <ColorBar v-if="mode !== '2v2'" label="1v1" :orange="stats.global.orange_wins_1v1" :blue="stats.global.blue_wins_1v1" />
@@ -99,7 +97,7 @@
               </div>
             </article>
 
-            <article class="broadcast-panel section-card">
+            <article v-stats-block="'activity'" class="broadcast-panel section-card">
               <div class="section-title"><span>Speelactiviteit</span><small>wedstrijden per dag</small></div>
               <div class="activity-summary">
                 <div class="activity-before"><strong>{{ stats.global.lunch_matches }}</strong><span><i></i>voor 14:00</span></div>
@@ -119,7 +117,7 @@
             </article>
           </div>
 
-          <article class="broadcast-panel recent-panel">
+          <article v-stats-block="'recent_results'" class="broadcast-panel recent-panel">
             <div class="section-title">
               <span>Recente uitslagen</span>
               <small>laatste {{ recentMatches.length }}</small>
@@ -154,10 +152,9 @@
             <p v-else class="empty-copy">Nog geen uitslagen.</p>
           </article>
 
-          <article class="broadcast-panel highlights-panel">
+          <article v-stats-block="'records'" class="broadcast-panel highlights-panel">
             <div class="section-title">
-              <span>Clubhighlights</span>
-              <small>{{ stats.records.length }} onderscheidingen</small>
+              <span>Records</span>
             </div>
             <div v-if="stats.records.length" class="highlights-grid">
               <div v-for="record in visibleRecords" :key="record.key" class="highlight-card">
@@ -165,7 +162,7 @@
                 <div><span>{{ record.label }}</span><strong>{{ record.value }}</strong><small>{{ record.detail }}</small></div>
               </div>
             </div>
-            <p v-else class="empty-copy">Nog niet genoeg wedstrijden voor onderscheidingen.</p>
+            <p v-else class="empty-copy">Nog niet genoeg wedstrijden voor records.</p>
             <button v-if="stats.records.length > 4" class="more-button" @click="showAllRecords = !showAllRecords">
               {{ showAllRecords ? 'Minder tonen' : `Toon alle ${stats.records.length}` }}
             </button>
@@ -174,10 +171,10 @@
 
         <!-- Leaderboard -->
         <section v-if="activeTab === 'Ranglijst'" class="tab-content">
-          <article class="broadcast-panel ranking-panel">
+          <article v-stats-block="'ranking'" class="broadcast-panel ranking-panel">
             <div class="section-intro">
-              <div><p class="eyebrow">{{ modeLabel }} · ELO</p><h2>Ranglijst</h2></div>
-              <p>Vanaf 1000 binnen deze selectie</p>
+              <h2>Ranglijst</h2>
+              <p>ELO start op 1000 voor deze selectie.</p>
             </div>
             <div v-if="stats.leaderboard.length" class="ranking-list">
               <div class="ranking-head ranking-row">
@@ -225,27 +222,26 @@
             <article class="broadcast-panel player-hero">
               <StatsPlayerAvatar :name="selectedPlayer.name" :avatar-url="selectedPlayer.avatar_url" :size="72" :crowned="selectedPlayer.rank === 1" />
               <div class="player-hero-copy">
-                <p class="eyebrow">SPELERSPROFIEL</p>
                 <h2>{{ selectedPlayer.name }} <span v-if="selectedPlayer.current_winstreak >= 3" class="streak-flame" :aria-label="`${selectedPlayer.current_winstreak} overwinningen op rij`">🔥</span></h2>
                 <FormDots :results="selectedPlayer.recent_form" />
               </div>
               <div class="player-rank"><span>#{{ selectedPlayer.rank ?? '–' }}</span><strong>{{ formatElo(selectedPlayer.elo_precise) }}</strong><small>ELO</small></div>
             </article>
 
-            <div class="metric-grid player-metrics">
+            <div v-stats-block="'player_summary'" class="metric-grid player-metrics">
               <article class="metric-card broadcast-panel"><span>Duels</span><strong>{{ selectedPlayer.matches }}</strong><small>{{ selectedPlayer.wins }}W · {{ selectedPlayer.losses }}V</small></article>
-              <article class="metric-card broadcast-panel"><span>Winrate</span><strong>{{ formatPct(selectedPlayer.winrate) }}</strong><small>{{ periodLabel }}</small></article>
+              <article class="metric-card broadcast-panel"><span>Winrate</span><strong>{{ formatPct(selectedPlayer.winrate) }}</strong></article>
               <article class="metric-card broadcast-panel"><span>Actieve reeks</span><strong>{{ activePlayerStreak.value }}</strong><small>{{ activePlayerStreak.label }}</small></article>
               <article class="metric-card broadcast-panel"><span>Grootste zege</span><strong>{{ selectedPlayer.biggest_victory_score ?? '–' }}</strong><small>{{ selectedPlayer.biggest_victory_margin ? `+${selectedPlayer.biggest_victory_margin}` : 'geen' }}</small></article>
             </div>
 
-            <article class="broadcast-panel section-card">
-              <div class="section-title"><span>Verdiende badges</span><small>blijven bij je profiel</small></div>
+            <article v-stats-block="'player_badges'" class="broadcast-panel section-card">
+              <div class="section-title"><span>Badges</span><small>blijven bij je profiel</small></div>
               <PlayerBadges :badges="selectedPlayer.badges" />
             </article>
 
             <div class="player-columns">
-              <article class="broadcast-panel section-card">
+              <article v-stats-block="'player_goals'" class="broadcast-panel section-card">
                 <div class="section-title"><span>Doelbalans</span><small>per wedstrijd</small></div>
                 <div class="goal-grid">
                   <div><span>Voor</span><strong>{{ decimal(selectedPlayer.average_goals_for) }}</strong></div>
@@ -254,15 +250,15 @@
                 </div>
               </article>
 
-              <article class="broadcast-panel section-card">
-                <div class="section-title"><span>Spelvorm</span><small>resultaten</small></div>
+              <article v-stats-block="'player_modes'" class="broadcast-panel section-card">
+                <div class="section-title"><span>Spelvorm</span></div>
                 <div class="performance-split">
                   <div><span>1 tegen 1</span><strong>{{ selectedPlayer.wins_1v1 }}W · {{ selectedPlayer.losses_1v1 }}V</strong><small>{{ recordRate(selectedPlayer.wins_1v1, selectedPlayer.losses_1v1) }}</small></div>
                   <div><span>2 tegen 2</span><strong>{{ selectedPlayer.wins_2v2 }}W · {{ selectedPlayer.losses_2v2 }}V</strong><small>{{ recordRate(selectedPlayer.wins_2v2, selectedPlayer.losses_2v2) }}</small></div>
                 </div>
               </article>
 
-              <article class="broadcast-panel section-card">
+              <article v-stats-block="'player_colours'" class="broadcast-panel section-card">
                 <div class="section-title"><span>Kleur</span><small>{{ colorConclusion }}</small></div>
                 <div class="context-split">
                   <div class="orange-context"><span>Oranje</span><strong>{{ formatPct(selectedPlayer.winrate_orange) }}</strong><small>{{ selectedPlayer.matches_orange }} duels</small></div>
@@ -270,7 +266,7 @@
                 </div>
               </article>
 
-              <article class="broadcast-panel section-card">
+              <article v-stats-block="'player_positions'" class="broadcast-panel section-card">
                 <div class="section-title"><span>Positie</span><small>{{ positionConclusion }}</small></div>
                 <div class="context-split">
                   <div><span>Voor</span><strong>{{ formatPct(selectedPlayer.winrate_voor) }}</strong><small>{{ selectedPlayer.matches_voor }} duels</small></div>
@@ -279,7 +275,7 @@
               </article>
             </div>
 
-            <article class="broadcast-panel section-card streak-card">
+            <article v-stats-block="'player_streaks'" class="broadcast-panel section-card streak-card">
               <div class="section-title"><span>Reeksen</span><small>all-time</small></div>
               <div><span>Winst nu</span><strong>{{ selectedPlayer.current_winstreak }}</strong></div>
               <div><span>Winstrecord</span><strong>{{ selectedPlayer.longest_winstreak }}</strong></div>
@@ -292,7 +288,7 @@
         <!-- Head-to-head -->
         <section v-if="activeTab === 'Onderling'" class="tab-content matchup-layout">
           <article class="broadcast-panel matchup-picker">
-            <div class="section-title"><span>Onderlinge vergelijking</span><small>kies twee spelers</small></div>
+            <div class="section-title"><span>Onderlinge vergelijking</span></div>
             <div class="selector-row">
               <select v-model="h2hPlayer1" aria-label="Eerste speler">
                 <option :value="null" disabled>Speler 1</option>
@@ -312,7 +308,7 @@
               <span>TEGEN</span>
               <div class="versus-player"><StatsPlayerAvatar :name="playerName(h2hPlayer2)" :avatar-url="playerAvatarUrl(h2hPlayer2)" :size="52" :crowned="isRankOne(h2hPlayer2)" /><strong>{{ playerName(h2hPlayer2) }}</strong></div>
             </article>
-            <div class="matchup-cards">
+            <div v-stats-block="'head_to_head'" class="matchup-cards">
               <article class="broadcast-panel matchup-card">
                 <div class="matchup-label"><span>1V1</span><small>rechtstreeks duel</small></div>
                 <div v-if="selected1v1" class="matchup-score"><strong>{{ selected1v1.player1_wins }}</strong><span>–</span><strong>{{ selected1v1.player2_wins }}</strong></div>
@@ -332,16 +328,16 @@
               </article>
             </div>
           </template>
-          <p v-else class="broadcast-panel empty-copy select-prompt">Kies twee spelers voor hun 1v1-, 2v2- en duoresultaten.</p>
+          <p v-else class="broadcast-panel empty-copy select-prompt">Kies twee spelers om hun resultaten te vergelijken.</p>
 
           <div class="matchup-lists">
-            <article class="broadcast-panel section-card">
+            <article v-stats-block="'frequent_matchups'" class="broadcast-panel section-card">
               <div class="section-title"><span>Meeste confrontaties</span><small>alle spelvormen</small></div>
               <button v-for="matchup in stats.head_to_head.matchups.slice(0, 5)" :key="`${matchup.player1_id}-${matchup.player2_id}`" class="list-row" @click="selectPair(matchup.player1_id, matchup.player2_id)">
                 <span>{{ matchup.player1_name }} <i>vs</i> {{ matchup.player2_name }}</span><strong>{{ matchup.player1_wins }}–{{ matchup.player2_wins }}</strong>
               </button>
             </article>
-            <article class="broadcast-panel section-card">
+            <article v-stats-block="'strongest_duos'" class="broadcast-panel section-card">
               <div class="section-title"><span>Sterkste duo's</span><small>min. 3 duels</small></div>
               <div v-for="duo in strongestDuos" :key="`${duo.player1_id}-${duo.player2_id}`" class="list-row static-row">
                 <span>{{ duo.player1_name }} <i>&</i> {{ duo.player2_name }}</span><strong>{{ formatPct(duo.winrate) }}</strong>
@@ -364,6 +360,7 @@ import ColorBar from '../components/ColorBar.vue'
 import PlayerBadges from '../components/PlayerBadges.vue'
 import StatsPlayerAvatar from '../components/StatsPlayerAvatar.vue'
 import { useStats } from '../composables/useStats'
+import { useStatsBlockViews } from '../composables/useStatsBlockViews'
 import { currentGroup } from '../auth'
 import { formatLocalDateTime } from '../dateTime'
 import type { DuoStat, HeadToHeadMatchup, Match } from '../types'
@@ -381,9 +378,9 @@ const selectedPlayerId = ref<number | null>(null)
 const h2hPlayer1 = ref<number | null>(null)
 const h2hPlayer2 = ref<number | null>(null)
 const showAllRecords = ref(false)
+const { vStatsBlock, resetStatsBlockViews } = useStatsBlockViews()
+watch([activeTab, mode, period, selectedPlayerId, h2hPlayer1, h2hPlayer2], resetStatsBlockViews, { flush: 'post' })
 const recentMatches = computed(() => stats.value?.recent_matches ?? [])
-const periodLabel = computed(() => ({ all: 'All-time', '30d': 'Laatste 30 dagen', '50': 'Laatste 50 wedstrijden' })[period.value])
-const modeLabel = computed(() => mode.value === 'all' ? '1v1 en 2v2' : mode.value)
 
 onMounted(fetchStats)
 watch([mode, period], () => {
@@ -565,7 +562,6 @@ function selectPair(first: number, second: number) {
 .stats-container { position: relative; z-index: 1; width: min(1120px, 100%); margin: 0 auto; padding: 24px 18px 64px; }
 .page-header { display: flex; align-items: center; gap: 13px; margin-bottom: 22px; }
 .page-header h1, .section-intro h2, .player-hero h2 { font: 800 clamp(30px, 6vw, 44px)/.94 'Barlow Condensed', system-ui, sans-serif; letter-spacing: .01em; }
-.eyebrow { margin: 0 0 5px; color: var(--orange); font: 800 10px/1 'Barlow Condensed', system-ui, sans-serif; letter-spacing: .18em; text-transform: uppercase; }
 .back-button { width: 44px; height: 44px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 14px; border: 1px solid var(--line); background: #202a38; color: white; }
 .back-button:active { transform: scale(.94); }
 .page-header-actions { margin-left: auto; display: flex; align-items: center; gap: 15px; flex: 0 0 auto; }
@@ -592,8 +588,8 @@ function selectPair(first: number, second: number) {
 
 .overview-grid { display: grid; gap: 14px; }
 .leader-card { border-radius: 22px; padding: 19px; overflow: hidden; position: relative; border-color: #77401f; background: #211d1d; }
-.leader-kicker, .section-title span { color: var(--muted); text-transform: uppercase; font: 800 10px/1 'Barlow Condensed', system-ui, sans-serif; letter-spacing: .14em; }
-.leader-main { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 14px; margin-top: 19px; }
+.section-title span { color: var(--muted); text-transform: uppercase; font: 800 10px/1 'Barlow Condensed', system-ui, sans-serif; letter-spacing: .14em; }
+.leader-main { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 14px; }
 .rank-inline { margin-right: 8px; color: var(--orange); }
 .leader-copy h2 { font: 800 36px/.9 'Barlow Condensed', system-ui, sans-serif; }
 .leader-rating { margin-top: 6px; font: 800 19px/1 'Barlow Condensed', system-ui, sans-serif; }

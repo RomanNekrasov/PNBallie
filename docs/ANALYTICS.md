@@ -33,6 +33,8 @@ De website-UUID is een publieke collectoridentifier, geen wachtwoord.
 Productie (`pnballie.nl`) gebruikt `e2a427f6-a458-5afe-9043-feca1e0ed7c8`.
 Preview (`pnballie-preview.tail67de92.ts.net`) gebruikt
 `03c9b13b-4507-517c-b008-c488152a163b`. Houd deze websites gescheiden.
+Acceptatie (`acceptatie.pnballie.nl`) gebruikt
+`3f1b0a75-2d77-5d25-8678-eabea4c2d4f3`, met een eigen rapportagerol.
 
 Nginx resolveert de upstream tijdens aanvragen. Ontbrekende Umami-DNS verhindert
 dus niet dat PNBallie start. Collectoraanvragen hebben korte proxytime-outs.
@@ -101,6 +103,7 @@ zonder een tijdelijke meting van de initiële routerlocatie.
 | `match_saved` | `mode`: `1v1`, `2v2` |
 | `match_deleted` | Geen |
 | `stats_filters_changed` | `mode`: `all`, `1v1`, `2v2`; `period`: `all`, `30d`, `50` |
+| `stats_block_viewed` | `block`: een vaste naam uit de onderstaande statistiekblokken |
 | `comparison_selected` | Geen |
 | `profile_saved` | Geen |
 | `group_created`, `group_joined`, `group_updated` | Geen |
@@ -128,6 +131,57 @@ PNBallie voegt geen stabiele identifier voor andere websites toe. Do Not Track,
 Global Privacy Control en Umami's lokale uitschakelvoorkeur worden gerespecteerd.
 Het accountmenu en inlogscherm bevatten een korte toelichting wanneer analytics
 is geconfigureerd.
+
+## Welke statistieken worden bekeken
+
+De bestaande schermmetingen tellen bezoeken aan Overzicht, Ranglijst, Spelers
+en Onderling. Daarnaast meet `stats_block_viewed` afzonderlijke blokken, zoals
+Wins per kleur, Speelactiviteit en doelcijfers per speler. Een blok telt na
+twee aaneengesloten seconden waarin minimaal de helft zichtbaar is. Voor een
+blok dat hoger is dan het scherm geldt de helft van de schermhoogte. Een
+verborgen browsertab telt niet mee; wegscrollen of een blok verwijderen breekt
+de lopende meting af.
+
+Ieder blok telt maximaal één keer tijdens een bezoek aan `/stats`, ook na
+terugscrollen, een andere statistiektab, filter of speler. Na verlaten en
+opnieuw openen van de statistieken kan het blok opnieuw tellen. Analytics blijft
+optioneel en respecteert dezelfde uitschakelvoorkeuren als de schermmetingen.
+
+Alleen deze vaste bloknamen zijn toegestaan:
+
+| Blok | Betekenis |
+| --- | --- |
+| `overview_leader` | Koploper |
+| `overview_totals` | Wedstrijden en gemiddeld doelverschil |
+| `colour_wins` | Wins per kleur |
+| `activity` | Speelactiviteit |
+| `recent_results` | Recente uitslagen |
+| `records` | Records |
+| `ranking` | Ranglijst |
+| `player_summary` | Spelercijfers |
+| `player_badges` | Badges |
+| `player_goals` | Doelbalans |
+| `player_modes` | Resultaten per spelvorm |
+| `player_colours` | Resultaten per kleur |
+| `player_positions` | Resultaten per positie |
+| `player_streaks` | Reeksen |
+| `head_to_head` | Onderlinge resultaten na spelerkeuze |
+| `frequent_matchups` | Meeste confrontaties |
+| `strongest_duos` | Sterkste duo's |
+
+In [PNBallie usage in Grafana](https://grafana.tail67de92.ts.net/d/pnballie-analytics)
+komen tab- en blokranglijsten. De primaire telling is het aantal verschillende
+Umami-bezoeken met een waarneming binnen het gekozen tijdvak; herhaalde
+waarnemingen in hetzelfde bezoek verhogen dat aantal niet. Het totale aantal
+waarnemingen staat ernaast. Acceptatie, preview en productie blijven apart.
+In Umami is dezelfde blokmeting terug te vinden onder het event
+`stats_block_viewed`, uitgesplitst op `block`.
+
+Zichtbaarheid is geen bewijs dat iemand een cijfer leest of waardeert. Blokken
+bovenaan krijgen vanzelf meer blootstelling. Gebruik deze ranglijst samen met
+tabkeuze en filtergebruik. Nieuwe blokmetingen beginnen bij de uitrol; bestaande
+schermmetingen kunnen eerdere tabpopulariteit tonen. Er is geen terugwerkende
+invulling van blokviews. Testverkeer in de preview hoort niet bij echte adoptie.
 
 ## Verificatie
 

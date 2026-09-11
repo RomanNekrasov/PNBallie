@@ -1,21 +1,21 @@
 <template>
   <main class="account-page">
     <header class="account-heading">
-      <div><p class="account-kicker">WELKOM, {{ authUser?.display_name }}</p><h1 class="account-title">Jouw groepen</h1><p class="account-muted">Elke groep heeft zijn eigen competitie.</p></div>
+      <div><h1 class="account-title">Groepen</h1></div>
       <div class="account-heading-actions"><RouterLink v-if="currentGroup" to="/stats" class="account-back-link" aria-label="Terug naar clubstatistieken" title="Terug naar clubstatistieken"><span aria-hidden="true">←</span></RouterLink><SettingsMenu /></div>
     </header>
     <p v-if="error" class="account-error" role="alert">{{ error }}</p>
-    <section v-if="groups.length" class="group-grid" aria-label="Je competities">
+    <section v-if="groups.length" class="group-grid" aria-label="Je groepen">
       <button v-for="group in groups" :key="group.id" class="group-card" :class="{ selected: group.id === currentGroup?.id }" @click="openGroup(group.id)">
         <span class="group-emblem" aria-hidden="true">⚽</span>
         <strong>{{ group.name }}</strong><small>{{ group.role === 'admin' ? 'Beheerder' : 'Speler' }}</small>
-        <span class="group-open">Open competitie <span aria-hidden="true">→</span></span>
+        <span class="group-open">Open groep <span aria-hidden="true">→</span></span>
       </button>
     </section>
-    <p v-else class="account-notice">Je bent nog geen lid van een groep. Gebruik een uitnodigingscode of start je eigen competitie.</p>
+    <p v-else class="account-notice">Je bent nog geen lid van een groep. Vul een uitnodigingscode in of maak een groep.</p>
     <div class="account-columns">
       <section class="account-panel">
-        <p class="account-kicker">SPEEL MEE</p><h2>Sluit je aan</h2>
+        <h2>Deelnemen aan een groep</h2>
         <p class="account-muted">Vul de code of uitnodigingslink van je beheerder in.</p>
         <form class="account-form" @submit.prevent="joinGroup">
           <label>Uitnodiging<input v-model="invite" autocomplete="off" required maxlength="512" spellcheck="false" placeholder="Code of link" /></label>
@@ -23,10 +23,10 @@
         </form>
       </section>
       <section class="account-panel">
-        <p class="account-kicker">BEGIN JE EIGEN POOL</p><h2>Nieuwe groep</h2>
-        <p class="account-muted">Jij wordt beheerder en kunt daarna spelers uitnodigen.</p>
+        <h2>Nieuwe groep</h2>
+        <p class="account-muted">Je wordt beheerder en kunt spelers uitnodigen.</p>
         <form class="account-form" @submit.prevent="createGroup">
-          <label>Groepsnaam<input v-model="name" required maxlength="80" placeholder="Bijvoorbeeld: De kantinetoppers" /></label>
+          <label>Groepsnaam<input v-model="name" required maxlength="80" /></label>
           <button class="secondary-button" type="submit" :disabled="busy">Groep maken</button>
         </form>
       </section>
@@ -37,7 +37,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { authUser, currentGroup, groups, refreshGroups, selectGroup, type Group } from '../auth'
+import { currentGroup, groups, refreshGroups, selectGroup, type Group } from '../auth'
 import { api } from '../composables/useApi'
 import SettingsMenu from '../components/SettingsMenu.vue'
 import { trackEvent } from '../analytics'

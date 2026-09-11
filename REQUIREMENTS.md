@@ -47,6 +47,21 @@ scope en houdt de acceptatiestatus bij. Wijzigingen en controles staan in
 - [x] Bij de 1v1- en 2v2-verdeling een oranje/blauwe indicator voor de leidende
       kleur tonen, met een duidelijke gelijke-standweergave.
 
+### Populariteit van statistieken — vervolg
+
+- [ ] De bestaande tabmetingen overzichtelijk rangschikken in Grafana.
+- [ ] Afzonderlijke statistiekblokken meten zodra ze minstens twee seconden
+      voor minimaal de helft zichtbaar zijn; bij hoge blokken de schermhoogte
+      als grens gebruiken. Verborgen browsertabs tellen niet mee.
+- [ ] Per bezoek aan de statistieken ieder blok hoogstens één keer tellen;
+      scrollen, tabwissels, filters en spelerkeuze veroorzaken geen dubbeltelling.
+- [ ] Alleen vaste bloknamen versturen, met behoud van DNT/GPC en de bestaande
+      gegevensgrenzen. Geen speler-, groeps- of accountgegevens verzamelen.
+- [ ] In Grafana een ranglijst per blok tonen, op basis van bezoeken met een
+      waarneming. Duidelijk maken dat zichtbaarheid geen bewijs van lezen is.
+- [ ] Implementatie, definities en verificatie documenteren en publiceren;
+      daadwerkelijke browsermetingen en rapportages op de Spark-preview testen.
+
 ## 5. Profielen en permanente badges
 
 - [x] Achievement `Hoogste Score` verwijderen.
@@ -66,6 +81,21 @@ scope en houdt de acceptatiestatus bij. Wijzigingen en controles staan in
 - [x] Vervolgfeedback: de losse navigatiebalk verwijderen. Het huisje op het
       speelveld blijft naar statistieken leiden; profiel, groepen en beheer
       komen in een compact instellingenmenu in de bestaande paginakop.
+- [ ] Vervolgfeedback: slogans en dubbele introducties, kopjes en bijschriften
+      opruimen. Nuttige instructies, eenheden en foutmeldingen behouden.
+- [ ] `Over gebruiksstatistieken` van de inlogpagina verwijderen; de toelichting
+      blijft beschikbaar in het instellingenmenu.
+
+### Acceptatieomgeving
+
+- [ ] `https://acceptatie.pnballie.nl` publiceren als aparte testomgeving, met
+      een eigen database en een beheeraccount voor de democompetitie.
+- [ ] Acht fictieve spelers en 180 wedstrijden over circa 120 dagen toevoegen,
+      met 1v1/2v2, verschillende posities en kleuren, dagdelen en blijvende badges.
+- [ ] Alleen een lege acceptatiedatabase vullen; herstarts bewaren wijzigingen
+      die tijdens het testen zijn gemaakt. Geen productiedata overnemen.
+- [ ] Acceptatie krijgt eigen Umami-rapportage en staging-telemetrie.
+- [ ] Inloggen, demo-inhoud, statistiekmetingen en de publieke URL verifiëren.
 
 ## 7. Asynchrone AI-avatar
 
