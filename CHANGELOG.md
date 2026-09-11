@@ -3,7 +3,18 @@
 Alle relevante wijzigingen aan deze uitbreiding worden hier bijgehouden.
 Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 
-## Unreleased — 2026-09-10
+## Unreleased — 2026-09-11
+
+### Mobiele formulieren
+
+- Invoervelden voor inloggen, registratie, profiel en groepsbeheer gebruiken
+  tekst van 16px, net als de statistiekfilters. Dit voorkomt automatisch
+  inzoomen bij focus op iPhones en het vasthouden van die zoom op het speelveld
+  na het inloggen. Handmatig zoomen blijft beschikbaar.
+- Productiebuild gecontroleerd met WebKit op 375px en Chromium op 393px en
+  desktop: tien scherm-/focuscontroles per browser, velden minimaal 16px, geen
+  horizontale overflow of JavaScript-fouten. De native iPhone-toetsenbordzoom
+  is niet rechtstreeks getest met browseremulatie.
 
 ### Observability en gebruiksanalytics
 
