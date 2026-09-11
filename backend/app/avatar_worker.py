@@ -16,7 +16,13 @@ from sqlmodel import Session, select
 
 from app.avatar_images import InvalidAvatarImage, validate_transparent_png
 from app.avatar_models import AvatarJob, PlayerAvatar, utcnow
-from app.avatar_providers import AvatarProvider, AvatarProviderError
+from app.avatar_providers import (
+    LOCAL_BUSY_RETRY_SECONDS,
+    MAX_BUSY_RETRY_SECONDS,
+    AvatarProvider,
+    AvatarProviderBusy,
+    AvatarProviderError,
+)
 from app.database import engine
 from app.models import Membership, Player, as_utc
 from app.telemetry import (
@@ -143,6 +149,27 @@ def fail_job(database: Engine, job: AvatarJob, error: str, *, retryable: bool = 
         return ("retry" if retry else "failure") if result.rowcount else "fenced"
 
 
+def defer_job(database: Engine, job: AvatarJob, error: str, *, retry_after: int = LOCAL_BUSY_RETRY_SECONDS):
+    """Return a busy local claim to the queue without consuming a real attempt."""
+    if job.provider != "local":
+        return fail_job(database, job, error, retryable=True)
+    now = utcnow()
+    expired = as_utc(job.created_at) <= now - SOURCE_RETENTION
+    delay = max(LOCAL_BUSY_RETRY_SECONDS, min(MAX_BUSY_RETRY_SECONDS, retry_after))
+    values = _terminal_values("failed", "De opdracht is verlopen. Upload de foto opnieuw.", now) if expired else {
+        "status": "queued", "error": error, "attempts": AvatarJob.attempts - 1,
+        "lease_token": None, "leased_until": None,
+        "available_at": now + timedelta(seconds=delay), "updated_at": now,
+    }
+    with Session(database) as session:
+        result = session.exec(update(AvatarJob).where(
+            AvatarJob.id == job.id, AvatarJob.status == "processing",
+            AvatarJob.lease_token == job.lease_token, AvatarJob.leased_until > now,
+        ).values(**values))
+        session.commit()
+        return ("expired" if expired else "unavailable") if result.rowcount else "fenced"
+
+
 class LeaseHeartbeat:
     def __init__(self, database: Engine, job: AvatarJob):
         self.database, self.job = database, job
@@ -205,6 +232,8 @@ def run_once(database: Engine = engine, provider: AvatarProvider | None = None) 
                         with Session(database) as session:
                             current = session.get(AvatarJob, job.id)
                             outcome = "cancelled" if current and current.status == "cancelled" else "fenced"
+                except AvatarProviderBusy as exc:
+                    outcome = defer_job(database, job, str(exc), retry_after=exc.retry_after)
                 except AvatarProviderError as exc:
                     error_type = "provider_error"
                     outcome = fail_job(database, job, str(exc), retryable=exc.retryable)

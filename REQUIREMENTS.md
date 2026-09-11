@@ -123,6 +123,23 @@ scope en houdt de acceptatiestatus bij. Wijzigingen en controles staan in
 - [x] Tests met gesimuleerde modelantwoorden onderscheiden van een echte
       generatieproef; externe afhankelijkheden eerlijk vastleggen.
 
+### Vervolg: gedeelde modelservice — 11 september 2026
+
+- [x] Verloren GPU-toegang in de acceptatieruntime herstellen; native CDI en
+      echte gecompileerde CUDA-kernels vóór en na een containerupdate controleren.
+- [x] Een bezette gedeelde modelservice laten wachten zonder de drie echte
+      generatiepogingen te verbruiken; retries begrenzen en bestaande
+      annulering, bronretentie en bescherming tegen verlopen claims behouden.
+      52 gerichte avatar-/telemetrytests en Ruff slagen.
+- [ ] De bijgewerkte worker en private service uitrollen en het wachten op
+      gedeelde capaciteit op Spark verifiëren.
+- [ ] Een nieuwe volledige generatie en de resulterende transparante PNG
+      controleren; een geslaagde GPU-preflight geldt niet als beeldproef.
+
+De GPU-storing en de wachtrijverbetering zijn afzonderlijke bevindingen.
+De eerdere definitief mislukte opdracht met gewiste bron wordt niet heropend.
+Details staan in [Eigen spelersavatars](docs/AVATAR_SERVICE.md).
+
 ## 8. Tracing, telemetry, logging en gebruiksanalytics
 
 Vervolgopdracht van 9 september 2026; uitwerking en Spark-acceptatie staan ook in

@@ -5,6 +5,21 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 
 ## Unreleased — 2026-09-11
 
+### Avatarwachtrij en GPU-herstel
+
+- Een bezette private modelservice zet een opdracht terug in de wachtrij zonder
+  een generatiepoging te verbruiken. Dit voorkomt dat een tweede appomgeving
+  na drie korte pogingen opgeeft terwijl een andere avatar nog wordt gemaakt.
+  De wachttijd is begrensd op 30–300 seconden; bronretentie, annulering en
+  bescherming tegen verlopen workerclaims blijven gelden.
+- De fout in de acceptatieomgeving had een andere oorzaak: de container was
+  GPU-toegang kwijtgeraakt via de oude Docker-runtimehook. De Spark-runtime is
+  opnieuw aangemaakt met native CDI-apparaattoewijzing. Een echte gecompileerde
+  GPU-proef slaagt ook na een containerupdate; de hostdriver is niet gewijzigd.
+- 52 gerichte avatar-/telemetrytests en Ruff slagen. Een nieuwe volledige
+  beeldgeneratie wordt afzonderlijk gecontroleerd. De eerdere definitief
+  mislukte opdracht en gewiste bronfoto worden niet opnieuw geactiveerd.
+
 ### Acceptatie en teksten
 
 - Slogans en herhalende bijschriften op inloggen, groepen, profiel, beheer en
