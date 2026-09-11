@@ -585,7 +585,7 @@ function selectPair(first: number, second: number) {
 .stats-shell button:focus-visible, .stats-shell select:focus-visible { outline: 2px solid #ffbd8c; outline-offset: 3px; }
 .stats-filters { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 15px; }
 .stats-filters label { flex: 1 1 140px; display: grid; gap: 6px; color: var(--muted); font-size: 11px; }
-.stats-filters select { width: 100%; min-height: 44px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 11px; background: var(--panel-soft); color: white; font-size: 13px; }
+.stats-filters select { width: 100%; min-height: 44px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 11px; background: var(--panel-soft); color: white; font-size: 16px; }
 .filter-description { margin: -5px 0 15px; color: var(--muted); font-size: 11px; }
 .streak-flame { font-size: .6em; vertical-align: middle; }
 .tab-content { animation: enter .22s ease-out both; }
