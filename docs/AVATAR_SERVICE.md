@@ -124,6 +124,30 @@ Mac en Spark; de gestopte embeddingscontainer bleef behouden met restart `no`.
 Wachtrij, autorisatie, providercontracten, alpha-correctie en subprocessfouten
 zijn daarnaast met lokale tests gecontroleerd.
 
+### GPU-herstel en gedeelde wachtrij — 11 september 2026
+
+Een latere opdracht in de acceptatieomgeving mislukte doordat de container
+geen GPU meer kon gebruiken: NVML gaf `Unknown Error` en
+`torch.cuda.is_available()` was onwaar, terwijl de GPU op de host beschikbaar
+bleef. De oude Docker-runtimehook kan GPU-toegang verliezen bij een
+containerupdate. De runtime is daarom opnieuw aangemaakt met native
+CDI-apparaattoewijzing. Een echte gecompileerde CUDA-proef slaagt vóór én na
+een containerupdate. De hostdriver en andere workloads zijn niet aangepast.
+De exacte runtimeconfiguratie en controles staan in het homelabrunbook.
+
+Daarnaast delen preview en acceptatie één modelservice. Een bezette service
+liet een tweede opdracht voorheen drie korte retries verbruiken, hoewel de
+lopende generatie ruim twintig minuten kan duren. De service meldt deze
+specifieke situatie nu expliciet; de worker wacht zonder een echte poging te
+verbruiken. Dit is een afzonderlijke wachtrijverbetering, geen verklaring voor
+de eerdere GPU-fout. Het protocol en de grenzen staan hieronder.
+
+De wachtrijwijziging passeert 52 gerichte avatar-/telemetrytests en Ruff.
+De GPU-proef bewijst toegang en kerneluitvoering; een nieuwe volledige
+generatie met controle van de resulterende PNG wordt afzonderlijk uitgevoerd.
+De eerder definitief mislukte opdracht blijft afgesloten en de gewiste
+bronfoto wordt niet hersteld. Een nieuwe eigen foto vereist een nieuwe upload.
+
 ## Architectuur en namespacekeuze
 
 ```text
@@ -160,10 +184,11 @@ worker -> PNG/alpha-validatie -> player_avatar -> groepsbeveiligde afbeelding
   `docs/runbooks/pnballie-avatar-local.md`. De productieapp en score-PVC zijn
   daarbij niet gewijzigd. Een toekomstige productie-uitrol via Flux blijft een
   afzonderlijke stap.
-- Gebruik één queue-worker en één inferenceproces (`--workers 1`). Claims zijn
-  bestand tegen een overlappende workerstart; het serviceproces verwerkt maximaal
-  één beeld tegelijk. Meerdere inferenceprocessen zouden elk een eigen lock
-  hebben en worden niet ondersteund op de gedeelde GB10.
+- Gebruik één queue-worker per appdatabase en één gedeeld inferenceproces
+  (`--workers 1`). Preview en acceptatie kunnen zo dezelfde private modelservice
+  gebruiken. Claims zijn bestand tegen een overlappende workerstart; de service
+  verwerkt maximaal één beeld tegelijk. Meerdere inferenceprocessen zouden elk
+  een eigen lock hebben en worden niet ondersteund op de gedeelde GB10.
 
 De app behoudt SQLModel, SQLite en de bestaande `uv`-stack. Een bestaande
 databasewachtrij voorkomt een extra Redis/Celery-beheerdienst voor dit kleine
@@ -187,10 +212,21 @@ op als lokale omgevingsvariabelen of versleutelde deploymentsecrets.
 | `HF_HOME` | Persistente cache voor de exact gepinde modelrevisies |
 
 `/api/avatars/config` zegt of een provider is **geconfigureerd**; het is geen
-live GPU-gereedheidscheck. Een bezette of onvoldoende uitgeruste Spark geeft
-een tijdelijke fout. De worker probeert een tijdelijke fout maximaal driemaal,
-met wachttijden van 30 en 60 seconden. Een latere nieuwe poging blijft een
-expliciete actie vanuit het profiel.
+live GPU-gereedheidscheck. Een GPU-fout of onvoldoende geheugen geeft een gewone
+tijdelijke fout. De worker probeert zulke fouten maximaal driemaal, met
+wachttijden van 30 en 60 seconden. Een latere nieuwe poging blijft een expliciete
+actie vanuit het profiel.
+
+Als de private lokale service al een avatar verwerkt, antwoordt zij na
+tokencontrole met HTTP 503, `X-PNBallie-Avatar-State: busy` en `Retry-After: 30`.
+Alleen deze combinatie zet de opdracht terug op `queued` zonder de geclaimde
+poging te verbruiken. Eerder verbruikte echte pogingen blijven staan. De worker
+begrenst de wachttijd op 30–300 seconden; ontbrekende of ongeldige waarden
+vallen terug op 30 seconden. De gebruiker ziet dat de opdracht op een vrije
+plek wacht. Gewone 503-antwoorden, time-outs en cloudantwoorden krijgen deze
+uitzondering niet. De wachtrij bewaart een upload nog steeds maximaal 24 uur
+zolang de worker draait; annulering en verlopen of vervangen workerclaims
+kunnen niet door een laat bezet-antwoord worden teruggedraaid.
 
 Bij de cloudroute vraagt de worker twee invoerbeelden, PNG-uitvoer,
 `background=transparent`, 1024 × 1024 en `quality=medium`. Het model staat
@@ -317,6 +353,10 @@ Tijdstippen hebben een expliciete UTC-offset.
   OpenAI-providercontract getest met lokale testafbeeldingen.
 - [x] Private servicetoken, capaciteitsweigering en HTTP-contract getest zonder
   GPU of cloud.
+- [x] Gedeelde bezetmelding, begrensde wachttijden, behoud van echte pogingen,
+  bronretentie, annulering en verlopen/vervangen claims getest.
+- [x] GPU-toegang hersteld met native CDI; echte gecompileerde CUDA-proef slaagt
+  vóór en na een containerupdate. Volledige generatie blijft een aparte controle.
 - [x] Een echte tweestaps-Qwen-proef op Spark, visueel geaccepteerde RGBA-PNG
   en gemeten looptijd van 24 minuten en 24 seconden.
 - [x] Geheugenretentie na die proef opgelost met een apart proces per opdracht;

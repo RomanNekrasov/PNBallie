@@ -32,7 +32,11 @@ from app.avatar_images import (
     remove_alpha_noise,
     validate_transparent_png,
 )
-from app.avatar_providers import AVATAR_PROMPT
+from app.avatar_providers import (
+    AVATAR_PROMPT,
+    LOCAL_BUSY_HEADER,
+    LOCAL_BUSY_RETRY_SECONDS,
+)
 from app.telemetry import (
     INFERENCE_SERVICE,
     Runtime,
@@ -259,7 +263,9 @@ async def generate(request: Request):
     if not token or not hmac.compare_digest(provided, f"Bearer {token}"):
         raise HTTPException(401, "Invalid service credentials")
     if not generation_lock.acquire(blocking=False):
-        raise HTTPException(503, "The model is processing another avatar")
+        raise HTTPException(503, "The model is processing another avatar", headers={
+            LOCAL_BUSY_HEADER: "busy", "Retry-After": str(LOCAL_BUSY_RETRY_SECONDS),
+        })
     try:
         raw = bytearray()
         async for chunk in request.stream():

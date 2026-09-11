@@ -17,11 +17,24 @@ from app.avatar_images import (
     validate_transparent_png,
 )
 from app.avatar_models import AvatarJob, PlayerAvatar, avatar_url, utcnow
-from app.avatar_providers import AvatarProvider, AvatarProviderError, AvatarSettings
+from app.avatar_providers import (
+    LOCAL_BUSY_HEADER,
+    AvatarProvider,
+    AvatarProviderBusy,
+    AvatarProviderError,
+    AvatarSettings,
+)
 from app.avatar_service import foreground_from_layers
-from app.avatar_worker import claim_job, complete_job, fail_job, renew_lease, run_once
+from app.avatar_worker import (
+    claim_job,
+    complete_job,
+    defer_job,
+    fail_job,
+    renew_lease,
+    run_once,
+)
 from app.database import get_session
-from app.models import Group, Membership, Player, User
+from app.models import Group, Membership, Player, User, as_utc
 from app.routers import avatars
 
 
@@ -260,6 +273,137 @@ def test_retry_backoff_expiry_and_crash_limit_delete_source(api):
         assert session.get(AvatarJob, second_id).source_png is None
 
 
+def test_shared_local_capacity_can_defer_repeatedly_then_complete_on_first_attempt(api, monkeypatch):
+    client, database, _ = api
+    job_id = enqueue(client).json()["id"]
+    now = [utcnow()]
+    monkeypatch.setattr("app.avatar_worker.utcnow", lambda: now[0])
+
+    class BusyProvider:
+        calls = 0
+
+        def generate(self, **_):
+            self.calls += 1
+            if self.calls <= 6:
+                raise AvatarProviderBusy()
+            return png()
+
+    provider = BusyProvider()
+    for _ in range(6):
+        assert run_once(database, provider)
+        with Session(database) as session:
+            job = session.get(AvatarJob, job_id)
+            assert job.status == "queued" and job.attempts == 0
+            assert job.source_png and job.active_player_id == 1
+            assert job.lease_token is None and job.leased_until is None
+            assert as_utc(job.available_at) == now[0] + timedelta(seconds=30)
+            assert session.get(PlayerAvatar, 1) is None
+            available = as_utc(job.available_at)
+        assert claim_job(database) is None
+        now[0] = available
+    assert run_once(database, provider)
+    with Session(database) as session:
+        job = session.get(AvatarJob, job_id)
+        assert job.status == "succeeded" and job.attempts == 1
+        assert job.source_png is None and job.active_player_id is None
+        assert validate_transparent_png(session.get(PlayerAvatar, 1).png)
+
+
+def test_capacity_deferrals_preserve_prior_failures_and_real_failure_limit(api, monkeypatch):
+    client, database, _ = api
+    job_id = enqueue(client).json()["id"]
+    now = [utcnow()]
+    monkeypatch.setattr("app.avatar_worker.utcnow", lambda: now[0])
+    failures = iter([False, True, True, True, False, True, False])
+
+    class MixedProvider:
+        def generate(self, **_):
+            if next(failures):
+                raise AvatarProviderBusy()
+            raise AvatarProviderError("Temporary inference failure", retryable=True)
+
+    for attempts in (1, 1, 1, 1, 2, 2, 3):
+        assert run_once(database, MixedProvider())
+        with Session(database) as session:
+            job = session.get(AvatarJob, job_id)
+            assert job.attempts == attempts
+            if attempts < 3:
+                assert job.status == "queued" and job.source_png
+                now[0] = as_utc(job.available_at)
+            else:
+                assert job.status == "failed" and job.source_png is None
+                assert job.active_player_id is None
+    assert not run_once(database, MixedProvider())
+
+
+@pytest.mark.parametrize("expire_during_response", [False, True])
+def test_capacity_waiting_does_not_extend_source_retention(api, monkeypatch, expire_during_response):
+    client, database, _ = api
+    job_id = enqueue(client).json()["id"]
+    now = [utcnow()]
+    monkeypatch.setattr("app.avatar_worker.utcnow", lambda: now[0])
+    with Session(database) as session:
+        job = session.get(AvatarJob, job_id)
+        job.created_at = now[0] - timedelta(hours=24) + timedelta(seconds=1)
+        session.add(job)
+        session.commit()
+
+    class BusyProvider:
+        def generate(self, **_):
+            if expire_during_response:
+                now[0] += timedelta(seconds=2)
+            raise AvatarProviderBusy()
+
+    assert run_once(database, BusyProvider())
+    if not expire_during_response:
+        now[0] += timedelta(seconds=2)
+        assert claim_job(database) is None
+    with Session(database) as session:
+        job = session.get(AvatarJob, job_id)
+        assert job.status == "failed" and job.source_png is None
+        assert job.active_player_id is None and job.lease_token is None
+
+
+def test_cancellation_wins_over_late_capacity_deferral(api):
+    client, database, _ = api
+    job_id = enqueue(client).json()["id"]
+
+    class CancellingProvider:
+        def generate(self, **_):
+            assert client.delete(f"/api/avatars/jobs/{job_id}").json()["status"] == "cancelled"
+            raise AvatarProviderBusy()
+
+    assert run_once(database, CancellingProvider())
+    with Session(database) as session:
+        job = session.get(AvatarJob, job_id)
+        assert job.status == "cancelled" and job.source_png is None
+        assert job.active_player_id is None and job.lease_token is None
+    assert claim_job(database) is None
+
+
+@pytest.mark.parametrize("reclaimed", [False, True])
+def test_expired_or_replaced_lease_cannot_refund_attempt_or_requeue_job(api, reclaimed):
+    client, database, _ = api
+    job_id = enqueue(client).json()["id"]
+    old_claim = claim_job(database)
+    with Session(database) as session:
+        job = session.get(AvatarJob, job_id)
+        job.leased_until = utcnow() - timedelta(seconds=1)
+        session.add(job)
+        session.commit()
+    current_claim = claim_job(database) if reclaimed else old_claim
+    with Session(database) as session:
+        before = session.get(AvatarJob, job_id).model_dump()
+    assert defer_job(database, old_claim, "Busy") == "fenced"
+    with Session(database) as session:
+        assert session.get(AvatarJob, job_id).model_dump() == before
+    if reclaimed:
+        assert defer_job(database, current_claim, "Busy") == "unavailable"
+        with Session(database) as session:
+            job = session.get(AvatarJob, job_id)
+            assert job.attempts == 1 and job.status == "queued"
+
+
 def test_invalid_model_output_is_failed_without_replacing_existing_avatar(api):
     client, database, _ = api
     enqueue(client)
@@ -354,6 +498,45 @@ def test_provider_never_falls_back_or_sends_cloud_without_consent(tmp_path):
     assert len(calls) == 1 and calls[0].url.host == "private"
 
 
+@pytest.mark.parametrize("retry_after,expected_delay", [
+    ("45", 45), ("1", 30), ("999", 300), ("9999999999999999999999", 30),
+    ("-1", 30), ("Wed, 21 Oct 2030 07:28:00 GMT", 30), ("", 30),
+])
+def test_local_provider_recognizes_explicit_busy_signal_with_bounded_delay(tmp_path, retry_after, expected_delay):
+    reference = tmp_path / "reference.png"
+    reference.write_bytes(png())
+    settings = AvatarSettings("http://private/v1/avatar", "test-token", "", "", reference)
+
+    class UnreadBody(httpx.SyncByteStream):
+        def __iter__(self):
+            raise AssertionError("Busy responses must not consume an arbitrary response body")
+
+    transport = httpx.MockTransport(lambda _: httpx.Response(
+        503, headers={LOCAL_BUSY_HEADER: "busy", "Retry-After": retry_after}, stream=UnreadBody(),
+    ))
+    provider = AvatarProvider(settings, transport=transport)
+    with pytest.raises(AvatarProviderBusy) as error:
+        provider.generate(source_png=png(), provider="local", cloud_consent=False, job_id="busy-test")
+    assert error.value.retry_after == expected_delay
+
+
+@pytest.mark.parametrize("provider_name,status,state", [
+    ("local", 503, ""), ("local", 503, "unavailable"), ("local", 502, "busy"),
+    ("local", 429, "busy"), ("openai", 503, "busy"),
+])
+def test_generic_errors_and_cloud_responses_are_never_capacity_deferrals(tmp_path, provider_name, status, state):
+    reference = tmp_path / "reference.png"
+    reference.write_bytes(png())
+    settings = AvatarSettings("http://private/v1/avatar", "test-token", "cloud-key", "explicit-model", reference)
+    provider = AvatarProvider(settings, transport=httpx.MockTransport(lambda _: httpx.Response(
+        status, headers={LOCAL_BUSY_HEADER: state, "Retry-After": "30"}, json={"detail": "busy"},
+    )))
+    with pytest.raises(AvatarProviderError) as error:
+        provider.generate(source_png=png(), provider=provider_name, cloud_consent=True, job_id="error-test")
+    assert type(error.value) is AvatarProviderError
+    assert error.value.retryable
+
+
 def test_openai_edits_contract_requests_transparent_png_with_two_images(tmp_path):
     reference = tmp_path / "reference.png"
     reference.write_bytes(png())
@@ -384,7 +567,29 @@ def test_service_requires_token_and_does_not_load_model_if_capacity_is_missing(m
     response = client.post("/v1/avatar", json=payload,
                            headers={"Authorization": "Bearer service-token"})
     assert response.status_code == 503
+    assert LOCAL_BUSY_HEADER not in response.headers
     assert not avatar_service.generation_lock.locked()
+
+
+def test_service_signals_busy_only_after_auth_and_without_starting_another_generation(monkeypatch):
+    from app import avatar_service
+
+    monkeypatch.setenv("AVATAR_SERVICE_TOKEN", "service-token")
+
+    def unexpected_generation(*_):
+        raise AssertionError("An occupied slot must not start another model child")
+
+    monkeypatch.setattr(avatar_service, "generate_in_subprocess", unexpected_generation)
+    client = TestClient(avatar_service.app)
+    with avatar_service.generation_lock:
+        unauthorized = client.post("/v1/avatar", json={})
+        assert unauthorized.status_code == 401 and LOCAL_BUSY_HEADER not in unauthorized.headers
+        response = client.post("/v1/avatar", json={}, headers={"Authorization": "Bearer service-token"})
+        assert response.status_code == 503
+        assert response.headers[LOCAL_BUSY_HEADER] == "busy" and response.headers["Retry-After"] == "30"
+        assert avatar_service.generation_lock.locked()
+    invalid = client.post("/v1/avatar", json={}, headers={"Authorization": "Bearer service-token"})
+    assert invalid.status_code == 422 and LOCAL_BUSY_HEADER not in invalid.headers
 
 
 def test_service_returns_real_png_protocol_without_gpu_or_cloud(monkeypatch):

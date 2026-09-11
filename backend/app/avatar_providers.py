@@ -31,11 +31,23 @@ AVATAR_PROMPT = (
     "background, never draw a checkerboard to imitate transparency."
 )
 
+LOCAL_BUSY_HEADER = "X-PNBallie-Avatar-State"
+LOCAL_BUSY_RETRY_SECONDS = 30
+MAX_BUSY_RETRY_SECONDS = 300
+
 
 class AvatarProviderError(RuntimeError):
     def __init__(self, message: str, *, retryable: bool = False):
         super().__init__(message)
         self.retryable = retryable
+
+
+class AvatarProviderBusy(AvatarProviderError):
+    """The private local service accepted no work because its sole slot is busy."""
+
+    def __init__(self, retry_after: int = LOCAL_BUSY_RETRY_SECONDS):
+        super().__init__("De afbeeldingsdienst is bezig. Je opdracht wacht op een vrije plek.", retryable=True)
+        self.retry_after = max(LOCAL_BUSY_RETRY_SECONDS, min(MAX_BUSY_RETRY_SECONDS, retry_after))
 
 
 @dataclass(frozen=True)
@@ -94,6 +106,9 @@ class AvatarProvider:
             try:
                 return self._generate(source_png=source_png, provider=provider,
                                       cloud_consent=cloud_consent, job_id=job_id)
+            except AvatarProviderBusy:
+                outcome = "unavailable"
+                raise
             except AvatarProviderError as exc:
                 outcome, error_type = ("retry" if exc.retryable else "failure"), "provider_error"
                 raise
@@ -139,6 +154,13 @@ class AvatarProvider:
                                ("image[]", ("body.png", reference, "image/png"))])
                 response = client.send(request, stream=True)
                 try:
+                    if provider == "local" and response.status_code == 503 \
+                            and response.headers.get(LOCAL_BUSY_HEADER) == "busy":
+                        # Only this explicit private protocol signal refunds an
+                        # attempt. Generic 503s, cloud responses and timeouts do not.
+                        raw_delay = response.headers.get("Retry-After", "")
+                        delay = int(raw_delay) if len(raw_delay) <= 3 and raw_delay.isascii() and raw_delay.isdecimal() else LOCAL_BUSY_RETRY_SECONDS
+                        raise AvatarProviderBusy(delay)
                     if response.status_code >= 400:
                         raise AvatarProviderError(
                             "De afbeeldingsdienst is tijdelijk niet beschikbaar." if
