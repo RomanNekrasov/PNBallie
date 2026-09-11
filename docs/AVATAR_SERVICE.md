@@ -143,8 +143,51 @@ verbruiken. Dit is een afzonderlijke wachtrijverbetering, geen verklaring voor
 de eerdere GPU-fout. Het protocol en de grenzen staan hieronder.
 
 De wachtrijwijziging passeert 52 gerichte avatar-/telemetrytests en Ruff.
-De GPU-proef bewijst toegang en kerneluitvoering; een nieuwe volledige
-generatie met controle van de resulterende PNG wordt afzonderlijk uitgevoerd.
+De volledige releasecontrole passeert 138 backendtests en 89 frontendtests,
+plus lint, migratie-, container-, privacy- en browserstartcontroles.
+App-PR 15 is gepubliceerd als `01787a0034cd1afd1c2af84753016a721af43339`.
+Homelab-PR 54 is gereconcilieerd als
+`1f632046f24c55421ca1fbf5f1aac9a11ff3d886`; API en worker in preview en
+acceptatie gebruiken backenddigest
+`sha256:26f3f323877603fd98375b43059003f0f3f9b80f98adeabd68fae13665d7cdeb`.
+De private service gebruikt het bijbehorende bezetprotocol. Frontend en
+productie behouden hun bestaande images.
+
+Het wachten op gedeelde capaciteit is live gecontroleerd terwijl de service
+een echte avatar maakte. De uitgerolde acceptatieworker verwerkte vier echte
+bezetantwoorden met een afzonderlijke tijdelijke SQLite-database. Na iedere
+terugplaatsing bleef `attempts` nul, waren de leasevelden leeg, bleef de
+bronfoto bewaard en was de wachttijd begrensd. Geen appdatabase of
+gebruikersopdracht is voor deze proef gewijzigd.
+
+Een afzonderlijke volledige beeldproef is op 11 september om 21:11:37 UTC
+gestart vanuit pod `avatar-cdi-verification` in namespace
+`pnballie-acceptance`, met het bestaande Roman-avatarbestand uit de repository
+en de meegeleverde bodyreferentie. Deze proef gebruikt de uitgerolde provider
+en private HTTP-service, zonder appdatabase of nieuwe persoonlijke foto.
+Het laatst ontvangen modelbericht was **Qwen Edit-stap 25/40 om 21:21:38 UTC**.
+Daarna waren SSH en Kubernetes onbereikbaar, meldde Tailscale de Spark offline
+en gaf de Cloudflare-tunnel fout 1033. Om 21:32 UTC was de verbinding nog niet
+hersteld. De oorzaak en de uiteindelijke uitkomst van de generatie zijn
+onbekend: dit is geen bewijs van een geslaagde of mislukte volledige run.
+Een voltooide RGBA-PNG, Layered-stap, vrijgegeven modelgeheugen en nieuwe
+profielopslag zijn voor deze proef niet geverifieerd.
+
+Controleer bij herstelde verbinding eerst de bestaande proefpod:
+
+```sh
+kubectl --kubeconfig "$HOME/.kube/spark-homelab.yaml" -n pnballie-acceptance \
+  get pod avatar-cdi-verification
+kubectl --kubeconfig "$HOME/.kube/spark-homelab.yaml" -n pnballie-acceptance \
+  logs avatar-cdi-verification --tail=100
+```
+
+Controleer daarna de private service, het eventuele generatieproces en een
+mogelijk al geschreven resultaat volgens het homelabrunbook. Start geen
+tweede proef en herstart de service niet voordat de bestaande toestand bekend
+is. Als een PNG beschikbaar is, controleer bestand, transparantie en beeld
+voordat deze verificatie wordt afgevinkt. Deze proef slaat geen profielavatar
+op; een geslaagd serviceantwoord bewijst dus geen volledige profielupload.
 De eerder definitief mislukte opdracht blijft afgesloten en de gewiste
 bronfoto wordt niet hersteld. Een nieuwe eigen foto vereist een nieuwe upload.
 
@@ -355,8 +398,15 @@ Tijdstippen hebben een expliciete UTC-offset.
   GPU of cloud.
 - [x] Gedeelde bezetmelding, begrensde wachttijden, behoud van echte pogingen,
   bronretentie, annulering en verlopen/vervangen claims getest.
+- [x] Vier echte bezetantwoorden tijdens een lopende generatie vanuit de
+  uitgerolde acceptatieworker gecontroleerd met een tijdelijke SQLite-database;
+  pogingen blijven nul en echte appdata blijven onaangeroerd.
 - [x] GPU-toegang hersteld met native CDI; echte gecompileerde CUDA-proef slaagt
   vóór en na een containerupdate. Volledige generatie blijft een aparte controle.
+- [ ] Nieuwe volledige Qwen-generatie na het GPU-herstel via de uitgerolde
+  provider/private service, met bestaande testavatar en controle van de PNG.
+  De poging is waargenomen tot Edit-stap 25/40; na verlies van de verbinding
+  met de host zijn resultaat en oorzaak onbekend.
 - [x] Een echte tweestaps-Qwen-proef op Spark, visueel geaccepteerde RGBA-PNG
   en gemeten looptijd van 24 minuten en 24 seconden.
 - [x] Geheugenretentie na die proef opgelost met een apart proces per opdracht;

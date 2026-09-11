@@ -16,9 +16,16 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
   GPU-toegang kwijtgeraakt via de oude Docker-runtimehook. De Spark-runtime is
   opnieuw aangemaakt met native CDI-apparaattoewijzing. Een echte gecompileerde
   GPU-proef slaagt ook na een containerupdate; de hostdriver is niet gewijzigd.
-- 52 gerichte avatar-/telemetrytests en Ruff slagen. Een nieuwe volledige
-  beeldgeneratie wordt afzonderlijk gecontroleerd. De eerdere definitief
-  mislukte opdracht en gewiste bronfoto worden niet opnieuw geactiveerd.
+- De bijgewerkte API en worker zijn uitgerold op preview en acceptatie. Tijdens
+  een echte generatie zijn vier bezetantwoorden gecontroleerd met een tijdelijke
+  wachtrij in de acceptatieworker: nul verbruikte pogingen, vrijgegeven leases,
+  bewaarde bron en begrensde wachttijd. De appdatabases zijn niet gewijzigd.
+- Releasecontroles slagen met 138 backendtests en 89 frontendtests, inclusief
+  lint, migratie-, container- en privacycontroles.
+- De nieuwe beeldproef bereikte Qwen Edit-stap 25/40 voordat de Spark
+  onbereikbaar werd. Oorzaak en uiteindelijke uitkomst zijn onbekend; een
+  voltooide PNG of profielopslag is niet geverifieerd. De hervatcontrole staat
+  in `docs/AVATAR_SERVICE.md`. De eerdere mislukte upload wordt niet heropend.
 
 ### Acceptatie en teksten
 

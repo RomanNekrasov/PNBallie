@@ -131,13 +131,22 @@ scope en houdt de acceptatiestatus bij. Wijzigingen en controles staan in
       generatiepogingen te verbruiken; retries begrenzen en bestaande
       annulering, bronretentie en bescherming tegen verlopen claims behouden.
       52 gerichte avatar-/telemetrytests en Ruff slagen.
-- [ ] De bijgewerkte worker en private service uitrollen en het wachten op
-      gedeelde capaciteit op Spark verifiëren.
+- [x] De bijgewerkte worker en private service uitrollen en het wachten op
+      gedeelde capaciteit op Spark verifiëren. Vier echte bezetantwoorden met
+      een tijdelijke SQLite-database in de acceptatieworker laten pogingen op
+      nul, geven leases vrij, behouden de bron en begrenzen de wachttijd.
 - [ ] Een nieuwe volledige generatie en de resulterende transparante PNG
       controleren; een geslaagde GPU-preflight geldt niet als beeldproef.
+      De poging bereikte Edit-stap 25/40 op 11 september om 21:21:38 UTC;
+      daarna werd de Spark onbereikbaar. Uitkomst en oorzaak zijn onbekend.
 
 De GPU-storing en de wachtrijverbetering zijn afzonderlijke bevindingen.
 De eerdere definitief mislukte opdracht met gewiste bron wordt niet heropend.
+De afzonderlijke beeldproef gebruikt de bestaande repository-avatar via de
+provider/private service vanuit acceptatie, zonder echte appdata te wijzigen.
+Een voltooide RGBA-PNG of profielopslag is niet geverifieerd. Controleer na
+herstel eerst pod `pnballie-acceptance/avatar-cdi-verification` en de bestaande
+generatietoestand voordat een nieuwe proef of herstart wordt uitgevoerd.
 Details staan in [Eigen spelersavatars](docs/AVATAR_SERVICE.md).
 
 ## 8. Tracing, telemetry, logging en gebruiksanalytics
