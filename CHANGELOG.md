@@ -12,9 +12,12 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
   nuttige instructies en definities blijven beschikbaar.
 - De toelichting over gebruiksstatistieken staat alleen nog in het
   instellingenmenu, niet meer op de inlogpagina.
-- Een afzonderlijke acceptatieomgeving op `acceptatie.pnballie.nl` voorbereid,
+- Een afzonderlijke acceptatieomgeving op `acceptatie.pnballie.nl` uitgerold,
   met een lege-database-bootstrap voor acht fictieve spelers en 180 wedstrijden.
   De demogegevens worden bij herstarts niet overschreven.
+- Publieke login, alle negen statistiekfilters en blijvende badges geverifieerd.
+  Een tijdelijke profielwijziging en sessie bleven na backendvervanging behouden;
+  de bootstrap sloeg de bestaande database over.
 - De promotie van geteste image-digests naar productie en de eenmalige
   authenticatieovergang vastgelegd in `docs/RELEASE_PROMOTION.md`.
 
@@ -24,12 +27,22 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
   tabmetingen: twee seconden minimaal half zichtbaar, met hoogstens één telling
   per bezoek aan de statistieken. Verborgen tabs en kort voorbijscrollen tellen
   niet mee; filters en spelerwissels voegen geen herhaalde telling toe.
-- Grafana krijgt ranglijsten voor statistiektabs en afzonderlijke blokken.
+- Grafana toont ranglijsten voor statistiektabs en afzonderlijke blokken.
   Alleen vaste bloknamen gaan naar Umami; bestaande privacyvoorkeuren blijven
   gelden. Definities en beperkingen staan in `docs/ANALYTICS.md`.
+- De uitgerolde preview en publieke acceptatie slagen in WebKit op 393px en
+  Chromium op 1440px: alle zeventien blokken worden vastgelegd, met correcte
+  drempels, deduplicatie en nul analyticsverzoeken bij DNT/lokale opt-out.
+  Alle achttien Grafana-gebruikspanelen en vier afgeschermde rapportagerollen
+  zijn live geverifieerd. De eerste populariteitscijfers zijn testverkeer.
+- Releasecontroles slagen met 118 backendtests, 89 frontendtests en private
+  ARM64/amd64-imagepublicatie. Stagingmetrics, logs en traces zijn op Spark
+  bevestigd; images en scores van productie blijven apart.
 
 ### Mobiele formulieren
 
+- Lange waarden in de groepslidkeuze veroorzaken geen horizontale overflow
+  meer in WebKit. De selectie blijft binnen de breedte van het formulier.
 - Invoervelden voor inloggen, registratie, profiel en groepsbeheer gebruiken
   tekst van 16px, net als de statistiekfilters. Dit voorkomt automatisch
   inzoomen bij focus op iPhones en het vasthouden van die zoom op het speelveld
