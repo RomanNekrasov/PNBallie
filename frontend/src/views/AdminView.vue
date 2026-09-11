@@ -1,7 +1,7 @@
 <template>
   <main class="account-page">
     <header class="account-heading">
-      <div><p class="account-kicker">BEHEER · {{ currentGroup?.name }}</p><h1 class="account-title">Jouw competitie</h1><p class="account-muted">Beheer spelers, leden en uitnodigingen voor deze groep.</p></div>
+      <div><p class="account-kicker">{{ currentGroup?.name }}</p><h1 class="account-title">Groepsbeheer</h1></div>
       <div class="account-heading-actions"><RouterLink to="/stats" class="account-back-link" aria-label="Terug naar clubstatistieken" title="Terug naar clubstatistieken"><span aria-hidden="true">←</span></RouterLink><SettingsMenu /></div>
     </header>
     <p v-if="error" class="account-error" role="alert">{{ error }}</p>

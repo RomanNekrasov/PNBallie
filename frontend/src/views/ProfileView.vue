@@ -1,7 +1,7 @@
 <template>
   <main class="account-page">
     <header class="account-heading">
-      <div><p class="account-kicker">{{ currentGroup?.name }}</p><h1 class="account-title">Jouw spelersprofiel</h1><p class="account-muted">Je naam, avatar en blijvende prestaties.</p></div>
+      <div><p class="account-kicker">{{ currentGroup?.name }}</p><h1 class="account-title">Mijn profiel</h1></div>
       <div class="account-heading-actions"><RouterLink to="/stats" class="account-back-link" aria-label="Terug naar clubstatistieken" title="Terug naar clubstatistieken"><span aria-hidden="true">←</span></RouterLink><SettingsMenu /></div>
     </header>
     <p v-if="error" class="account-error" role="alert">{{ error }}</p>
@@ -21,8 +21,8 @@
           </form>
         </section>
         <section class="account-panel">
-          <h2>Jouw badges</h2>
-          <p class="account-muted">Verdiend in deze competitie. Ze blijven staan wanneer een winreeks stopt.</p>
+          <h2>Badges</h2>
+          <p class="account-muted">Badges blijven staan als je winreeks stopt.</p>
           <PlayerBadges :badges="badges" />
           <RouterLink class="quiet-button" style="margin-top:18px" to="/stats">Bekijk je statistieken</RouterLink>
         </section>
@@ -38,26 +38,25 @@
         </section>
       </div>
       <section class="account-panel">
-        <p class="account-kicker">JOUW GEZICHT, DEZELFDE SPEELSTIJL</p><h2>Maak je eigen avatar</h2>
-        <p class="account-muted">Upload een duidelijke foto van je gezicht. Je krijgt een poppetje in onze cartoonstijl, met een transparante achtergrond.</p>
+        <h2>Avatar</h2>
+        <p class="account-muted">Upload een duidelijke gezichtsfoto voor een cartoonavatar met transparante achtergrond.</p>
         <div v-if="job" class="job-status" role="status" aria-live="polite">
           <strong>{{ statusLabel(job.status) }}</strong>
-          <small v-if="job.status === 'queued'">Je foto staat in de wachtrij. Je kunt deze pagina verlaten.</small>
-          <small v-if="job.status === 'processing'">Je avatar wordt gemaakt. Je kunt deze pagina sluiten en later terugkomen.</small>
-          <small v-if="jobActive && job.provider === 'local'">Het maken op de Spark duurt circa 25–40 minuten, naast eventuele wachttijd.</small>
+          <small v-if="jobActive">Je kunt deze pagina sluiten en later terugkomen.</small>
+          <small v-if="jobActive && job.provider === 'local'">Dit duurt circa 25–40 minuten, plus eventuele wachttijd.</small>
           <small v-if="jobActive && requestAge">{{ requestAge }}</small>
           <small v-if="job.status === 'succeeded'">Je nieuwe avatar wordt bij je wedstrijden en statistieken gebruikt.</small>
           <small v-if="job.error && job.status === 'failed'">{{ job.error }}</small>
           <small v-if="job.error && job.status === 'queued'">Wachten op een nieuwe poging: {{ job.error }}</small>
           <small v-if="pollError" class="account-error" role="alert">{{ pollError }} De status wordt opnieuw opgehaald.</small>
-          <small v-if="jobActive || job.status === 'cancelled'">Annuleren voorkomt dat deze aanvraag een nieuwe avatar opslaat. Een lopende verwerking kan nog doorgaan; een volgende aanvraag wacht dan mogelijk langer.</small>
+          <small v-if="jobActive || job.status === 'cancelled'">Na annuleren wordt deze avatar niet opgeslagen. De verwerking kan nog doorlopen en een volgende aanvraag vertragen.</small>
           <button v-if="jobActive" class="quiet-button" :disabled="saving" @click="cancelJob">Aanvraag annuleren</button>
         </div>
-        <p v-if="config && !config.local_available && !config.openai_available" class="account-notice">De avatardienst is nog niet beschikbaar. Je kunt je profiel al gebruiken; een beheerder van de app moet de dienst eerst aansluiten.</p>
+        <p v-if="config && !config.local_available && !config.openai_available" class="account-notice">Avatars maken is momenteel niet beschikbaar.</p>
         <form v-else-if="config" class="account-form" @submit.prevent="upload">
           <label>Foto (PNG, JPEG of WebP; maximaal {{ Math.round(config.max_upload_bytes / 1024 / 1024) }} MB)<input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp" :disabled="jobActive || saving" @change="choosePhoto" /></label>
           <img v-if="previewUrl" :src="previewUrl" alt="Geselecteerde foto" class="upload-preview" />
-          <label>Verwerking<select v-model="provider" :disabled="jobActive || saving"><option v-if="config.local_available" value="local">Lokaal op de Spark</option><option v-if="config.openai_available" value="openai">GPT via OpenAI</option></select></label>
+          <label>Verwerking<select v-model="provider" :disabled="jobActive || saving"><option v-if="config.local_available" value="local">Eigen server</option><option v-if="config.openai_available" value="openai">GPT via OpenAI</option></select></label>
           <label v-if="provider === 'openai'" class="checkbox-label"><input v-model="cloudConsent" type="checkbox" required /><span>Ik geef toestemming om deze foto naar OpenAI te sturen voor mijn avatar.</span></label>
           <p class="account-hint">De originele upload wordt verwijderd nadat de aanvraag is afgerond. Je avatar blijft bij je profiel bewaard.</p>
           <button type="submit" class="primary-button" :disabled="!photo || jobActive || saving || (provider === 'openai' && !cloudConsent)">{{ saving ? 'Even geduld…' : 'Avatar laten maken' }}</button>

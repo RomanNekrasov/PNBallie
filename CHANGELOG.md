@@ -5,6 +5,29 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 
 ## Unreleased — 2026-09-11
 
+### Acceptatie en teksten
+
+- Slogans en herhalende bijschriften op inloggen, groepen, profiel, beheer en
+  statistieken opgeruimd. Paginakoppen en groepsbenamingen zijn directer;
+  nuttige instructies en definities blijven beschikbaar.
+- De toelichting over gebruiksstatistieken staat alleen nog in het
+  instellingenmenu, niet meer op de inlogpagina.
+- Een afzonderlijke acceptatieomgeving op `acceptatie.pnballie.nl` voorbereid,
+  met een lege-database-bootstrap voor acht fictieve spelers en 180 wedstrijden.
+  De demogegevens worden bij herstarts niet overschreven.
+- De promotie van geteste image-digests naar productie en de eenmalige
+  authenticatieovergang vastgelegd in `docs/RELEASE_PROMOTION.md`.
+
+### Populariteit van statistieken
+
+- Statistiekblokken krijgen een eigen zichtbaarheidstelling naast de bestaande
+  tabmetingen: twee seconden minimaal half zichtbaar, met hoogstens één telling
+  per bezoek aan de statistieken. Verborgen tabs en kort voorbijscrollen tellen
+  niet mee; filters en spelerwissels voegen geen herhaalde telling toe.
+- Grafana krijgt ranglijsten voor statistiektabs en afzonderlijke blokken.
+  Alleen vaste bloknamen gaan naar Umami; bestaande privacyvoorkeuren blijven
+  gelden. Definities en beperkingen staan in `docs/ANALYTICS.md`.
+
 ### Mobiele formulieren
 
 - Invoervelden voor inloggen, registratie, profiel en groepsbeheer gebruiken

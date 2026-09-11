@@ -6,9 +6,20 @@ const screens = {
   profile: 'Eigen profiel', groups: 'Groepen', admin: 'Groepsbeheer', login: 'Inloggen',
 } as const
 export type AnalyticsScreen = keyof typeof screens
+/** Stable categories only: never a player, group, selected filter or metric value. */
+const statsBlockScreens = {
+  overview_leader: 'stats_overview', overview_totals: 'stats_overview', colour_wins: 'stats_overview',
+  activity: 'stats_overview', recent_results: 'stats_overview', records: 'stats_overview',
+  ranking: 'stats_ranking',
+  player_summary: 'stats_players', player_badges: 'stats_players', player_goals: 'stats_players',
+  player_modes: 'stats_players', player_colours: 'stats_players', player_positions: 'stats_players', player_streaks: 'stats_players',
+  head_to_head: 'stats_matchups', frequent_matchups: 'stats_matchups', strongest_duos: 'stats_matchups',
+} as const satisfies Record<string, AnalyticsScreen>
+export type StatsBlock = keyof typeof statsBlockScreens
 const eventFields = {
   match_saved: { mode: ['1v1', '2v2'] }, match_deleted: {},
   stats_filters_changed: { mode: ['all', '1v1', '2v2'], period: ['all', '30d', '50'] },
+  stats_block_viewed: { block: Object.keys(statsBlockScreens) },
   comparison_selected: {}, profile_saved: {}, group_created: {}, group_joined: {},
   group_updated: {}, player_added: {}, player_updated: {}, member_updated: {}, member_removed: {},
   invite_created: {}, invite_revoked: {},
@@ -65,6 +76,7 @@ export function sanitizeAnalyticsPayload(type: string, input: Payload): Payload 
       if (!(allowed as readonly unknown[]).includes(data[key])) return null
       clean[key] = data[key]
     }
+    if (input.name === 'stats_block_viewed' && statsBlockScreens[clean.block as StatsBlock] !== screen) return null
     if (Object.keys(clean).length) safe.data = clean
   }
   return safe
@@ -95,6 +107,12 @@ export function trackScreen(screen: AnalyticsScreen) {
 export function trackEvent(name: AnalyticsEvent, data: Payload = {}) {
   if (!currentScreen || !hasOwn(eventFields, name)) return
   emit({ url: `/app/${currentScreen}`, name, data })
+}
+
+export function trackStatsBlockView(block: StatsBlock) {
+  if (!hasOwn(statsBlockScreens, block)) return
+  // A callback belongs to its block's screen, even if another screen is now current.
+  emit({ url: `/app/${statsBlockScreens[block]}`, name: 'stats_block_viewed', data: { block } })
 }
 
 /** No authentication data, actual page URL, referrer or identities reach Umami. */
