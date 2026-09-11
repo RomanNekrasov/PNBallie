@@ -49,17 +49,17 @@ scope en houdt de acceptatiestatus bij. Wijzigingen en controles staan in
 
 ### Populariteit van statistieken — vervolg
 
-- [ ] De bestaande tabmetingen overzichtelijk rangschikken in Grafana.
-- [ ] Afzonderlijke statistiekblokken meten zodra ze minstens twee seconden
+- [x] De bestaande tabmetingen overzichtelijk rangschikken in Grafana.
+- [x] Afzonderlijke statistiekblokken meten zodra ze minstens twee seconden
       voor minimaal de helft zichtbaar zijn; bij hoge blokken de schermhoogte
       als grens gebruiken. Verborgen browsertabs tellen niet mee.
-- [ ] Per bezoek aan de statistieken ieder blok hoogstens één keer tellen;
+- [x] Per bezoek aan de statistieken ieder blok hoogstens één keer tellen;
       scrollen, tabwissels, filters en spelerkeuze veroorzaken geen dubbeltelling.
-- [ ] Alleen vaste bloknamen versturen, met behoud van DNT/GPC en de bestaande
+- [x] Alleen vaste bloknamen versturen, met behoud van DNT/GPC en de bestaande
       gegevensgrenzen. Geen speler-, groeps- of accountgegevens verzamelen.
-- [ ] In Grafana een ranglijst per blok tonen, op basis van bezoeken met een
+- [x] In Grafana een ranglijst per blok tonen, op basis van bezoeken met een
       waarneming. Duidelijk maken dat zichtbaarheid geen bewijs van lezen is.
-- [ ] Implementatie, definities en verificatie documenteren en publiceren;
+- [x] Implementatie, definities en verificatie documenteren en publiceren;
       daadwerkelijke browsermetingen en rapportages op de Spark-preview testen.
 
 ## 5. Profielen en permanente badges
@@ -81,21 +81,21 @@ scope en houdt de acceptatiestatus bij. Wijzigingen en controles staan in
 - [x] Vervolgfeedback: de losse navigatiebalk verwijderen. Het huisje op het
       speelveld blijft naar statistieken leiden; profiel, groepen en beheer
       komen in een compact instellingenmenu in de bestaande paginakop.
-- [ ] Vervolgfeedback: slogans en dubbele introducties, kopjes en bijschriften
+- [x] Vervolgfeedback: slogans en dubbele introducties, kopjes en bijschriften
       opruimen. Nuttige instructies, eenheden en foutmeldingen behouden.
-- [ ] `Over gebruiksstatistieken` van de inlogpagina verwijderen; de toelichting
+- [x] `Over gebruiksstatistieken` van de inlogpagina verwijderen; de toelichting
       blijft beschikbaar in het instellingenmenu.
 
 ### Acceptatieomgeving
 
-- [ ] `https://acceptatie.pnballie.nl` publiceren als aparte testomgeving, met
+- [x] `https://acceptatie.pnballie.nl` publiceren als aparte testomgeving, met
       een eigen database en een beheeraccount voor de democompetitie.
-- [ ] Acht fictieve spelers en 180 wedstrijden over circa 120 dagen toevoegen,
+- [x] Acht fictieve spelers en 180 wedstrijden over circa 120 dagen toevoegen,
       met 1v1/2v2, verschillende posities en kleuren, dagdelen en blijvende badges.
-- [ ] Alleen een lege acceptatiedatabase vullen; herstarts bewaren wijzigingen
+- [x] Alleen een lege acceptatiedatabase vullen; herstarts bewaren wijzigingen
       die tijdens het testen zijn gemaakt. Geen productiedata overnemen.
-- [ ] Acceptatie krijgt eigen Umami-rapportage en staging-telemetrie.
-- [ ] Inloggen, demo-inhoud, statistiekmetingen en de publieke URL verifiëren.
+- [x] Acceptatie krijgt eigen Umami-rapportage en staging-telemetrie.
+- [x] Inloggen, demo-inhoud, statistiekmetingen en de publieke URL verifiëren.
 
 ## 7. Asynchrone AI-avatar
 
@@ -199,7 +199,35 @@ De losse navigatiebalk is vervangen door het instellingenmenu; de route via
 huisje, statistieken en menu is opnieuw in de browser gecontroleerd op desktop
 en 390 × 844.
 
-Er zijn geen foto's naar een cloudprovider gestuurd. Een echte OIDC-provider en
-publieke uitrol zijn nog niet geconfigureerd. De lokale app gebruikt een aparte
-testkopie met 6 spelers en 35 wedstrijden. Zie docs/AVATAR_SERVICE.md en
+Er zijn geen foto's naar een cloudprovider gestuurd. Een echte OIDC-provider is
+nog niet geconfigureerd en de productie-upgrade is niet uitgevoerd. De lokale
+app gebruikt een aparte testkopie met 6 spelers en 35 wedstrijden. Zie docs/AVATAR_SERVICE.md en
 docs/AUTH_AND_GROUPS.md voor configuratie en verificatie.
+
+## Eindstatus vervolg — 11 september 2026
+
+Statistiekpopulariteit, opgeschoonde teksten en de aparte acceptatieomgeving
+zijn gepubliceerd via app-PR 13 en homelab-PR 52. App-release
+`72ef9f47abdcb7458f843d6ad60fd1bd3eb10505` passeert 118 backendtests, 89
+frontendtests, lint/build, container-/privacycontroles en vijf koude routes.
+De images zijn privaat en ondersteunen ARM64 en amd64.
+
+WebKit op 393px en Chromium op 1440px controleren zowel de uitgerolde preview
+als `acceptatie.pnballie.nl`. Alle zeventien blokken hebben echte Umami-records;
+drempels, deduplicatie, tabtoewijzing en navigatie zijn gecontroleerd. DNT en
+lokale opt-out sturen geen analyticsverzoeken. Inlog-, profiel-, groeps- en
+beheerpagina's bevatten de opgeschoonde teksten en tekstvelden van minimaal
+16px, zonder horizontale overflow of JavaScript-fouten.
+
+Acceptatie start met acht fictieve spelers en 180 wedstrijden, inclusief alle
+negen filtercombinaties, beide dagdelen en blijvende badges. Een profielwijziging
+en ingelogde sessie blijven na backendvervanging behouden; de bootstrap slaat
+bestaande data over. Prometheus, Loki en Tempo bevatten echte stagingmetingen.
+Alle achttien gebruikspanelen in Grafana werken, waaronder de tab- en
+blokranglijsten. De vier rapportagerollen blijven strikt gescheiden en
+land/regio/stad zijn beschikbaar zonder opgeslagen IP-adressen. De eerste
+populariteitscijfers zijn acceptatietestverkeer, geen organisch gebruik.
+
+Zie [acceptatie en verificatie](docs/ACCEPTANCE.md) en [promotie naar productie](docs/RELEASE_PROMOTION.md).
+De competitie op `pnballie.nl` behoudt haar bestaande authenticatie, images
+en scores; deze acceptatie voert die afzonderlijke migratie niet uit.

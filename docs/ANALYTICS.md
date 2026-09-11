@@ -170,7 +170,7 @@ Alleen deze vaste bloknamen zijn toegestaan:
 | `strongest_duos` | Sterkste duo's |
 
 In [PNBallie usage in Grafana](https://grafana.tail67de92.ts.net/d/pnballie-analytics)
-komen tab- en blokranglijsten. De primaire telling is het aantal verschillende
+staan tab- en blokranglijsten. De primaire telling is het aantal verschillende
 Umami-bezoeken met een waarneming binnen het gekozen tijdvak; herhaalde
 waarnemingen in hetzelfde bezoek verhogen dat aantal niet. Het totale aantal
 waarnemingen staat ernaast. Acceptatie, preview en productie blijven apart.
@@ -184,6 +184,19 @@ schermmetingen kunnen eerdere tabpopulariteit tonen. Er is geen terugwerkende
 invulling van blokviews. Testverkeer in de preview hoort niet bij echte adoptie.
 
 ## Verificatie
+
+Op 11 september 2026 is app-release `72ef9f47abdcb7458f843d6ad60fd1bd3eb10505`
+daadwerkelijk gecontroleerd op zowel de private preview als
+`https://acceptatie.pnballie.nl`, met WebKit op 393px en Chromium op 1440px.
+Alle zeventien blokken leveren opgeslagen Umami-events met sessie-/bezoek-ID's;
+de controles bevestigen zichtbaarheidsdrempels, deduplicatie en tabtoewijzing.
+DNT en lokale opt-out maken geen analyticsverzoeken. Alle achttien Grafana-
+gebruikspanelen werken met echte queries en gerenderde grafieken, inclusief
+de op verschillende bezoeken gesorteerde populariteitsranglijsten. Vier
+afzonderlijke rapportagerollen weigeren toegang tot ruwe tabellen, andere
+websites en schrijfopdrachten.
+Locatievelden zijn beschikbaar zonder opgeslagen IP-adressen. Dit eerste
+verkeer is synthetisch acceptatieverkeer en moet zo worden geïnterpreteerd.
 
 Gedragstests controleren standaard uit, DNT, geweigerde configuratie,
 virtuele tabwisselingen, payloadsanitatie, mislukte saves, nieuwe avataruitkomsten,

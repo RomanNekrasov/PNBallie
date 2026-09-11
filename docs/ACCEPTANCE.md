@@ -48,3 +48,37 @@ het initiële aantal is geen blijvende healthcheck.
 
 Zie [Van acceptatie naar productie](RELEASE_PROMOTION.md) voor de CI/CD-stappen
 en de eenmalige overstap van de huidige productie-authenticatie.
+
+## Verificatie — 11 september 2026
+
+App-release `72ef9f47abdcb7458f843d6ad60fd1bd3eb10505` is uitgerold met
+homelab-revisie `2f2b9907cf0169d5093fe37bc3337e79281aec50`. Alle twaalf Flux-
+Kustomizations zijn Ready; HTTPS en lokale login werken. De release passeert
+118 backendtests, 89 frontendtests, container-/privacycontroles en vijf koude
+routes uit de productiebuild.
+
+De eerste database bevat acht fictieve spelers en 180 wedstrijden: 72 keer
+1v1, 108 keer 2v2 en 90 wedstrijden in elk dagdeel. Alle negen combinaties van
+spelvorm en periode zijn gecontroleerd, inclusief de blijvende vijf-winbadge.
+Een tijdelijke profielwijziging en de ingelogde sessie bleven na vervanging van
+de backendpod behouden. De initcontainer sloeg de bestaande database over; de
+tijdelijke wijziging is daarna hersteld.
+
+Echte API-verzoeken leveren metrics in Prometheus, logs in Loki en een
+gecorreleerde trace in Tempo. Interne metrics-, rapportage- en trace-endpoints
+zijn via de publieke app niet toegankelijk.
+
+De uitgerolde interface is getest in WebKit op 393px en Chromium op 1440px.
+Alle zeventien statistiekblokken leveren echte Umami-records met sessie- en
+bezoek-ID's. De controles bevestigen de zichtbaarheidsdrempel, deduplicatie,
+tabtoewijzing en het stoppen bij navigatie. DNT en lokale opt-out veroorzaken
+geen analyticsverzoeken. De opgeschoonde accountpagina's hebben tekstvelden van
+minimaal 16px, zonder horizontale overflow of JavaScript-fouten.
+
+Alle achttien panelen van het PNBallie-gebruiksdashboard zijn met werkelijke
+Grafana-queries en de gerenderde grafieken gecontroleerd. De ranglijsten tonen
+vier statistiektabs en zeventien blokken, gesorteerd op verschillende bezoeken.
+De vier rapportagerollen weigeren toegang tot andere websites, ruwe tabellen en
+schrijfopdrachten. Land/regio/stad zijn beschikbaar zonder opgeslagen
+IP-adressen of appgebruikers-ID's. De eerste tellingen komen van de
+acceptatieproeven; ze zeggen nog niets over normaal gebruik.

@@ -41,10 +41,10 @@ paginakop ga je naar je profiel, groepen of groepsbeheer en kun je uitloggen.
 
 - Maak een groep of gebruik een uitnodigingscode/link van de beheerder.
 - Wissel tussen competities via **Groepen**.
-- In **Beheer** beheer je spelers, profielkoppelingen, ledenrollen en uitnodigingen.
+- In **Groepsbeheer** beheer je spelers, profielkoppelingen, ledenrollen en uitnodigingen.
 - Een speler kan ook zonder account meedoen. Een beheerder kan later een account
   koppelen. Deactiveren behoudt de uitslagen en badges.
-- In **Profiel** wijzig je je spelersnaam en wachtwoord en vraag je een avatar aan.
+- In **Mijn profiel** wijzig je je spelersnaam en wachtwoord en vraag je een avatar aan.
 - Alleen een groepsbeheerder kan uitslagen verwijderen. De groep houdt altijd
   minstens één beheerder.
 
@@ -80,7 +80,12 @@ scores zijn bevestigd; de actuele acceptatiestatus staat in
 analytics uit deze release draaien op de aparte
 [private Spark-preview](https://pnballie-preview.tail67de92.ts.net).
 Je kunt daar een eigen account en testcompetitie maken.
-Imagepublicatie en de private preview staan los van de publieke upgrade.
+De [acceptatieomgeving](https://acceptatie.pnballie.nl) gebruikt dezelfde nieuwe
+release met acht fictieve spelers en 180 startwedstrijden in een eigen database.
+Zie de [acceptatiehandleiding](docs/ACCEPTANCE.md) voor inloggen, demodata en
+verificatie. De [promotiehandleiding](docs/RELEASE_PROMOTION.md) beschrijft hoe
+dezelfde geteste image-digests later via een aparte GitOps-PR naar productie gaan.
+Imagepublicatie en de testomgevingen voeren die productie-upgrade niet uit.
 Kubernetes-/Flux-configuratie hoort in
 `spark-homelab`; de historische Azure/Terraform-bestanden blijven als terugvalset.
 De Azure-backend is gestopt en de Azure Pipeline is verwijderd. Start een oude
@@ -127,8 +132,9 @@ beeldkwaliteit op de GPU.
 
 Optionele OpenTelemetry-traces, veilige JSON/OTLP-logs en Prometheus-metrics
 voeden de bestaande private Grafana. Umami meet expliciete SPA-schermen en
-acties, met Do Not Track en zonder uitnodigingscodes of persoonsgegevens in
-events. Zie [configuratie en datagrenzen](docs/OBSERVABILITY.md).
+acties en zichtbare statistiekblokken, met Do Not Track en zonder
+uitnodigingscodes of persoonsgegevens in events. Zie [gebruiksmetingen en
+populariteit](docs/ANALYTICS.md) en [configuratie en datagrenzen](docs/OBSERVABILITY.md).
 
 ## Controles en release
 
