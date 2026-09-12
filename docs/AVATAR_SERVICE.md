@@ -236,6 +236,64 @@ De private controlebestanden staan buiten Git in
 portretgelijkenis bij een nieuwe persoonlijke foto blijft door de speler te
 beoordelen.
 
+### Portretgelijkenis onderzocht — 12 september 2026
+
+Na de technische profielproef is een aangeleverde nieuwe selfie gebruikt voor
+drie rechtstreekse, lokale Qwen Edit-proeven: een hoofd op de headless body,
+een gerichte bewerking van de volledige cartoonreferentie en een los
+cartoonhoofd voor compositie op de oorspronkelijke body. Alle drie slagen
+met een 1024 × 1024 RGB-PNG in respectievelijk 777,860, 776,157 en
+774,632 seconden. Het bronportret, de exacte prompts en de resultaten staan
+uitsluitend in de private, genegeerde proefmap.
+
+De eerste kandidaat heeft volgens onze beoordeling de beste gelijkenis: meer gezichtsdetail
+en een passende gesloten mond, maar een te lang/smal gezicht en overdreven
+krullen. De tweede is compacter en fraaier afgewerkt, maar behoudt de brede
+lach van de volledige referentie. De losse kop heeft algemenere ogen, haar
+en baard. Deze visuele beoordeling is op één portret gebaseerd en is geen
+claim dat de gebruiker de nieuwe kandidaten al heeft beoordeeld. Prompt, uitsnede en
+voorbewerking veranderen samen; hun afzonderlijke effect is niet vastgesteld.
+
+De 0,70-allocatorgrens bleef actief. Beschikbaar hostgeheugen daalde tot
+minimaal 50,457–52,901 GiB en herstelde na procesafsluiting tot
+111,388–112,230 GiB. De losse proeven en de HTTP-service delen nu een
+procesoverstijgend GPU-slot; de normale wachtrij gebruikt bij bezetting haar
+bestaande wachtprotocol. Alle 167 backendtests en de vier CI-controles van
+app-PR 20 slagen.
+
+Alle drie kandidaten zijn daarna als 640 × 640 RGBA-PNG gecontroleerd met
+echte transparantie, zonder afbeeldingsmetadata of zichtbare pixels op de
+buitenrand. De derde variant behoudt de oorspronkelijke bodypixels vóór
+de uiteindelijke schaalbewerking, maar het hoofd blijft eenvoudiger.
+
+De afzonderlijke Layered-proef op kandidaat 01 slaagt om 10:44:42 UTC in
+711,742 seconden. Vier RGBA-lagen leveren een 640 × 640-voorgrond met
+73,575439% exact transparante pixels op. Bij 145 geheugenmetingen is
+minimaal 48,860 GiB hostgeheugen beschikbaar; na procesafsluiting herstelt
+dit naar 112,230 GiB. Layered behoudt de globale gelijkenis, met lichte
+hertekening maar zonder zichtbare kwaliteitswinst in deze vergelijking. Beide
+varianten renderen schoon op lichte en donkere achtergrond. De 6.136
+Layered-pixels met niet-nul RGB en alpha 0 zijn volledig onzichtbaar; een ruwe
+kanaalweergave daarvan bewijst geen zichtbare achtergrondruis. Dit bewijst ook
+niet dat Layered het eerdere grove gezicht veroorzaakte.
+
+Gekozen is **kandidaat 01 met CPU-achtergrondextractie**: behoud van de Edit-
+details zonder extra modelhertekening, bij de beste gelijkenis in deze proef.
+De PNG is 640 × 640 RGBA en 60,522949% exact transparant. De beoordeelde
+uitsnede vermijdt 711,742 seconden extra modelwerk.
+De gemeten Edit-stap duurt 777,860 seconden; de handmatige CPU-nabewerking
+vormt nog geen automatisch vervangende productiepipeline. De standaardprompt
+en bestaande profielen zijn ongewijzigd; er is geen nieuwe OpenAI-aanvraag
+uitgevoerd. De exacte metingen en beperkingen staan in
+[Avatarproeven](AVATAR_EXPERIMENTS.md).
+
+Na afloop is het GPU-slot weer beschikbaar, met 112,170 GiB vrij hostgeheugen
+en nul cgroup-OOM-events of -kills. Beide workers bereiken de idle service;
+de wachtrijen bevatten geen actieve opdrachten en het bestaande acceptatie-
+profielbeeld heeft nog dezelfde hash. Alle 28 tijdelijke Spark-proefbestanden
+zijn met gecontroleerde SHA-256-hashes privé op de Mac gearchiveerd; alleen
+die proefmap is van Spark verwijderd. Runtimecode en modelcache zijn behouden.
+
 ## Architectuur en namespacekeuze
 
 ```text
@@ -478,8 +536,12 @@ Tijdstippen hebben een expliciete UTC-offset.
   subprocesswrapper, met opgeslagen en opnieuw opgevraagde profielavatar.
   De acceptatieproef gebruikt de bestaande repository-avatar; testrecords
   zijn gericht opgeruimd en de oorspronkelijke data zijn ongewijzigd.
-- [ ] Portretgelijkenis bij een nieuwe persoonlijke foto beoordelen; de
-  technische proef met een bestaand poppetje controleert dit niet.
+- [x] Portretgelijkenis bij één nieuwe persoonlijke foto visueel beoordelen
+  met drie lokale Edit-proeven; kandidaat 01 met CPU-uitsnede is gekozen.
+  Beperkingen en metingen staan in [Avatarproeven](AVATAR_EXPERIMENTS.md).
+- [x] Een transparante eindvariant kiezen na PNG-validatie en vergelijking
+  op lichte/donkere achtergrond. De selectie is onze visuele beoordeling;
+  de gebruiker heeft de nieuwe kandidaten nog niet beoordeeld.
 - [ ] Een eventuele echte OpenAI-proef met geconfigureerd project/model en
   expliciete profielkeuze.
 - [x] Afzonderlijke lokale Spark-runtime gestart met gepinde modellen, geteste
