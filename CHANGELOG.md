@@ -5,6 +5,18 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 
 ## Unreleased — 2026-09-12
 
+### Proeven met portretgelijkenis
+
+- Lokale Spark-proeven opgezet voor een gedetailleerdere cartoonkop, een
+  gerichte hoofdbewerking en compositie op de oorspronkelijke body. Foto's en
+  resultaten blijven buiten Git; het proefplan staat in `docs/AVATAR_EXPERIMENTS.md`.
+- De private HTTP-service en losse proefprocessen delen één GPU-slot. Tijdens
+  een proef wachten normale opdrachten via het bestaande bezetprotocol, zonder
+  generatiepogingen te verbruiken.
+- De proefrunner bewaart tussenbeelden, parameters, looptijden en geheugenmetingen;
+  timeout, beëindiging en laag hostgeheugen ruimen het eigen modelproces op.
+  CPU-hulpmiddelen vergelijken achtergrondextractie en een exact bewaarde body.
+
 ### Vorige avatarfout herkenbaar
 
 - Een mislukte avataropdracht staat als ‘Vorige aanvraag mislukt’ met de lokale

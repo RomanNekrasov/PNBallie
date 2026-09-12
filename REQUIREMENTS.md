@@ -172,6 +172,9 @@ Details staan in [Eigen spelersavatars](docs/AVATAR_SERVICE.md).
       bevestigen. Alleen vijf tijdelijke records zijn verwijderd; de voorstaat
       is ongewijzigd en de testsessie is uitgelogd, zonder volledige databaserestore.
 
+Vervolg voor portretgelijkenis: de lokale prompt- en compositieproeven van
+12 september worden bijgehouden in [Avatarproeven](docs/AVATAR_EXPERIMENTS.md).
+
 ## 8. Tracing, telemetry, logging en gebruiksanalytics
 
 Vervolgopdracht van 9 september 2026; uitwerking en Spark-acceptatie staan ook in

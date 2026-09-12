@@ -554,8 +554,14 @@ def test_openai_edits_contract_requests_transparent_png_with_two_images(tmp_path
                                                      cloud_consent=True, job_id="test"))
 
 
-def test_service_requires_token_and_does_not_load_model_if_capacity_is_missing(monkeypatch):
+@pytest.fixture
+def service_gpu_slot(tmp_path, monkeypatch):
+    monkeypatch.setenv("AVATAR_GPU_LOCK_PATH", str(tmp_path / "avatar-gpu.lock"))
+
+
+def test_service_requires_token_and_does_not_load_model_if_capacity_is_missing(monkeypatch, service_gpu_slot):
     from app import avatar_service
+    from app.avatar_slot import gpu_slot
 
     monkeypatch.setenv("AVATAR_SERVICE_TOKEN", "service-token")
     monkeypatch.setattr(avatar_service, "generate_in_subprocess", lambda *_: (_ for _ in ()).throw(
@@ -569,9 +575,11 @@ def test_service_requires_token_and_does_not_load_model_if_capacity_is_missing(m
     assert response.status_code == 503
     assert LOCAL_BUSY_HEADER not in response.headers
     assert not avatar_service.generation_lock.locked()
+    with gpu_slot():
+        pass
 
 
-def test_service_signals_busy_only_after_auth_and_without_starting_another_generation(monkeypatch):
+def test_service_signals_busy_only_after_auth_and_without_starting_another_generation(monkeypatch, service_gpu_slot):
     from app import avatar_service
 
     monkeypatch.setenv("AVATAR_SERVICE_TOKEN", "service-token")
@@ -592,7 +600,7 @@ def test_service_signals_busy_only_after_auth_and_without_starting_another_gener
     assert invalid.status_code == 422 and LOCAL_BUSY_HEADER not in invalid.headers
 
 
-def test_service_returns_real_png_protocol_without_gpu_or_cloud(monkeypatch):
+def test_service_returns_real_png_protocol_without_gpu_or_cloud(monkeypatch, service_gpu_slot):
     from app import avatar_service
 
     monkeypatch.setenv("AVATAR_SERVICE_TOKEN", "service-token")

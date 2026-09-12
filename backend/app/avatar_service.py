@@ -38,6 +38,7 @@ from app.avatar_providers import (
     LOCAL_BUSY_HEADER,
     LOCAL_BUSY_RETRY_SECONDS,
 )
+from app.avatar_slot import AvatarGpuBusy, AvatarGpuLockUnavailable, gpu_slot
 from app.telemetry import (
     INFERENCE_SERVICE,
     Runtime,
@@ -286,36 +287,43 @@ async def generate(request: Request):
             LOCAL_BUSY_HEADER: "busy", "Retry-After": str(LOCAL_BUSY_RETRY_SECONDS),
         })
     try:
-        raw = bytearray()
-        async for chunk in request.stream():
-            raw.extend(chunk)
-            if len(raw) > MAX_OUTPUT_BYTES * 4 // 3 + 8192:
-                raise HTTPException(413, "Image request too large")
-        try:
-            payload = json.loads(raw)
-            source = _decode_input(payload["source_png"])
-            reference = _decode_input(payload["reference_png"])
-        except (json.JSONDecodeError, TypeError, KeyError) as exc:
-            raise HTTPException(422, "Invalid image request") from exc
-        started = time.monotonic()
-        outcome, error_type = "success", "none"
-        with operation_span("avatar.inference") as span:
+        with gpu_slot():
+            raw = bytearray()
+            async for chunk in request.stream():
+                raw.extend(chunk)
+                if len(raw) > MAX_OUTPUT_BYTES * 4 // 3 + 8192:
+                    raise HTTPException(413, "Image request too large")
             try:
-                png = await run_in_threadpool(generate_in_subprocess, source, reference)
-            except InferenceUnavailable as exc:
-                outcome, error_type = "unavailable", "unavailable"
-                raise HTTPException(503, "Avatar inference is not available on this host") from exc
-            except InvalidAvatarImage as exc:
-                outcome, error_type = "failure", "invalid_image"
-                raise HTTPException(422, "The model did not produce a transparent avatar") from exc
-            except Exception as exc:
-                outcome, error_type = "failure", "unexpected"
-                raise HTTPException(503, "The image model could not complete this job") from exc
-            finally:
-                span_result(span, outcome=outcome, error=error_type)
-                event("avatar.inference.finished", outcome=outcome, error_type=error_type,
-                      duration_seconds=time.monotonic() - started)
-        return {"data": [{"b64_json": base64.b64encode(png).decode()}]}
+                payload = json.loads(raw)
+                source = _decode_input(payload["source_png"])
+                reference = _decode_input(payload["reference_png"])
+            except (json.JSONDecodeError, TypeError, KeyError) as exc:
+                raise HTTPException(422, "Invalid image request") from exc
+            started = time.monotonic()
+            outcome, error_type = "success", "none"
+            with operation_span("avatar.inference") as span:
+                try:
+                    png = await run_in_threadpool(generate_in_subprocess, source, reference)
+                except InferenceUnavailable as exc:
+                    outcome, error_type = "unavailable", "unavailable"
+                    raise HTTPException(503, "Avatar inference is not available on this host") from exc
+                except InvalidAvatarImage as exc:
+                    outcome, error_type = "failure", "invalid_image"
+                    raise HTTPException(422, "The model did not produce a transparent avatar") from exc
+                except Exception as exc:
+                    outcome, error_type = "failure", "unexpected"
+                    raise HTTPException(503, "The image model could not complete this job") from exc
+                finally:
+                    span_result(span, outcome=outcome, error=error_type)
+                    event("avatar.inference.finished", outcome=outcome, error_type=error_type,
+                          duration_seconds=time.monotonic() - started)
+            return {"data": [{"b64_json": base64.b64encode(png).decode()}]}
+    except AvatarGpuBusy as exc:
+        raise HTTPException(503, "The model is processing another avatar", headers={
+            LOCAL_BUSY_HEADER: "busy", "Retry-After": str(LOCAL_BUSY_RETRY_SECONDS),
+        }) from exc
+    except AvatarGpuLockUnavailable as exc:
+        raise HTTPException(503, "Avatar inference is not available on this host") from exc
     finally:
         generation_lock.release()
 
