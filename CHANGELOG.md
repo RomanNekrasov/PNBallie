@@ -5,6 +5,15 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 
 ## Unreleased — 2026-09-12
 
+### Vorige avatarfout herkenbaar
+
+- Een mislukte avataropdracht staat als ‘Vorige aanvraag mislukt’ met de lokale
+  datum en tijd. De bewaarde fout staat onder ‘Details vorige aanvraag’, zodat
+  een eerdere storing niet meer op een actuele servicemelding lijkt.
+- Een nieuwe foto kan opnieuw worden ingestuurd. Actuele uploadfouten blijven
+  zichtbaar; oude opdrachten worden niet automatisch herhaald. Alle 92
+  frontendtests, lint en de productiebuild slagen.
+
 ### Geheugenbudget voor avatars
 
 - Het modelproces stelt vóór de eerste gewichten een CUDA-allocatorbudget in:

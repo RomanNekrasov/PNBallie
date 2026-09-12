@@ -130,6 +130,67 @@ describe('profile avatar flow', () => {
     expect(view.text()).toContain('Je avatar wordt gemaakt')
   })
 
+  it('dates a previous failure, keeps its reason collapsed, and accepts a fresh photo only on submission', async () => {
+    latest = { ...job('failed'), created_at: '2026-09-11T20:32:44', error: 'De afbeeldingsdienst is tijdelijk niet beschikbaar.' }
+    const view = await openProfile()
+    expect(view.get('.job-status strong').text()).toBe('Vorige aanvraag mislukt')
+    const requested = view.get('time')
+    expect(requested.attributes('datetime')).toBe('2026-09-11T20:32:44.000Z')
+    expect(requested.text()).toBe(new Intl.DateTimeFormat('nl-NL', {
+      weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+    }).format(new Date('2026-09-11T20:32:44Z')))
+    const details = view.get('details')
+    expect(details.attributes('open')).toBeUndefined()
+    expect(details.get('summary').text()).toBe('Details vorige aanvraag')
+    expect(details.get('small').text()).toBe(latest.error)
+    expect(view.find('[role="alert"]').exists()).toBe(false)
+    expect(view.text()).toContain('Kies opnieuw een foto om een nieuwe aanvraag te starten.')
+    expect(view.text()).not.toContain('Avatars maken is momenteel niet beschikbaar.')
+    expect(view.get('input[type="file"]').attributes('disabled')).toBeUndefined()
+    const calls = apiMock.mock.calls.length
+    await vi.advanceTimersByTimeAsync(10000)
+    expect(apiMock.mock.calls).toHaveLength(calls)
+    expect(analyticsMock).not.toHaveBeenCalled()
+    await selectPhoto(view)
+    expect(submissions()).toHaveLength(0)
+    expect(uploadForm(view).get('button[type="submit"]').attributes('disabled')).toBeUndefined()
+    await uploadForm(view).trigger('submit')
+    await flushPromises()
+    expect(submissions()).toHaveLength(1)
+    expect(view.get('.job-status strong').text()).toBe('In de wachtrij')
+    expect(view.find('details').exists()).toBe(false)
+    expect(view.find('time').exists()).toBe(false)
+    expect(view.text()).not.toContain('Vorige aanvraag mislukt')
+    expect(view.text()).not.toContain(latest.error)
+    expect(view.get('input[type="file"]').attributes('disabled')).toBeDefined()
+  })
+
+  it('keeps a current upload error visible separately from the previous failed request', async () => {
+    latest = { ...job('failed'), error: 'De afbeeldingsdienst is tijdelijk niet beschikbaar.' }
+    const respond = apiMock.getMockImplementation()!
+    apiMock.mockImplementation((path: string, options?: RequestInit) => path.startsWith('/api/avatars/me/jobs?')
+      ? Promise.reject(new Error('De afbeeldingsdienst is nog niet ingesteld.')) : respond(path, options))
+    const view = await openProfile()
+    await selectPhoto(view)
+    await uploadForm(view).trigger('submit')
+    await flushPromises()
+    expect(view.get('[role="alert"]').text()).toBe('De afbeeldingsdienst is nog niet ingesteld.')
+    expect(view.get('.job-status strong').text()).toBe('Vorige aanvraag mislukt')
+    expect(view.get('details small').text()).toBe(latest.error)
+    expect(view.get('input[type="file"]').attributes('disabled')).toBeUndefined()
+  })
+
+  it('still shows unavailable configuration without suggesting an upload that cannot be made', async () => {
+    latest = { ...job('failed'), error: 'De afbeeldingsdienst is tijdelijk niet beschikbaar.' }
+    configuration.local_available = configuration.openai_available = false
+    const view = await openProfile()
+    expect(view.get('.job-status strong').text()).toBe('Vorige aanvraag mislukt')
+    expect(view.text()).toContain('Avatars maken is momenteel niet beschikbaar.')
+    expect(view.text()).not.toContain('Kies opnieuw een foto om een nieuwe aanvraag te starten.')
+    expect(view.find('input[type="file"]').exists()).toBe(false)
+    expect(submissions()).toHaveLength(0)
+  })
+
   it('retains the selected File when clearing the native input and uploads only on submission', async () => {
     const view = await openProfile()
     const photo = await selectPhoto(view)
