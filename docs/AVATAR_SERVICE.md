@@ -173,23 +173,68 @@ onbekend: dit is geen bewijs van een geslaagde of mislukte volledige run.
 Een voltooide RGBA-PNG, Layered-stap, vrijgegeven modelgeheugen en nieuwe
 profielopslag zijn voor deze proef niet geverifieerd.
 
-Controleer bij herstelde verbinding eerst de bestaande proefpod:
-
-```sh
-kubectl --kubeconfig "$HOME/.kube/spark-homelab.yaml" -n pnballie-acceptance \
-  get pod avatar-cdi-verification
-kubectl --kubeconfig "$HOME/.kube/spark-homelab.yaml" -n pnballie-acceptance \
-  logs avatar-cdi-verification --tail=100
-```
-
-Controleer daarna de private service, het eventuele generatieproces en een
-mogelijk al geschreven resultaat volgens het homelabrunbook. Start geen
-tweede proef en herstart de service niet voordat de bestaande toestand bekend
-is. Als een PNG beschikbaar is, controleer bestand, transparantie en beeld
-voordat deze verificatie wordt afgevinkt. Deze proef slaat geen profielavatar
-op; een geslaagd serviceantwoord bewijst dus geen volledige profielupload.
+Na herstel op 12 september bleek het laatste modelbericht uit de vorige boot
+Edit-stap 30/40 om 21:22:38 UTC te zijn. Tijdens het laden waren vier NVIDIA-
+meldingen `NV_ERR_NO_MEMORY` vastgelegd, waarna het model nog minutenlang
+generatiestappen uitvoerde. Dit stelt de oorzaak van de hostuitval niet vast.
+Er was geen voltooide PNG; de verlopen proefpod en zijn ConfigMap zijn na inspectie
+verwijderd. Deze afzonderlijke serviceproef heeft geen profielavatar opgeslagen.
 De eerder definitief mislukte opdracht blijft afgesloten en de gewiste
 bronfoto wordt niet hersteld. Een nieuwe eigen foto vereist een nieuwe upload.
+
+### Profielproef na herstart — 12 september 2026
+
+Spark startte rond 06:55 UTC opnieuw. De app herstelde, maar het CNI-adres
+voor een private inferencepoort was bij Docker-start nog niet beschikbaar.
+De bestaande containerverbinding is hersteld en het homelab heeft een gerichte
+herstelcontrole voor deze opstartvolgorde gekregen. CUDA-kernels en compilatie
+slagen opnieuw; een nieuwe hostherstart om die herstelcontrole te testen is
+nog niet uitgevoerd.
+
+App-PR 17 (`92768d43b032bc4770ef26eacd59596b2ee78f92`) passeert 150
+backendtests en alle vier CI-controles. De private modelservice gebruikt de
+bijbehorende module met `AVATAR_CUDA_MEMORY_FRACTION=0.70`; een echte
+Torch-controle bevestigt 0,70 bij 119,7 GiB zichtbaar devicegeheugen. De
+geselecteerde API-, worker- en frontendimages zijn hiervoor niet gewijzigd.
+
+De volledige profielroute is geslaagd: upload om 07:17 UTC via de publieke
+acceptatie-API, duurzame opdracht, uitgerolde worker, Qwen Edit en Layered,
+opslag bij het profiel en opnieuw opvragen van de afbeelding. Het demoaccount
+gebruikte een tijdelijke groep met een nieuw gekoppeld spelersprofiel en de
+bestaande repository-avatar. Er is geen nieuwe persoonlijke foto of
+cloudprovider gebruikt. De opdracht slaagde op **poging 1**; de modelaanvraag
+duurde **1505,6 seconden (25 minuten en 6 seconden)**.
+
+De opgeslagen uitvoer is **640 × 640 RGBA-PNG, 642.837 bytes**, met **58,51%
+exact transparante pixels** en geen alpha 1–15. Het complete cartoonpoppetje,
+hoofd, body, stang en bal zijn op lichte en donkere achtergrond bekeken.
+De opnieuw geladen profielgegevens verwijzen naar de juiste avatarversie;
+de HTTP-bytes komen overeen met SQLite. Opvragen met alleen de sessiecookie
+werkt, zonder groeps- of CSRF-header; anoniem volgt HTTP 401. De bron is gewist
+en de opdracht heeft geen actieve claim of lease meer.
+
+De 303 geheugenmetingen tonen beschikbaar hostgeheugen van **112,027 GiB
+vooraf**, minimaal **50,598 GiB** tijdens de run en **112,207 GiB na afloop**.
+Het modelchild is afgesloten. De cgroup registreert nul OOM-events en een
+geheugenpiek van 14,684 GiB; die cgroupwaarde is **geen GPU-geheugenpiek**.
+Tijdens Layered laden verschenen om 07:35:21 en 07:35:25 UTC twee NVIDIA-
+waarschuwingen `NV_ERR_NO_MEMORY`. De run voltooide daarna succesvol. Dit is
+geen bewijs dat alle GPU-waarschuwingen zijn verdwenen of dat hiermee de
+oorzaak van de eerdere hostuitval vaststaat.
+
+Vóór opruiming zijn zes Tempo-spans met vijf juiste ouder-kindkoppelingen en
+35 gecorreleerde Loki-records over API, worker en inference geverifieerd.
+Daarna zijn uitsluitend de tijdelijke opdracht, avatar, groepslidmaatschap,
+speler en groep verwijderd. De oorspronkelijke Democompetitie, profielen,
+avatars en wedstrijddata komen overeen met de vastgelegde voorstaat. De
+testsessie is uitgelogd; de service is weer healthy met `processing: false`.
+
+De private controlebestanden staan buiten Git in
+`.local-test/avatar-profile-verification/`: `result.png`,
+`contrast-preview.png`, `evidence.json`, `memory-summary.json` en
+`tracing-evidence.json`. Dit bewijst de volledige technische profielroute;
+portretgelijkenis bij een nieuwe persoonlijke foto blijft door de speler te
+beoordelen.
 
 ## Architectuur en namespacekeuze
 
@@ -268,8 +313,8 @@ vallen buiten deze grens. Ook de controle op 80 GiB vrij geheugen vóór elke
 modellaadstap bewaakt geen doorlopende vrije reserve. De containerlimiet en
 metingen van beschikbaar hostgeheugen blijven daarom nodig. Een allocator-OOM
 kan betekenen dat het model niet binnen het gekozen budget past; verhoog de
-grens niet automatisch. De volledige beeldproef met dit nieuwe budget is nog
-niet uitgevoerd.
+grens niet automatisch. De volledige profielproef van 12 september is met
+dit budget geslaagd; de gemeten hostreserve en waarschuwingen staan hierboven.
 
 `/api/avatars/config` zegt of een provider is **geconfigureerd**; het is geen
 live GPU-gereedheidscheck. Een GPU-fout of onvoldoende geheugen geeft een gewone
@@ -420,18 +465,21 @@ Tijdstippen hebben een expliciete UTC-offset.
   pogingen blijven nul en echte appdata blijven onaangeroerd.
 - [x] GPU-toegang hersteld met native CDI; echte gecompileerde CUDA-proef slaagt
   vóór en na een containerupdate. Volledige generatie blijft een aparte controle.
-- [ ] Nieuwe volledige Qwen-generatie na het GPU-herstel via de uitgerolde
+- [x] Nieuwe volledige Qwen-generatie na het GPU-herstel via de uitgerolde
   provider/private service, met bestaande testavatar en controle van de PNG.
-  De poging is waargenomen tot Edit-stap 25/40; na verlies van de verbinding
-  met de host zijn resultaat en oorzaak onbekend.
+  De profielproef van 12 september slaagt in één poging met budget 0,70.
 - [x] Een echte tweestaps-Qwen-proef op Spark, visueel geaccepteerde RGBA-PNG
   en gemeten looptijd van 24 minuten en 24 seconden.
 - [x] Geheugenretentie na die proef opgelost met een apart proces per opdracht;
   echte 1 GiB CUDA-proef bevestigt terugkeer naar circa 111,5 GiB vrij geheugen.
 - [x] Achtergrondruis verwijderd en alpha/randbehoud getest; 58,51% exact
   transparante pixels in de bijgewerkte proef-PNG.
-- [ ] Een volledige eigen profielupload met nieuwe foto door de live wachtrij
-  en de uiteindelijke subprocesswrapper; lokale worker is hiervoor gestart.
+- [x] Een volledige profielupload door de live wachtrij en uiteindelijke
+  subprocesswrapper, met opgeslagen en opnieuw opgevraagde profielavatar.
+  De acceptatieproef gebruikt de bestaande repository-avatar; testrecords
+  zijn gericht opgeruimd en de oorspronkelijke data zijn ongewijzigd.
+- [ ] Portretgelijkenis bij een nieuwe persoonlijke foto beoordelen; de
+  technische proef met een bestaand poppetje controleert dit niet.
 - [ ] Een eventuele echte OpenAI-proef met geconfigureerd project/model en
   expliciete profielkeuze.
 - [x] Afzonderlijke lokale Spark-runtime gestart met gepinde modellen, geteste
