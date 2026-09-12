@@ -46,7 +46,12 @@
           <small v-if="jobActive && job.provider === 'local'">Dit duurt circa 25–40 minuten, plus eventuele wachttijd.</small>
           <small v-if="jobActive && requestAge">{{ requestAge }}</small>
           <small v-if="job.status === 'succeeded'">Je nieuwe avatar wordt bij je wedstrijden en statistieken gebruikt.</small>
-          <small v-if="job.error && job.status === 'failed'">{{ job.error }}</small>
+          <small v-if="job.status === 'failed' && requestTimestamp">Aangevraagd op <time :datetime="requestTimestamp">{{ formatLocalDateTime(job.created_at) }}</time>.</small>
+          <small v-if="job.status === 'failed' && (config?.local_available || config?.openai_available)">Kies opnieuw een foto om een nieuwe aanvraag te starten.</small>
+          <details v-if="job.error && job.status === 'failed'">
+            <summary>Details vorige aanvraag</summary>
+            <small>{{ job.error }}</small>
+          </details>
           <small v-if="job.error && job.status === 'queued'">Wachten op een nieuwe poging: {{ job.error }}</small>
           <small v-if="pollError" class="account-error" role="alert">{{ pollError }} De status wordt opnieuw opgehaald.</small>
           <small v-if="jobActive || job.status === 'cancelled'">Na annuleren wordt deze avatar niet opgeslagen. De verwerking kan nog doorlopen en een volgende aanvraag vertragen.</small>
@@ -75,7 +80,7 @@ import { useStats } from '../composables/useStats'
 import PlayerBadges from '../components/PlayerBadges.vue'
 import SettingsMenu from '../components/SettingsMenu.vue'
 import { playerAvatar, playerInitials } from '../playerAvatar'
-import { parseUtcTimestamp } from '../dateTime'
+import { formatLocalDateTime, parseUtcTimestamp } from '../dateTime'
 import type { Player } from '../types'
 import { trackEvent } from '../analytics'
 
@@ -103,6 +108,11 @@ const avatarUrl = computed(() => playerAvatar(player.value?.name, player.value?.
 const badges = computed(() => stats.value?.players.find(entry => entry.player_id === player.value?.id)?.badges ?? [])
 const jobActive = computed(() => job.value?.status === 'queued' || job.value?.status === 'processing')
 const now = ref(Date.now())
+const requestTimestamp = computed(() => {
+  if (!job.value?.created_at) return null
+  const created = parseUtcTimestamp(job.value.created_at)
+  return Number.isFinite(created.getTime()) ? created.toISOString() : null
+})
 const requestAge = computed(() => {
   if (!job.value?.created_at) return ''
   const created = parseUtcTimestamp(job.value.created_at).getTime()
@@ -123,7 +133,7 @@ watch(job, (next, previous) => {
 })
 
 function statusLabel(status: AvatarJob['status']) {
-  return { queued: 'In de wachtrij', processing: 'Je avatar wordt gemaakt', succeeded: 'Je avatar is klaar!', failed: 'De avatar is niet gelukt', cancelled: 'Aanvraag geannuleerd' }[status]
+  return { queued: 'In de wachtrij', processing: 'Je avatar wordt gemaakt', succeeded: 'Je avatar is klaar!', failed: 'Vorige aanvraag mislukt', cancelled: 'Aanvraag geannuleerd' }[status]
 }
 function clearPhoto() {
   photo.value = null

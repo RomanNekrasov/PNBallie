@@ -113,6 +113,10 @@ scope en houdt de acceptatiestatus bij. Wijzigingen en controles staan in
       alternatief ondersteunen.
 - [x] Verwerking via een duurzame asynchrone wachtrij en worker/service; de
       frontend blijft bruikbaar en toont status/fouten.
+- [x] Een eerdere mislukte aanvraag met lokale datum/tijd en uitklapbare
+      foutdetails tonen, zodat een oude storing herkenbaar is als historie.
+      Opnieuw uploaden blijft mogelijk wanneer een provider is ingesteld;
+      actuele uploadfouten blijven zichtbaar. Geen automatische herhaling.
 - [x] Eigenaarstoegang, uploadlimieten, afbeeldingsvalidatie en foutpaden bewaken.
 - [x] Model op aanvraag starten op de Spark en na verwerking afschalen.
       De echte modelroute is uitgevoerd. Iedere opdracht draait nu in een apart
