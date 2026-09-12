@@ -12,10 +12,25 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
   instellingen stoppen de generatie vóór het laden. Modellen, stappen en
   resolutie blijven gelijk.
 - Het budget begrenst PyTorch-allocaties, niet alle driverallocaties. De circa
-  30% buiten het budget is geen gegarandeerde vrije hostreserve. De volledige
-  Spark-proef met deze instelling moet nog plaatsvinden.
+  30% buiten het budget is geen gegarandeerde vrije hostreserve.
 - Alle 150 backendtests en Ruff slagen, inclusief controles op geldige en
   ongeldige budgetten en weigeren van model laden als de instelling mislukt.
+- Na de herstart van Spark is de private netwerkverbinding van inference
+  hersteld en een gerichte herstelcontrole voor de opstartvolgorde toegevoegd.
+  CUDA-preflight en de ingestelde fractie 0,70 zijn op de GB10 gecontroleerd.
+- Een echte profielupload via acceptatie-API, duurzame wachtrij, worker en
+  Spark is op de eerste poging geslaagd. De modelaanvraag duurde 25m06s en
+  leverde een opgeslagen 640 × 640 RGBA-PNG met 58,51% transparante pixels op.
+  Weergave met alleen cookies, anonieme weigering en bronverwijdering slagen.
+- Tijdens 303 geheugenmetingen daalde beschikbaar hostgeheugen van 112,027
+  naar minimaal 50,598 GiB en herstelde naar 112,207 GiB na procesafsluiting.
+  Er waren geen cgroup-OOM-events. Twee NVIDIA-allocatiewaarschuwingen tijdens
+  Layered laden verhinderden voltooiing niet; hun verband met de eerdere
+  hostuitval is niet vastgesteld.
+- De echte opdracht heeft zes gekoppelde trace-spans en 35 logrecords over
+  drie services. De tijdelijke groep en haar testrecords zijn gericht
+  verwijderd; oorspronkelijke profielen, avatars en scores zijn ongewijzigd.
+  De proef gebruikte een bestaande repository-avatar, geen nieuwe portretfoto.
 
 ## Unreleased — 2026-09-11
 

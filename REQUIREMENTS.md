@@ -135,18 +135,15 @@ scope en houdt de acceptatiestatus bij. Wijzigingen en controles staan in
       gedeelde capaciteit op Spark verifiëren. Vier echte bezetantwoorden met
       een tijdelijke SQLite-database in de acceptatieworker laten pogingen op
       nul, geven leases vrij, behouden de bron en begrenzen de wachttijd.
-- [ ] Een nieuwe volledige generatie en de resulterende transparante PNG
-      controleren; een geslaagde GPU-preflight geldt niet als beeldproef.
-      De poging bereikte Edit-stap 25/40 op 11 september om 21:21:38 UTC;
-      daarna werd de Spark onbereikbaar. Uitkomst en oorzaak zijn onbekend.
+- [x] Een nieuwe volledige generatie en de resulterende transparante PNG
+      controleren. De poging van 11 september gaf geen te controleren PNG; de echte
+      profielproef van 12 september slaagt met een opgeslagen 640 × 640 RGBA-PNG.
 
 De GPU-storing en de wachtrijverbetering zijn afzonderlijke bevindingen.
 De eerdere definitief mislukte opdracht met gewiste bron wordt niet heropend.
-De afzonderlijke beeldproef gebruikt de bestaande repository-avatar via de
-provider/private service vanuit acceptatie, zonder echte appdata te wijzigen.
-Een voltooide RGBA-PNG of profielopslag is niet geverifieerd. Controleer na
-herstel eerst pod `pnballie-acceptance/avatar-cdi-verification` en de bestaande
-generatietoestand voordat een nieuwe proef of herstart wordt uitgevoerd.
+De oude afzonderlijke serviceproef leverde geen te controleren PNG op; de
+verlopen proefpod is na inspectie verwijderd. De volgende proef gebruikt een
+nieuw tijdelijk spelersprofiel en controleert de volledige route tot opslag.
 Details staan in [Eigen spelersavatars](docs/AVATAR_SERVICE.md).
 
 ### Vervolg: CUDA-geheugenbudget — 12 september 2026
@@ -158,8 +155,18 @@ Details staan in [Eigen spelersavatars](docs/AVATAR_SERVICE.md).
 - [x] Dezelfde modellen, BF16-instellingen, resolutie en aantallen stappen
       behouden. Vastleggen dat dit budget niet alle driverallocaties omvat en
       geen gegarandeerde vrije hostreserve van 30% oplevert.
-- [ ] Het budget op de Spark uitrollen en een volledige profielgeneratie met
-      geheugenmetingen controleren; tests zonder modelgewichten bewijzen dit niet.
+- [x] Het budget op Spark uitrollen en met de echte Torch-runtime controleren:
+      fractie 0,70 bij 119,7 GiB voor CUDA zichtbaar geheugen. De app passeert
+      150 backendtests; de volledige beeldproef is afzonderlijk uitgevoerd.
+- [x] Een volledige profielupload via acceptatie, duurzame wachtrij en worker
+      afronden, met opgeslagen RGBA-PNG en geheugenmetingen. Eerste poging,
+      modelaanvraag 1505,6 seconden, 640 × 640 RGBA en 58,51% transparantie.
+      Hostgeheugen herstelt naar 112,207 GiB; de proef gebruikt een bestaande
+      repository-avatar en beoordeelt geen nieuwe persoonlijke portretfoto.
+- [x] De tijdelijke testrecords na verificatie gericht verwijderen en
+      ongewijzigde oorspronkelijke groeps-, profiel-, avatar- en wedstrijddata
+      bevestigen. Alleen vijf tijdelijke records zijn verwijderd; de voorstaat
+      is ongewijzigd en de testsessie is uitgelogd, zonder volledige databaserestore.
 
 ## 8. Tracing, telemetry, logging en gebruiksanalytics
 
