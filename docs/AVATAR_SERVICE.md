@@ -252,7 +252,24 @@ op als lokale omgevingsvariabelen of versleutelde deploymentsecrets.
 | `OPENAI_API_KEY` | Alleen nodig als OpenAI beschikbaar moet zijn |
 | `OPENAI_IMAGE_MODEL` | Expliciet te kiezen GPT Image-model; geen stilzwijgende model- of kostenwijziging |
 | `AVATAR_MIN_AVAILABLE_GIB` | Geheugenpoort op de Spark; standaard 80 GiB vrij vóór elke modellaadstap |
+| `AVATAR_CUDA_MEMORY_FRACTION` | Alleen modelservice: PyTorch-allocatorbudget per childproces; standaard `0.70`, eindig en groter dan 0 tot en met 1 |
 | `HF_HOME` | Persistente cache voor de exact gepinde modelrevisies |
+
+De modelchild stelt het CUDA-allocatorbudget in zodra CUDA beschikbaar is,
+vóór het eerste model gewichten laadt. Een ongeldige waarde of een mislukte
+budgetinstelling stopt die generatie vóór het laden. Beide modellen blijven
+sequentieel met dezelfde BF16-gewichten, stappen en resolutie draaien.
+
+Met de standaardwaarde `0.70` kan de PyTorch-allocator maximaal 70% van het
+totale voor CUDA zichtbare geheugen reserveren; ongeveer 30% blijft buiten
+dat budget. Dit is **geen gegarandeerde reservering voor het besturingssysteem**:
+de GPU en CPU delen fysiek geheugen en driver- of andere niet-PyTorch-allocaties
+vallen buiten deze grens. Ook de controle op 80 GiB vrij geheugen vóór elke
+modellaadstap bewaakt geen doorlopende vrije reserve. De containerlimiet en
+metingen van beschikbaar hostgeheugen blijven daarom nodig. Een allocator-OOM
+kan betekenen dat het model niet binnen het gekozen budget past; verhoog de
+grens niet automatisch. De volledige beeldproef met dit nieuwe budget is nog
+niet uitgevoerd.
 
 `/api/avatars/config` zegt of een provider is **geconfigureerd**; het is geen
 live GPU-gereedheidscheck. Een GPU-fout of onvoldoende geheugen geeft een gewone

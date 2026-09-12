@@ -10,6 +10,7 @@ import binascii
 import gc
 import hmac
 import json
+import math
 import os
 import signal
 import subprocess
@@ -85,6 +86,16 @@ def require_capacity() -> None:
         raise InferenceUnavailable("Insufficient available memory for avatar inference")
 
 
+def cuda_memory_fraction() -> float:
+    try:
+        fraction = float(os.getenv("AVATAR_CUDA_MEMORY_FRACTION", "0.70"))
+    except ValueError:
+        raise InferenceUnavailable("AVATAR_CUDA_MEMORY_FRACTION must be finite and within (0, 1]") from None
+    if not math.isfinite(fraction) or not 0 < fraction <= 1:
+        raise InferenceUnavailable("AVATAR_CUDA_MEMORY_FRACTION must be finite and within (0, 1]")
+    return fraction
+
+
 def foreground_from_layers(layers: list[Image.Image]) -> bytes:
     """Compose transparent foreground layers; reject opaque or edge-filling ones.
 
@@ -134,6 +145,14 @@ class QwenRuntime:
             raise InferenceUnavailable("The avatar-gpu dependencies are not installed") from exc
         if not torch.cuda.is_available():
             raise InferenceUnavailable("A supported CUDA runtime is required")
+        # This runs inside the fresh model child. A limit in the HTTP parent
+        # would not survive exec. It bounds PyTorch's allocator, not all driver
+        # allocations or the shared host's total memory use.
+        fraction = cuda_memory_fraction()
+        try:
+            torch.cuda.set_per_process_memory_fraction(fraction)
+        except (RuntimeError, ValueError) as exc:
+            raise InferenceUnavailable("The CUDA allocator memory budget could not be applied") from exc
 
         pipeline = None
         started = time.monotonic()

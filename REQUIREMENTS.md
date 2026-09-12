@@ -149,6 +149,18 @@ herstel eerst pod `pnballie-acceptance/avatar-cdi-verification` en de bestaande
 generatietoestand voordat een nieuwe proef of herstart wordt uitgevoerd.
 Details staan in [Eigen spelersavatars](docs/AVATAR_SERVICE.md).
 
+### Vervolg: CUDA-geheugenbudget — 12 september 2026
+
+- [x] Vóór het laden van modelgewichten een PyTorch-allocatorbudget instellen
+      in het afzonderlijke modelproces, standaard 70% van het voor CUDA zichtbare
+      geheugen. Alleen eindige waarden groter dan 0 tot en met 1 zijn geldig;
+      ongeldige configuratie of een mislukte instelling stopt vóór model laden.
+- [x] Dezelfde modellen, BF16-instellingen, resolutie en aantallen stappen
+      behouden. Vastleggen dat dit budget niet alle driverallocaties omvat en
+      geen gegarandeerde vrije hostreserve van 30% oplevert.
+- [ ] Het budget op de Spark uitrollen en een volledige profielgeneratie met
+      geheugenmetingen controleren; tests zonder modelgewichten bewijzen dit niet.
+
 ## 8. Tracing, telemetry, logging en gebruiksanalytics
 
 Vervolgopdracht van 9 september 2026; uitwerking en Spark-acceptatie staan ook in

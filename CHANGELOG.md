@@ -3,6 +3,20 @@
 Alle relevante wijzigingen aan deze uitbreiding worden hier bijgehouden.
 Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 
+## Unreleased — 2026-09-12
+
+### Geheugenbudget voor avatars
+
+- Het modelproces stelt vóór de eerste gewichten een CUDA-allocatorbudget in:
+  standaard `AVATAR_CUDA_MEMORY_FRACTION=0.70`. Ongeldige of niet-toepasbare
+  instellingen stoppen de generatie vóór het laden. Modellen, stappen en
+  resolutie blijven gelijk.
+- Het budget begrenst PyTorch-allocaties, niet alle driverallocaties. De circa
+  30% buiten het budget is geen gegarandeerde vrije hostreserve. De volledige
+  Spark-proef met deze instelling moet nog plaatsvinden.
+- Alle 150 backendtests en Ruff slagen, inclusief controles op geldige en
+  ongeldige budgetten en weigeren van model laden als de instelling mislukt.
+
 ## Unreleased — 2026-09-11
 
 ### Avatarwachtrij en GPU-herstel
