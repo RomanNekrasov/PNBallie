@@ -176,9 +176,14 @@ Vervolg voor portretgelijkenis: de lokale prompt- en compositieproeven van
 12 september worden bijgehouden in [Avatarproeven](docs/AVATAR_EXPERIMENTS.md).
 Drie Edit-varianten met één nieuwe selfie zijn uitgevoerd en visueel beoordeeld;
 de drie transparante eindvarianten en een afzonderlijke Layered-versie zijn
-vergeleken. Onze keuze is kandidaat 01 met CPU-uitsnede; feedback van de gebruiker
-op de nieuwe kandidaten is nog niet ontvangen. De standaardprompt en bestaande
-profielen zijn ongewijzigd.
+vergeleken. Kandidaat 01 met CPU-uitsnede was onze aanvankelijke keuze; de gebruiker
+vindt de varianten nog te getekend en vraagt om meer realisme. De aanvullende
+Edit-proef slaagt met een fotografischer gezicht in kandidaat 05, onze voorkeur
+onder de gegenereerde varianten. Een handmatige CPU-compositie met echte
+selfiepixels is eveneens gereed en als transparante PNG gevalideerd. De
+uitsnede van kandidaat 05 met witdrempel 225 is gekozen, met een verminderde
+maar nog zichtbare lichte haarrand. Runtime- en opruimcontroles slagen; de
+standaardprompt, permanente code en bestaande profielen zijn ongewijzigd.
 
 ## 8. Tracing, telemetry, logging en gebruiksanalytics
 
