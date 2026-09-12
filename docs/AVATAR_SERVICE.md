@@ -251,8 +251,9 @@ en een passende gesloten mond, maar een te lang/smal gezicht en overdreven
 krullen. De tweede is compacter en fraaier afgewerkt, maar behoudt de brede
 lach van de volledige referentie. De losse kop heeft algemenere ogen, haar
 en baard. Deze visuele beoordeling is op één portret gebaseerd en is geen
-claim dat de gebruiker de nieuwe kandidaten al heeft beoordeeld. Prompt, uitsnede en
-voorbewerking veranderen samen; hun afzonderlijke effect is niet vastgesteld.
+claim van algemene identiteitsnauwkeurigheid. Prompt, uitsnede en voorbewerking
+veranderen samen; hun afzonderlijke effect is niet vastgesteld. De gebruiker
+vond de eerste drie kandidaten daarna nog te getekend en vraagt om meer realisme.
 
 De 0,70-allocatorgrens bleef actief. Beschikbaar hostgeheugen daalde tot
 minimaal 50,457–52,901 GiB en herstelde na procesafsluiting tot
@@ -277,7 +278,7 @@ Layered-pixels met niet-nul RGB en alpha 0 zijn volledig onzichtbaar; een ruwe
 kanaalweergave daarvan bewijst geen zichtbare achtergrondruis. Dit bewijst ook
 niet dat Layered het eerdere grove gezicht veroorzaakte.
 
-Gekozen is **kandidaat 01 met CPU-achtergrondextractie**: behoud van de Edit-
+Aanvankelijk gekozen is **kandidaat 01 met CPU-achtergrondextractie**: behoud van de Edit-
 details zonder extra modelhertekening, bij de beste gelijkenis in deze proef.
 De PNG is 640 × 640 RGBA en 60,522949% exact transparant. De beoordeelde
 uitsnede vermijdt 711,742 seconden extra modelwerk.
@@ -293,6 +294,33 @@ de wachtrijen bevatten geen actieve opdrachten en het bestaande acceptatie-
 profielbeeld heeft nog dezelfde hash. Alle 28 tijdelijke Spark-proefbestanden
 zijn met gecontroleerde SHA-256-hashes privé op de Mac gearchiveerd; alleen
 die proefmap is van Spark verwijderd. Runtimecode en modelcache zijn behouden.
+
+De vervolgproef voor meer realisme gebruikt de selfie als leidende eerste invoer
+en de headless body als ondersteunende referentie. Kandidaat 05 slaagt in
+790,748 seconden en toont een fotografisch gezicht met gesloten mond en
+natuurlijker haar-/huiddetail. Dit is onze voorkeur onder de gegenereerde
+varianten; het model hertekent de body en kan subtiel de gezichtsverhoudingen
+veranderen. Het is geen pixelgetrouwe kopie van de selfie.
+
+Een CPU-compositie met de werkelijke selfiepixels is
+inmiddels gereed: 640 × 640 RGBA, 277.565 bytes en 66,3467% transparant, zonder
+EXIF. Alleen de zichtbare oorspronkelijke hals is tijdens de verfijning
+vervangen; 53.530 overige zichtbare bodypixels blijven vóór eindschaling gelijk.
+Deze variant is makkelijker herkenbaar, maar gebruikt een handmatig masker en
+combineert een fotografisch hoofd met een getekende body. Voor kandidaat 05
+is witdrempel 225 gekozen: de 640 × 640 RGBA-PNG van 307.486 bytes is gevalideerd
+en heeft 62,0098% transparante pixels. Een dunne lichte haarrand blijft aanwezig;
+de centrale gezichtsregio en bodybinnenkant blijven bij de maskerwijziging gelijk.
+Er is geen extra Layered-proef gedaan.
+
+De afsluitende controle bevestigt een beschikbaar GPU-slot, 112,237 GiB vrij
+hostgeheugen, nul cgroup-OOM-events/-kills en gezonde idle workers zonder
+actieve opdrachten. De bestaande acceptatie-profielafbeelding heeft dezelfde
+hash. Alle zeven tijdelijke Spark-proefbestanden zijn met gelijke hashes privé
+gearchiveerd, waarna alleen de proefmap is verwijderd. Deze vergelijking wijzigt
+geen permanente code, standaardprompt, imagepins of opgeslagen profielen.
+Het plan, de metingen en de beperkingen staan in
+[Avatarproeven](AVATAR_EXPERIMENTS.md#follow-up-plan-photographic-likeness).
 
 ## Architectuur en namespacekeuze
 
@@ -537,11 +565,15 @@ Tijdstippen hebben een expliciete UTC-offset.
   De acceptatieproef gebruikt de bestaande repository-avatar; testrecords
   zijn gericht opgeruimd en de oorspronkelijke data zijn ongewijzigd.
 - [x] Portretgelijkenis bij één nieuwe persoonlijke foto visueel beoordelen
-  met drie lokale Edit-proeven; kandidaat 01 met CPU-uitsnede is gekozen.
+  met drie lokale Edit-proeven; kandidaat 01 was de aanvankelijke keuze.
   Beperkingen en metingen staan in [Avatarproeven](AVATAR_EXPERIMENTS.md).
 - [x] Een transparante eindvariant kiezen na PNG-validatie en vergelijking
-  op lichte/donkere achtergrond. De selectie is onze visuele beoordeling;
-  de gebruiker heeft de nieuwe kandidaten nog niet beoordeeld.
+  op lichte/donkere achtergrond. De gebruiker vindt de eerste vergelijking nog
+  te getekend; het vervolg voor een fotografischer gezicht staat apart beschreven.
+- [x] De feedback over realisme verwerken met een fotografische Edit-proef en
+  een CPU-compositie van echte selfiepixels. Kandidaat 05 met witdrempel 225 is
+  de gekozen gegenereerde variant; Qwen hertekent het gezicht en de body en
+  behoudt geen pixelidentiteit. De afsluitende runtime-/opruimcontroles slagen.
 - [ ] Een eventuele echte OpenAI-proef met geconfigureerd project/model en
   expliciete profielkeuze.
 - [x] Afzonderlijke lokale Spark-runtime gestart met gepinde modellen, geteste

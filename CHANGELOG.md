@@ -5,6 +5,39 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 
 ## Unreleased — 2026-09-12
 
+### Vervolg: realistischer portret
+
+- De gebruiker vindt de eerste drie kandidaten nog te getekend en wil het
+  gezicht makkelijker herkennen. Daarmee vervalt kandidaat 01 als definitieve
+  voorkeur; de eerdere proefresultaten blijven bewaard.
+- Eén aanvullende lokale Edit-proef uitgevoerd: de selfie als eerste en leidende
+  invoer, de headless body als tweede referentie, met een fotografisch gezicht,
+  natuurlijke verhoudingen en huid-/haardetail zonder getekende contouren.
+  Gepinde gewichten, seed 777, 40 stappen, CFG 4 en geheugenbudget 0,70 blijven gelijk.
+- Een private CPU-compositie met de echte selfiepixels is gereed, zonder
+  gezichtshertekening, retouchering of kleuraanpassing. De verfijnde hals vervangt
+  1.522 oorspronkelijke huidpixels; de overige 53.530 zichtbare bodypixels
+  blijven vóór eindschaling ongewijzigd. De PNG is 640 × 640 RGBA, 277.565 bytes
+  en 66,3467% transparant, zonder EXIF of zichtbare buitenrandpixels.
+- De fotografische compositie is makkelijker herkenbaar, met een natuurlijkere
+  halsverbinding. Het blijft een handmatig gemaskeerde foto op een getekende body.
+- Qwen-kandidaat 05 slaagt in 790,748 seconden en heeft een fotografischer
+  gezicht, gesloten mond en natuurlijker haar-/huiddetail. Dit is onze voorkeur
+  onder de gegenereerde varianten; de echte-fotocompositie blijft de vergelijking
+  zonder gezichtshertekening. Qwen kan verhoudingen veranderen en bewaart geen
+  pixelidentiteit. Gekozen is de 640 × 640 RGBA-uitsnede met witdrempel 225:
+  307.486 bytes en 62,0098% transparant, zonder EXIF. De dunne lichte haarrand is
+  verminderd; het centrale gezicht en de bodybinnenkant blijven gelijk. Er is
+  geen extra Layered-run gestart.
+- Tijdens 160 metingen daalt beschikbaar hostgeheugen van 112,225 naar minimaal
+  50,395 GiB en herstelt na procesafsluiting naar 112,262 GiB. Standaardprompt
+  en opgeslagen profielen zijn niet aangepast.
+- De afsluitende controle bevestigt een vrij GPU-slot, 112,237 GiB beschikbaar
+  hostgeheugen, gezonde idle workers en nul actieve opdrachten/OOM-events.
+  De bestaande profiel-PNG heeft dezelfde hash. Alle zeven tijdelijke Spark-
+  bestanden zijn privé gearchiveerd met gecontroleerde hashes; alleen de
+  proefmap is verwijderd. Deze vergelijking bevat geen permanente codewijziging.
+
 ### Proeven met portretgelijkenis
 
 - Lokale Spark-proeven opgezet voor een gedetailleerdere cartoonkop, een
