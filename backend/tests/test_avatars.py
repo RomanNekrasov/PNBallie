@@ -605,7 +605,8 @@ def test_service_returns_real_png_protocol_without_gpu_or_cloud(monkeypatch):
     assert validate_transparent_png(base64.b64decode(response.json()["data"][0]["b64_json"]))
 
 
-def test_gpu_runtime_loads_one_model_at_a_time_directly_to_cuda_and_releases_both(monkeypatch):
+@pytest.mark.parametrize("configured_fraction,expected_fraction", [(None, 0.70), ("0.55", 0.55), ("1", 1.0)])
+def test_gpu_runtime_applies_budget_before_loading_and_releases_each_model(monkeypatch, configured_fraction, expected_fraction):
     import sys
     import weakref
     from contextlib import nullcontext
@@ -613,6 +614,10 @@ def test_gpu_runtime_loads_one_model_at_a_time_directly_to_cuda_and_releases_bot
 
     from app import avatar_service
 
+    if configured_fraction is None:
+        monkeypatch.delenv("AVATAR_CUDA_MEMORY_FRACTION", raising=False)
+    else:
+        monkeypatch.setenv("AVATAR_CUDA_MEMORY_FRACTION", configured_fraction)
     events = []
     active = []
 
@@ -622,6 +627,7 @@ def test_gpu_runtime_loads_one_model_at_a_time_directly_to_cuda_and_releases_bot
 
         @classmethod
         def from_pretrained(cls, name, **kwargs):
+            assert events[:2] == ["cuda_available", ("budget", expected_fraction)], "weights loaded before the CUDA budget"
             assert not any(ref() for ref in active), "previous model is still retained"
             assert kwargs["device_map"] == "cuda" and kwargs["low_cpu_mem_usage"] is True
             assert kwargs["local_files_only"] is True and len(kwargs["revision"]) == 40
@@ -634,21 +640,76 @@ def test_gpu_runtime_loads_one_model_at_a_time_directly_to_cuda_and_releases_bot
             pass
 
         def __call__(self, **kwargs):
+            if "layers" in kwargs:
+                assert kwargs["num_inference_steps"] == 50 and kwargs["resolution"] == 640
+            else:
+                assert kwargs["num_inference_steps"] == 40
             image = Image.open(BytesIO(png())).copy()
             return SimpleNamespace(images=[[image]] if "layers" in kwargs else [image])
 
     fake_torch = SimpleNamespace(
         bfloat16="bf16", inference_mode=nullcontext,
         Generator=lambda **_: SimpleNamespace(manual_seed=lambda _: 777),
-        cuda=SimpleNamespace(is_available=lambda: True, empty_cache=lambda: events.append("release")),
+        cuda=SimpleNamespace(
+            is_available=lambda: events.append("cuda_available") or True,
+            set_per_process_memory_fraction=lambda fraction: events.append(("budget", fraction)),
+            empty_cache=lambda: events.append("release"),
+        ),
     )
     monkeypatch.setitem(sys.modules, "torch", fake_torch)
     monkeypatch.setitem(sys.modules, "diffusers", SimpleNamespace(
         QwenImageEditPlusPipeline=FakePipeline, QwenImageLayeredPipeline=FakePipeline))
     monkeypatch.setattr(avatar_service, "require_capacity", lambda: None)
     assert validate_transparent_png(avatar_service.QwenRuntime().generate(png(), png()))
-    assert events == ["load", "release", "load", "release"]
+    assert events == ["cuda_available", ("budget", expected_fraction), "load", "release", "load", "release"]
     assert not any(ref() for ref in active)
+
+
+@pytest.mark.parametrize("configured_fraction", ["", "invalid", "nan", "inf", "-inf", "0", "-0.1", "1.01", "1e999"])
+def test_invalid_cuda_budget_stops_before_allocator_or_model_load(monkeypatch, configured_fraction):
+    import sys
+    from types import SimpleNamespace
+
+    from app import avatar_service
+
+    monkeypatch.setenv("AVATAR_CUDA_MEMORY_FRACTION", configured_fraction)
+    monkeypatch.setattr(avatar_service, "require_capacity", lambda: None)
+    calls = []
+    pipeline = SimpleNamespace(from_pretrained=lambda *_args, **_kwargs: calls.append("load"))
+    monkeypatch.setitem(sys.modules, "diffusers", SimpleNamespace(
+        QwenImageEditPlusPipeline=pipeline, QwenImageLayeredPipeline=pipeline))
+    monkeypatch.setitem(sys.modules, "torch", SimpleNamespace(cuda=SimpleNamespace(
+        is_available=lambda: True,
+        set_per_process_memory_fraction=lambda _fraction: calls.append("budget"),
+    )))
+    with pytest.raises(avatar_service.InferenceUnavailable, match="AVATAR_CUDA_MEMORY_FRACTION"):
+        avatar_service.QwenRuntime().generate(png(), png())
+    assert calls == []
+
+
+def test_failed_cuda_budget_application_never_loads_unbounded_models(monkeypatch):
+    import sys
+    from types import SimpleNamespace
+
+    from app import avatar_service
+
+    monkeypatch.delenv("AVATAR_CUDA_MEMORY_FRACTION", raising=False)
+    monkeypatch.setattr(avatar_service, "require_capacity", lambda: None)
+    calls = []
+
+    def failed_budget(_fraction):
+        calls.append("budget")
+        raise RuntimeError("Synthetic allocator configuration failure")
+
+    pipeline = SimpleNamespace(from_pretrained=lambda *_args, **_kwargs: calls.append("load"))
+    monkeypatch.setitem(sys.modules, "diffusers", SimpleNamespace(
+        QwenImageEditPlusPipeline=pipeline, QwenImageLayeredPipeline=pipeline))
+    monkeypatch.setitem(sys.modules, "torch", SimpleNamespace(cuda=SimpleNamespace(
+        is_available=lambda: True, set_per_process_memory_fraction=failed_budget,
+    )))
+    with pytest.raises(avatar_service.InferenceUnavailable, match="budget could not be applied"):
+        avatar_service.QwenRuntime().generate(png(), png())
+    assert calls == ["budget"]
 
 
 def test_isolated_model_protocol_waits_for_process_exit(monkeypatch):
