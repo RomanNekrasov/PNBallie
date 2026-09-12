@@ -172,6 +172,14 @@ Details staan in [Eigen spelersavatars](docs/AVATAR_SERVICE.md).
       bevestigen. Alleen vijf tijdelijke records zijn verwijderd; de voorstaat
       is ongewijzigd en de testsessie is uitgelogd, zonder volledige databaserestore.
 
+Vervolg voor portretgelijkenis: de lokale prompt- en compositieproeven van
+12 september worden bijgehouden in [Avatarproeven](docs/AVATAR_EXPERIMENTS.md).
+Drie Edit-varianten met één nieuwe selfie zijn uitgevoerd en visueel beoordeeld;
+de drie transparante eindvarianten en een afzonderlijke Layered-versie zijn
+vergeleken. Onze keuze is kandidaat 01 met CPU-uitsnede; feedback van de gebruiker
+op de nieuwe kandidaten is nog niet ontvangen. De standaardprompt en bestaande
+profielen zijn ongewijzigd.
+
 ## 8. Tracing, telemetry, logging en gebruiksanalytics
 
 Vervolgopdracht van 9 september 2026; uitwerking en Spark-acceptatie staan ook in

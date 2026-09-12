@@ -5,6 +5,40 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 
 ## Unreleased — 2026-09-12
 
+### Proeven met portretgelijkenis
+
+- Lokale Spark-proeven opgezet voor een gedetailleerdere cartoonkop, een
+  gerichte hoofdbewerking en compositie op de oorspronkelijke body. Foto's en
+  resultaten blijven buiten Git; het proefplan staat in `docs/AVATAR_EXPERIMENTS.md`.
+- De private HTTP-service en losse proefprocessen delen één GPU-slot. Tijdens
+  een proef wachten normale opdrachten via het bestaande bezetprotocol, zonder
+  generatiepogingen te verbruiken.
+- De proefrunner bewaart tussenbeelden, parameters, looptijden en geheugenmetingen;
+  timeout, beëindiging en laag hostgeheugen ruimen het eigen modelproces op.
+  CPU-hulpmiddelen vergelijken achtergrondextractie en een exact bewaarde body.
+- Drie echte Edit-proeven met een nieuwe selfie slagen in 774,632–777,860
+  seconden per 1024 × 1024 RGB-beeld. De headless-bodyvariant heeft volgens onze
+  beoordeling de beste gelijkenis; de volledige referentie beïnvloedt de
+  gezichtsuitdrukking en de losse kop is algemener.
+- De afzonderlijke Layered-proef slaagt in 711,742 seconden en behoudt de globale
+  gelijkenis, met lichte hertekening maar zonder zichtbare kwaliteitswinst.
+  Gekozen is kandidaat 01 met CPU-uitsnede: behoud van de Edit-details zonder
+  extra modelhertekening, 640 × 640 RGBA en 60,522949% transparant. Beide
+  varianten renderen schoon op lichte/donkere achtergrond; onzichtbare RGB-
+  restwaarden bij alpha 0 zijn geen zichtbare achtergrondruis. Deze proef wijst
+  Layered niet aan als oorzaak van de eerdere grove gezichtsdetails.
+- De drie kandidaten zijn als transparante PNG gevalideerd en samen vergeleken.
+  De losse-hoofdvariant bewaart 55.052 oorspronkelijke zichtbare bodypixels vóór
+  eindschaling, maar heeft minder gezichtsdetail en een lichte naadovergang.
+- Alle 167 backendtests en vier CI-controles van app-PR 20 slagen. Modelprocessen
+  sluiten af en beschikbaar hostgeheugen herstelt. De vergelijking betreft één
+  portret met meerdere tegelijk gewijzigde instellingen; de standaardprompt,
+  opgeslagen profielen en cloudverwerking zijn niet gewijzigd.
+- Na afloop zijn het GPU-slot en beide workers weer beschikbaar, zonder actieve
+  opdrachten of cgroup-OOM-events. Alle 28 tijdelijke Spark-proefbestanden zijn
+  met gecontroleerde hashes privé op de Mac gearchiveerd en alleen de proefmap
+  is op Spark opgeruimd; runtimecode en modelcache blijven behouden.
+
 ### Vorige avatarfout herkenbaar
 
 - Een mislukte avataropdracht staat als ‘Vorige aanvraag mislukt’ met de lokale
