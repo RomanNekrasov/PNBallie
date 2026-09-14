@@ -293,3 +293,17 @@ populariteitscijfers zijn acceptatietestverkeer, geen organisch gebruik.
 Zie [acceptatie en verificatie](docs/ACCEPTANCE.md) en [promotie naar productie](docs/RELEASE_PROMOTION.md).
 De competitie op `pnballie.nl` behoudt haar bestaande authenticatie, images
 en scores; deze acceptatie voert die afzonderlijke migratie niet uit.
+
+## Avatarvervolg — nieuw sjabloon, 14 september 2026
+
+- [x] Nieuwe richting vastgelegd: herkenbaar maar zichtbaar getekend, tussen
+  de grove cartoon en de fotografische uitsnede in.
+- [x] Drie opties met dezelfde selfie en het nieuwe `player_template.png`:
+  zacht geschilderd, lichte inktcontouren en fijne pixelkunst.
+- [x] Vergelijking en losse transparante PNG's tonen; resultaten en beperkingen
+  vastleggen in `docs/AVATAR_EXPERIMENTS.md`.
+
+De drie transparante PNG-opties zijn gereed. Voorkeur: C, fijne pixelkunst.
+Qwen tekent het hoofd afzonderlijk; de nieuwe body blijft vóór eindschaling
+behouden. De volledige vergelijking en proefgegevens staan in
+`docs/AVATAR_EXPERIMENTS.md`.

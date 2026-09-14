@@ -1,15 +1,132 @@
-# Avatar likeness experiments — 12 September 2026
+# Avatar likeness experiments — September 2026
 
 The operator requested local Spark experiments after the first selfie avatar
 completed but lost facial detail compared with the existing OpenAI illustration.
 This experiment compares prompt and composition strategies using the supplied
 portrait. It does not change stored profiles or send photographs to a cloud API.
 
-**Preferred generated result: photographic candidate 05, extraction threshold 225.** After the user found
+**Current direction: recognizable drawn heads on the newly supplied template.**
+The photographic result below is retained as earlier evidence and is no longer
+the preferred style.
+
+**Previous photographic-round preference: candidate 05, extraction threshold 225.** After the user found
 the first three candidates too illustrated, the selfie-first follow-up produced
 a more recognizable face with natural hair and skin detail. The CPU composition
 of actual selfie pixels remains the unchanged-face comparison. The first
 comparison and its superseded preference for candidate 01 remain recorded below.
+
+## Template follow-up — 14 September 2026
+
+The user supplied a new transparent, headless player template and found the
+last photographic result too much like a cutout. This round targets a
+recognizable **drawn** face between the earlier cartoon and photographic trials.
+The original portrait and template remain private, unchanged source files.
+
+The initial full-figure plan used a selfie-first input order and padded white
+template. After the rejected result described below, the three final trials
+use **only the same selfie** to draw the head, then composite it onto the supplied
+body. They retain seed 777, 40 steps, CFG 4, pinned weights and a 0.70 CUDA
+allocation budget. The requested styles are:
+
+1. Softly painted portrait with natural proportions and subtle brushwork.
+2. Lightly inked portrait with detailed shading and controlled contours.
+3. Fine pixel-art portrait with enough detail for eyes, curls and facial hair.
+
+Preserve the selfie expression and identifiable proportions; avoid a toothy
+reference smile, caricature, block eyes or photographic pasted skin. Use the
+new template for the shirt, collar, rod, ball and overall figure. The CPU
+composition verifies all 532,097 source pixels with alpha ≥16 are unchanged
+before final framing/resampling. Values below 16 are cleared in a working copy
+to remove nearly transparent template noise; the original file is unchanged.
+Prepare CPU transparency and inspect consistent light/dark views before adding
+any costly Layered pass. Compare all options, including their smaller display
+size, and record a recommendation without modifying stored profiles or defaults.
+
+- [x] Record the revised brief, three variants and private input handling.
+- [x] Recover/check Spark service, GPU reservation and baseline memory.
+- [x] Generate the three template/selfie options sequentially on Spark.
+- [x] Inspect likeness, template fidelity, neck fit and transparent edges.
+- [x] Save comparison and individual PNGs, with measured runtime evidence.
+- [x] Verify service recovery, archive private files and publish documentation.
+
+### Revision after the first template result
+
+The first full-figure trial (06) completed, but omitted the eyes and reduced the
+portrait and body to a generic flat cartoon. It fails the recognizability brief
+and is **rejected**. Trial 07 was stopped during model loading, with its own
+supervisor reaping its child; trial 08 was not started.
+
+The revised three options generate a drawn **head and short neck from the selfie
+alone**, then place that head behind the supplied original template on the CPU.
+This removes the headless-body image from the face-rendering stage while keeping
+the requested painted, inked and fine-pixel choices. The prompts explicitly
+require complete eyes and natural facial detail. Preserve body pixels before
+final framing/resampling and verify the neck join. This adaptive change means
+the first attempt is not a controlled comparison with the later options.
+
+### Completed template options and selection
+
+All three revised trials completed on Spark with exit code 0. The portrait is
+redrawn by the pinned local Edit model; no hosted image service was used.
+
+| Option | Load (s) | Render (s) | Total (s) | Minimum available RAM (GiB) | Available after exit (GiB) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| A — painted | 289.246 | 282.447 | 578.887 | 48.676 | 111.584 |
+| B — inked | 291.253 | 289.539 | 587.980 | 50.190 | 111.223 |
+| C — fine pixel art | 293.322 | 293.960 | 596.038 | 52.898 | 111.187 |
+
+The runs have 118, 120 and 122 memory samples respectively, with no read failures.
+The initial rejected full-figure run took 773.767 seconds; its generic face
+omitted the eyes. Its replacement strategy produces complete facial features.
+The deliberately stopped loading-stage run is recorded separately in the
+private archive, not counted as a successful image result.
+
+**Recommended option: C, fine pixel art.** Its facial details remain readable at
+avatar size, with a clearly stylized game appearance and dark hair. A is the
+softer painted alternative, with more pronounced curls/shading; B has the most
+obvious ink-and-colour sketch appearance, but paler skin and hair. This is a
+subjective comparison using one portrait. All options can change facial details;
+none guarantees exact likeness for other users. A CPU-only pixel treatment of
+the actual selfie was also inspected, but still looked too photographic for
+this brief and is not one of the three selected options.
+
+All three heads use width **600** and neck anchor **(690, 465)** in template
+coordinates. They are pasted behind the original body and framed using one
+shared crop/scale, so the shirt, rod and ball align across the comparison.
+All **532,097 original template pixels with alpha ≥16** are verified unchanged
+before final resampling. Only nearly transparent values below 16 are cleared
+in a copy. The original supplied template passes its unchanged SHA-256 check.
+
+The final files pass the application's transparent-PNG validator: **640 × 640
+RGBA**, no EXIF and no visible pixels touching the outer border.
+
+| Option | PNG bytes | Exactly transparent |
+| --- | ---: | ---: |
+| A — painted | 289,263 | 64.8618% |
+| B — inked | 317,316 | 64.3501% |
+| C — fine pixel art | 260,344 | 65.2747% |
+
+CPU extraction removes border-connected white from the generated heads at
+threshold 225 for A and 240 for B/C. Inspecting light/dark backgrounds confirms
+a usable silhouette and neck join. Some pale hair-edge highlights remain in
+the painted/inked outputs; these are experimental options, not a demonstrated
+automatic matting solution. No Layered stage was needed for this comparison.
+
+Private outputs and both comparison sheets are under
+`.local-test/avatar-template-20260914/`; `best-template-avatar.png` is option C.
+The exact prompts, source hashes, manual placement, comparison rendering and
+memory measurements are retained privately. All **30** temporary Spark files
+were copied back with matching SHA-256 hashes before deleting only the exact
+experiment directory. Runtime code and model weights remain available.
+
+Final acceptance/preview checks both return HTTP 200, idle queues and HTTP 422
+for empty authenticated requests, confirming a released reservation. The
+stored-avatar hashes match the pre-trial baseline. Available memory returned
+to about **111 GiB**, and cgroup OOM/kill counters remain zero. The default app
+prompt and current player profiles are unchanged. The separate homelab change
+repairs the observed NVIDIA CDI boot race and passes 19 targeted recovery tests,
+47 repository tests and live idempotent unit verification; its next real reboot
+is still untested.
 
 ## Follow-up plan: photographic likeness
 

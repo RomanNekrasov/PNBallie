@@ -3,7 +3,31 @@
 Alle relevante wijzigingen aan deze uitbreiding worden hier bijgehouden.
 Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 
-## Unreleased — 2026-09-12
+## Unreleased — 2026-09-14
+
+### Vervolg: nieuw spelerssjabloon
+
+- Drie lokale opties voltooid: zacht geschilderd, lichte inktcontouren en fijne
+  pixelkunst. Voorkeur C combineert herkenbare details met een duidelijke
+  spelavatarstijl. De volledige runs duren 9m39s, 9m48s en 9m56s.
+- Elke PNG is 640 × 640 RGBA. Dezelfde body, halspositie en einduitsnede houden
+  de vergelijking consistent; 532.097 sjabloonpixels blijven vóór eindschaling
+  ongewijzigd. Licht/donker, transparantie en bestandsvalidatie zijn gecontroleerd.
+- Dertig tijdelijke Spark-bestanden zijn privé gearchiveerd met gelijke hashes;
+  de proefmap is verwijderd. Geheugen, GPU-reservering en beide workers herstellen;
+  opgeslagen avatars en de standaardprompt blijven ongewijzigd.
+
+- De eerste volledige figuur is afgekeurd: Qwen liet de ogen weg en maakte het
+  portret te generiek. De vervolgopties tekenen alleen het hoofd uit de selfie;
+  dat wordt vervolgens op de oorspronkelijke body geplaatst, met controle
+  van de halsverbinding en de ongewijzigde bodypixels vóór eindschaling.
+
+- De nieuwe proef vergelijkt drie herkenbare, getekende gezichten op het door
+  de gebruiker aangeleverde sjabloon: zacht geschilderd, lichte inktcontouren
+  en fijne pixelkunst. De fotografische variant was te veel een foto-uitsnede.
+  Foto, sjabloon en proefresultaten blijven privé; de vergelijking gebruikt
+  lokale Qwen-generatie op Spark.
+
 
 ### Vervolg: realistischer portret
 
