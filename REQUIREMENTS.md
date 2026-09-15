@@ -317,16 +317,15 @@ behouden. De volledige vergelijking en proefgegevens staan in
 - [x] Asynchrone wachtrij, privacy, GPU-reservering, tracing en procesopruiming behouden.
 - [x] Oudere clients ondersteunen; de nieuwe route expliciet laten bevestigen
   zodat een oude service niet ongemerkt de vorige stijl teruggeeft.
-- [ ] Tests, private imagepublicatie, GitOps-uitrol en een echte geüploade
+- [x] Tests, private imagepublicatie, GitOps-uitrol en een echte geüploade
   selfie op acceptatie verifiëren, inclusief transparante opslag en geheugenherstel.
 - [x] De twee gevraagde spelers toevoegen aan de bestaande productiecompetitie,
   na een gecontroleerde backup, met behoud van bestaande spelers en uitslagen.
 
-Acceptatie draait de geselecteerde C-release sinds 15 september. De echte upload
-bereikt de nieuwe keten, maar kan geen model laden: een nieuw aangemaakte
-embeddingsdienst gebruikt bijna 95 GiB GPU-geheugen. Volledige PNG-generatie en
-geheugenherstel blijven open. Foutafhandeling, tracing, bronopruiming en behoud
-van demo-/productiegegevens zijn gecontroleerd; zie `docs/AVATAR_SERVICE.md`.
+Acceptatie draait de geselecteerde C-release sinds 15 september. Na het expliciete
+stopverzoek voor embeddings slaagt een echte selfie-upload op de eerste poging,
+inclusief transparante opslag, geheugenherstel, tracing en bronopruiming.
+De oorspronkelijke demo-/productiegegevens zijn behouden; zie `docs/AVATAR_SERVICE.md`.
 
 ## iPhone-upload en capaciteit — 15 september 2026
 
@@ -334,5 +333,6 @@ van demo-/productiegegevens zijn gecontroleerd; zie `docs/AVATAR_SERVICE.md`.
 - [x] Foto's tot 20 MB en 50 megapixels begrensd verkleinen; EXIF/GPS verwijderen en oriëntatie behouden.
 - [x] Beschikbare servercapaciteit tonen en onbruikbare uploads weigeren vóór opslag/quotaverbruik.
 - [x] Bij tijdelijk geheugentekort wachten zonder de drie echte pogingen te verbruiken.
-- [ ] Tests, documentatie, publicatie en acceptatie-uitrol; echte iPhone-selectie niet claimen zonder toesteltest.
-- [x] De gebruiker heeft de embeddingsdienst expliciet laten stoppen. Container en modelbestanden blijven behouden; de C-test is hervat.
+- [x] Tests, documentatie, publicatie en acceptatie-uitrol; live 48-MP-HEIC-upload en bronopruiming gecontroleerd.
+- [ ] Fotoselectie op de echte iPhone bevestigen; backend- en componenttests vervangen de toesteltest niet.
+- [x] De gebruiker heeft de embeddingsdienst expliciet laten stoppen. Container en modelbestanden blijven behouden; de C-test is geslaagd.

@@ -29,13 +29,22 @@ services; zet haar in acceptatie aan nadat de nieuwe runtime is geïnstalleerd.
 De operator heeft de nieuw aangemaakte embeddingsdienst nu expliciet laten
 stoppen. De container en modelbestanden zijn behouden; er kwam circa 111 GiB
 vrij. De dienst blijft gestopt totdat hervatten afzonderlijk gewenst is.
-Een nieuwe volledige C-profielproef en de acceptatie-uitrol lopen nog.
+De volledige C-profielproef is geslaagd. De iPhone-fix is via homelab-PR 65 uitgerold op acceptatie.
 
-Validatie tot nu toe: HEIC-upload/oriëntatie/metadata, MIME-fallback,
+Validatie: HEIC-upload/oriëntatie/metadata, MIME-fallback,
 selectiebehoud en capaciteitsovergangen zijn getest. Een synthetische
 48-megapixel-HEIC wordt in het geharde ARM64-image binnen 1 GiB omgezet naar
-1024 × 768 RGBA; gemeten procespiek 364,5 MiB. Dit vervangt geen echte controle
-van de fotokiezer op de iPhone van de gebruiker.
+1024 × 768 RGBA; gemeten procespiek 364,5 MiB. Dezelfde synthetische HEIC is daarna via de publieke acceptatie-API geüpload
+(HTTP 202). De opgeslagen PNG komt exact overeen met de lokale normalisatie.
+Een tijdelijke GPU-reservering voorkwam modelstart; annulering verwijderde de
+bron en claim. Alleen tijdelijke testrecords zijn opgeruimd en alle demogegevens
+zijn behouden. Dit vervangt geen echte controle van de fotokiezer op de iPhone.
+
+App-PR 25 is gepubliceerd als `e601c37`; 191 backendtests, 96 frontendtests,
+containerchecks en ARM64/AMD64-publicatie slagen. Homelab-PR 65 is gereconcilieerd
+als `63e3880`. De drie acceptatiedeployments zijn ready; publieke pagina, health
+en configuratie geven 200. De API bevestigt `ready`, `pixel-v1`, 20 MiB en actieve
+capaciteitscontrole. Beide wachtrijen zijn leeg en productie-images ongewijzigd.
 
 ## Gekozen stijl C — 15 september 2026
 
@@ -104,9 +113,19 @@ de tijdelijke testrecords zijn verwijderd. De 8 demospelers, 180 wedstrijden
 en bestaande profielafbeeldingen zijn ongewijzigd. Beide avatarwachtrijen zijn
 leeg en beide private healthchecks zijn geslaagd.
 
-De volledige C-profielproef blijft open tot er voldoende GPU-geheugen beschikbaar
-is. De eerdere geslaagde C-experimenten en lokale compositorcontrole zijn geen
-vervanging voor die laatste controle op de uitgerolde versie.
+Na het expliciete stopverzoek is een nieuwe C-profielproef wel geslaagd:
+640 × 640 RGBA, 263.854 bytes en 64,59% volledig transparant. De eerste poging
+voltooide in ongeveer tien minuten, via de publieke acceptatie-upload, worker
+en private modelservice. Beeldcontrole bevestigt het herkenbare pixelportret
+op het aangeleverde lichaam. Alle 7 spans, 20 gecorreleerde logregels en 6
+parentverwijzingen zijn aanwezig. Het vrije geheugen bleef boven 52,10 GiB en
+herstelde naar 110,83 GiB na afloop; geen OOM/kill. De private afbeeldingsopslag,
+anonieme toegangsweigering, bronverwijdering en leaseopruiming zijn geverifieerd.
+De tijdelijke proefgroep is verwijderd; alle oorspronkelijke demogegevens en
+profielafbeeldingen zijn behouden. Dit voltooit de volledige C-profielproef.
+
+De bovenstaande mislukte proef beschrijft de eerdere situatie vóór het expliciete
+stopverzoek. De embeddingscontainer blijft nu gestopt, met bestanden behouden.
 
 ## Resultaat van het onderzoek — 9 september 2026
 
