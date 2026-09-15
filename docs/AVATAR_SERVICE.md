@@ -38,6 +38,39 @@ Modelcache, GPU-reservering, geheugenbudget, tracing en afzonderlijk childproces
 blijven behouden. De proefvarianten duurden ongeveer tien minuten; een nieuwe
 normale upload moet na uitrol afzonderlijk worden geverifieerd.
 
+### Uitrol en capaciteitstest
+
+App-PR 23 (`32eb60beab4f8d2fd390842ec0f1cb6d04749938`) passeert alle
+releasecontroles, waaronder 174 backendtests. Homelab-PR 63 is gereconcilieerd
+als `c03f5fd40d960f127c442cb757e8ecd2d7afdbea`. API en worker op acceptatie
+bevestigen `pixel-v1` met backenddigest
+`sha256:b0080b0c37edb992709095865e113f6bba8a1ffda88d8e9d930607c449ddd182`.
+Frontenddigest:
+`sha256:968385a4dcf989a52c4f08cbc4fc54fea0798c8280bd31c02de53869a1fe40be`.
+Alle drie de deployments zijn ready; publieke pagina, health en configuratie
+geven HTTP 200. Productie behoudt zijn bestaande images.
+
+Een echte selfie is via de publieke profiel-API naar een tijdelijke testgroep
+geüpload. De nieuwe keten wordt bereikt, maar genereert **nog geen nieuwe PNG**:
+een op dezelfde dag opnieuw aangemaakte embeddingsdienst bezet 96.811 MiB
+GPU-geheugen. Er is circa 11–12 GiB hostgeheugen vrij, tegenover de vereiste
+80 GiB vóór het laden. De opdracht eindigt na drie pogingen zonder modeluitvoer.
+De afzonderlijke testmonitor beëindigt bij de laatste poging uitsluitend zijn
+herkende testchild wegens de lage hostreserve; cgroup-OOM-tellers blijven nul.
+De nieuw aangemaakte embeddingsdienst is niet gestopt of aangepast.
+
+De foutketen levert 15 spans en 17 gecorreleerde logregels over API, worker en
+inference. Alle 14 parentverwijzingen zijn ook over de retries correct;
+gevoelige testmarkers zijn afwezig. Er is geen compositiespan of succesvolle
+modelrun geclaimd. De bronfoto, lease en actieve claim zijn opgeruimd; alleen
+de tijdelijke testrecords zijn verwijderd. De 8 demospelers, 180 wedstrijden
+en bestaande profielafbeeldingen zijn ongewijzigd. Beide avatarwachtrijen zijn
+leeg en beide private healthchecks zijn geslaagd.
+
+De volledige C-profielproef blijft open tot er voldoende GPU-geheugen beschikbaar
+is. De eerdere geslaagde C-experimenten en lokale compositorcontrole zijn geen
+vervanging voor die laatste controle op de uitgerolde versie.
+
 ## Resultaat van het onderzoek — 9 september 2026
 
 **Qwen kan echte transparante beelden leveren, met het specifieke
@@ -367,7 +400,9 @@ eigen profiel -> API -> avatar_job in SQLite <- avatar-worker
                                                |
                                                +-> private Spark image service
                                                |   apart proces per opdracht:
-                                               |   Edit -> Layered -> proces afsluiten
+                                               |   pixel-v1: Edit -> CPU-compositie
+                                               |   legacy: Edit -> Layered
+                                               |   daarna proces afsluiten
                                                |
                                                +-> OpenAI Image Edits
                                                    alleen na expliciete profielkeuze
@@ -399,8 +434,9 @@ worker -> PNG/alpha-validatie -> player_avatar -> groepsbeveiligde afbeelding
 - Gebruik één queue-worker per appdatabase en één gedeeld inferenceproces
   (`--workers 1`). Preview en acceptatie kunnen zo dezelfde private modelservice
   gebruiken. Claims zijn bestand tegen een overlappende workerstart; de service
-  verwerkt maximaal één beeld tegelijk. Meerdere inferenceprocessen zouden elk
-  een eigen lock hebben en worden niet ondersteund op de gedeelde GB10.
+  verwerkt maximaal één beeld tegelijk. De gedeelde bestandsreservering beschermt
+  ook tegen overlap met directe experimenten; één HTTP-proces blijft de
+  ondersteunde configuratie op de gedeelde GB10.
 
 De app behoudt SQLModel, SQLite en de bestaande `uv`-stack. Een bestaande
 databasewachtrij voorkomt een extra Redis/Celery-beheerdienst voor dit kleine
@@ -416,8 +452,9 @@ op als lokale omgevingsvariabelen of versleutelde deploymentsecrets.
 | --- | --- |
 | `AVATAR_LOCAL_URL` | Volledige interne URL, bijvoorbeeld `http://avatar-inference.pnballie-avatar.svc.cluster.local:8000/v1/avatar` |
 | `AVATAR_SERVICE_TOKEN` | Gedeeld geheim voor worker en private modelservice |
-| `AVATAR_REFERENCE_PATH` | Optioneel; standaard `app/assets/avatar-body.png` in het backendpakket |
-| `AVATAR_TIMEOUT_SECONDS` | Modelantwoord-time-out; standaard 3600, tussen 30 en 3600 seconden; de gemeten lokale BF16-route duurt langer dan twintig minuten |
+| `AVATAR_LOCAL_STYLE` | `legacy` (standaard) of `pixel-v1` (acceptatie); API en worker gelijk instellen |
+| `AVATAR_REFERENCE_PATH` | Voor legacy/OpenAI; standaard `app/assets/avatar-body.png`. Pixel-v1 gebruikt het vaste sjabloon in de modelservice |
+| `AVATAR_TIMEOUT_SECONDS` | Modelantwoord-time-out; standaard 3600, tussen 30 en 3600 seconden; de legacy-route duurde 25 minuten, de C-proeven ongeveer tien minuten |
 | `OPENAI_API_KEY` | Alleen nodig als OpenAI beschikbaar moet zijn |
 | `OPENAI_IMAGE_MODEL` | Expliciet te kiezen GPT Image-model; geen stilzwijgende model- of kostenwijziging |
 | `AVATAR_MIN_AVAILABLE_GIB` | Geheugenpoort op de Spark; standaard 80 GiB vrij vóór elke modellaadstap |
@@ -426,8 +463,8 @@ op als lokale omgevingsvariabelen of versleutelde deploymentsecrets.
 
 De modelchild stelt het CUDA-allocatorbudget in zodra CUDA beschikbaar is,
 vóór het eerste model gewichten laadt. Een ongeldige waarde of een mislukte
-budgetinstelling stopt die generatie vóór het laden. Beide modellen blijven
-sequentieel met dezelfde BF16-gewichten, stappen en resolutie draaien.
+budgetinstelling stopt die generatie vóór het laden. Legacy laadt beide modellen
+sequentieel; pixel-v1 laadt alleen Edit met dezelfde gepinde BF16-gewichten.
 
 Met de standaardwaarde `0.70` kan de PyTorch-allocator maximaal 70% van het
 totale voor CUDA zichtbare geheugen reserveren; ongeveer 30% blijft buiten

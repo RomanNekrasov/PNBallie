@@ -321,3 +321,9 @@ behouden. De volledige vergelijking en proefgegevens staan in
   selfie op acceptatie verifiëren, inclusief transparante opslag en geheugenherstel.
 - [x] De twee gevraagde spelers toevoegen aan de bestaande productiecompetitie,
   na een gecontroleerde backup, met behoud van bestaande spelers en uitslagen.
+
+Acceptatie draait de geselecteerde C-release sinds 15 september. De echte upload
+bereikt de nieuwe keten, maar kan geen model laden: een nieuw aangemaakte
+embeddingsdienst gebruikt bijna 95 GiB GPU-geheugen. Volledige PNG-generatie en
+geheugenherstel blijven open. Foutafhandeling, tracing, bronopruiming en behoud
+van demo-/productiegegevens zijn gecontroleerd; zie `docs/AVATAR_SERVICE.md`.

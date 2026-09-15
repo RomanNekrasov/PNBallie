@@ -10,7 +10,11 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 - De gekozen pixelstijl is beschikbaar via `AVATAR_LOCAL_STYLE=pixel-v1`: één
   portretgeneratie en compositie met het aangeleverde spelerssjabloon. De prompt
   behoudt de eigen gelaatstrekken; het private protocol bevestigt de stijl.
-  Oudere clients houden de bestaande route. Uitrol en profielproef volgen.
+  Oudere clients houden de bestaande route. De private release is via Flux
+  op acceptatie uitgerold; API en worker bevestigen de nieuwe stijl.
+- De echte upload bereikt de uitgerolde keten, maar de nieuwe embeddingsdienst
+  houdt bijna 95 GiB GPU-geheugen bezet. Volledige generatie blijft open;
+  fouttraces, bronopruiming en behoud van bestaande demoavatars zijn geverifieerd.
 - De twee gevraagde spelers zijn aan productie toegevoegd met geverifieerde
   versleutelde backups vóór en na de wijziging. Alle bestaande spelers,
   39 wedstrijden en 90 deelnames zijn ongewijzigd; productie blijft op zijn
