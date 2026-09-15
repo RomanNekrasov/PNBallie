@@ -118,6 +118,7 @@ def test_provider_and_service_negotiate_pixel_style_without_transmitting_body(tm
         assert Image.open(BytesIO(source)).size == (256, 256)
         return compose_pixel_avatar(portrait(), pixel_template())
 
+    monkeypatch.setattr(avatar_service, "require_capacity", lambda: None)
     monkeypatch.setattr(avatar_service, "generate_in_subprocess", generate)
     service = TestClient(avatar_service.app)
     settings = AvatarSettings("http://private/v1/avatar", "pixel-test-token", "", "",

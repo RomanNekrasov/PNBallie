@@ -1,5 +1,42 @@
 # Eigen spelersavatars
 
+## iPhone-foto's en beschikbare capaciteit — 15 september 2026
+
+De profielkiezer accepteert JPEG, PNG, WebP en HEIC/HEIF, inclusief een ontbrekend
+MIME-type bij bestanden uit een fotobibliotheek. De backend controleert het echte
+bestandsformaat. De native selectie blijft staan tot de upload klaar is. Als de
+browser geen HEIC-preview kan tonen, blijft de geselecteerde foto uploadbaar.
+Foto's mogen maximaal 20 MB en 50 megapixels zijn. De API verkleint vóór extra
+RGBA-kopieën, respecteert de beeldoriëntatie en bewaart alleen PNG-pixels zonder
+EXIF/GPS, XMP of andere fotometadata. HEIF gebruikt uitsluitend het primaire
+stilstaande beeld; hulpbeelden worden niet gedecodeerd. De modeluitvoer houdt
+zijn afzonderlijke limiet van 16 MB/16 megapixels en de alpha-validatie.
+
+`AVATAR_CHECK_CAPACITY=true` activeert een private, geauthenticeerde controle
+via `/v1/status`. Deze controle laadt geen model en deelt alleen een beperkte
+status. Het profiel meldt onvoldoende capaciteit of een onbereikbare dienst en
+kan de beschikbaarheid opnieuw controleren zonder de gekozen foto te wissen.
+De upload-API controleert opnieuw vóór het lezen/opslaan van fotobytes en vóór
+het aanmaken van een opdracht. Er wordt nooit vanzelf naar OpenAI gewisseld.
+
+Als capaciteit verdwijnt tussen controle en verwerking, geeft de private dienst
+503 met `X-PNBallie-Avatar-State: capacity`. De worker wacht zonder een echte
+poging te verbruiken; bronretentie blijft maximaal 24 uur. Zowel parent als child
+controleren de geheugenreserve. Onbekende hardware-/servicestoringen blijven
+gewone begrensde retries. De optie staat standaard uit voor oudere private
+services; zet haar in acceptatie aan nadat de nieuwe runtime is geïnstalleerd.
+
+De operator heeft de nieuw aangemaakte embeddingsdienst nu expliciet laten
+stoppen. De container en modelbestanden zijn behouden; er kwam circa 111 GiB
+vrij. De dienst blijft gestopt totdat hervatten afzonderlijk gewenst is.
+Een nieuwe volledige C-profielproef en de acceptatie-uitrol lopen nog.
+
+Validatie tot nu toe: HEIC-upload/oriëntatie/metadata, MIME-fallback,
+selectiebehoud en capaciteitsovergangen zijn getest. Een synthetische
+48-megapixel-HEIC wordt in het geharde ARM64-image binnen 1 GiB omgezet naar
+1024 × 768 RGBA; gemeten procespiek 364,5 MiB. Dit vervangt geen echte controle
+van de fotokiezer op de iPhone van de gebruiker.
+
 ## Gekozen stijl C — 15 september 2026
 
 Acceptatie gebruikt `AVATAR_LOCAL_STYLE=pixel-v1` voor API en worker. Een gewone
@@ -452,6 +489,7 @@ op als lokale omgevingsvariabelen of versleutelde deploymentsecrets.
 | --- | --- |
 | `AVATAR_LOCAL_URL` | Volledige interne URL, bijvoorbeeld `http://avatar-inference.pnballie-avatar.svc.cluster.local:8000/v1/avatar` |
 | `AVATAR_SERVICE_TOKEN` | Gedeeld geheim voor worker en private modelservice |
+| `AVATAR_CHECK_CAPACITY` | Standaard `false`; in acceptatie `true` met de nieuwe private `/v1/status`-route |
 | `AVATAR_LOCAL_STYLE` | `legacy` (standaard) of `pixel-v1` (acceptatie); API en worker gelijk instellen |
 | `AVATAR_REFERENCE_PATH` | Voor legacy/OpenAI; standaard `app/assets/avatar-body.png`. Pixel-v1 gebruikt het vaste sjabloon in de modelservice |
 | `AVATAR_TIMEOUT_SECONDS` | Modelantwoord-time-out; standaard 3600, tussen 30 en 3600 seconden; de legacy-route duurde 25 minuten, de C-proeven ongeveer tien minuten |
@@ -559,8 +597,8 @@ Groepsroutes gebruiken de bestaande login-cookie, `X-Group-ID` en bij mutaties
 
 | Route | Gedrag |
 | --- | --- |
-| `GET /api/avatars/config` | `local_available`, `openai_available`, `max_upload_bytes` |
-| `POST /api/avatars/me/jobs?provider=local` | Ruwe afbeeldingsbytes; `Content-Type: image/png`, `image/jpeg` of `image/webp`; antwoord 202 |
+| `GET /api/avatars/config` | `local_available`, `openai_available`, `max_upload_bytes`, `local_status`, `local_style` |
+| `POST /api/avatars/me/jobs?provider=local` | Ruwe afbeeldingsbytes; `Content-Type: image/png`, `image/jpeg`, `image/webp`, `image/heic` of `image/heif`; antwoord 202 |
 | `POST /api/avatars/me/jobs?provider=openai&cloud_consent=true` | Dezelfde upload, met expliciete toestemming om de foto door OpenAI te laten verwerken |
 | `GET /api/avatars/me/latest` | Laatste eigen opdracht in de actieve groep, of `null` |
 | `GET /api/avatars/jobs/{id}` | Eigen opdracht en fout-/resultaatstatus |
@@ -577,7 +615,7 @@ Tijdstippen hebben een expliciete UTC-offset.
 - Een upload bindt aan de ingelogde gebruiker én diens actieve spelersprofiel in
   de groep; de client kiest geen andere speler-ID.
 - De API decodeert en hercodeert foto's, verwijdert metadata, weigert animaties
-  en controleert werkelijk bestandsformaat. Limieten: 8 MiB upload, 16 megapixels,
+  en controleert werkelijk bestandsformaat. Limieten: 20 MiB upload, 50 megapixels bronfoto (16 megapixels modeluitvoer),
   maximaal vijf aanvragen per gebruiker per 24 uur, één actieve opdracht per
   speler. De genormaliseerde foto is maximaal 1024 × 1024.
 - De quota/indiening zijn onder een SQLite-schrijftransactie beschermd.

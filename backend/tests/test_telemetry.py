@@ -193,6 +193,7 @@ def test_durable_avatar_trace_links_api_worker_provider_and_inference(runtime_fa
     inference_app = FastAPI()
     inference_app.post("/v1/avatar")(avatar_service.generate)
     telemetry.install_http(inference_app, inference_runtime, accept_parent=True)
+    monkeypatch.setattr(avatar_service, "require_capacity", lambda: None)
     monkeypatch.setattr(avatar_service, "generate_in_subprocess", lambda *_: raw_png())
     inference_client = TestClient(inference_app)
     observed = []

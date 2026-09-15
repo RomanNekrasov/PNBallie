@@ -6,9 +6,15 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from app.auth import GroupContext, require_group, require_user
-from app.avatar_images import MAX_UPLOAD_BYTES, InvalidAvatarImage, normalize_upload
+from app.avatar_images import (
+    ALLOWED_MIME,
+    MAX_UPLOAD_BYTES,
+    InvalidAvatarImage,
+    normalize_upload,
+)
 from app.avatar_models import AvatarJob, AvatarJobRead, PlayerAvatar, read_job, utcnow
 from app.avatar_providers import AvatarSettings
+from app.avatar_readiness import CAPACITY_MESSAGE, UNAVAILABLE_MESSAGE, local_status
 from app.avatar_worker import SOURCE_RETENTION, _terminal_values
 from app.database import get_session
 from app.models import Membership, Player, User
@@ -30,10 +36,11 @@ def own_player(group: GroupContext, session: Session) -> Player:
 
 
 @router.get("/config")
-def configuration(group: GroupContext = Depends(require_group)):
+async def configuration(group: GroupContext = Depends(require_group)):
     config = AvatarSettings.from_env()
     return {"local_available": config.local_available, "openai_available": config.openai_available,
-            "max_upload_bytes": MAX_UPLOAD_BYTES}
+            "max_upload_bytes": MAX_UPLOAD_BYTES, "local_status": await local_status(config),
+            "local_style": config.local_style}
 
 
 @router.post("/me/jobs", status_code=202, response_model=AvatarJobRead)
@@ -46,6 +53,10 @@ async def upload(request: Request, provider: Literal["local", "openai"] = "local
     config = AvatarSettings.from_env()
     if not (config.local_available if provider == "local" else config.openai_available):
         raise HTTPException(503, "Deze afbeeldingsdienst is nog niet ingesteld.")
+    if provider == "local":
+        state = await local_status(config)
+        if state in {"capacity", "unavailable"}:
+            raise HTTPException(503, CAPACITY_MESSAGE if state == "capacity" else UNAVAILABLE_MESSAGE)
     if session.exec(select(AvatarJob.id).where(AvatarJob.active_player_id == player.id)).first():
         raise HTTPException(409, "Er wordt al een avatar voor je gemaakt.")
     recent_jobs = session.exec(select(func.count()).select_from(AvatarJob).where(
@@ -54,13 +65,13 @@ async def upload(request: Request, provider: Literal["local", "openai"] = "local
     if recent_jobs >= 5:
         raise HTTPException(429, "Je kunt maximaal vijf avatars per 24 uur aanvragen.")
     mime = request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
-    if mime not in {"image/jpeg", "image/png", "image/webp"}:
-        raise HTTPException(415, "Gebruik een PNG-, JPEG- of WebP-afbeelding.")
+    if mime not in ALLOWED_MIME:
+        raise HTTPException(415, "Gebruik een JPEG-, PNG-, WebP- of HEIC/HEIF-foto.")
     raw = bytearray()
     async for chunk in request.stream():
         raw.extend(chunk)
         if len(raw) > MAX_UPLOAD_BYTES:
-            raise HTTPException(413, "De foto mag maximaal 8 MB groot zijn.")
+            raise HTTPException(413, "De foto mag maximaal 20 MB groot zijn.")
     try:
         source = normalize_upload(bytes(raw), mime)
     except InvalidAvatarImage as exc:

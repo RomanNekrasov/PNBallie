@@ -138,6 +138,7 @@ def test_service_defers_for_external_reservation_after_auth_and_recovers(slot_pa
         assert probe_slot(slot_path).returncode == 75
         return png
 
+    monkeypatch.setattr(avatar_service, "require_capacity", lambda: None)
     monkeypatch.setattr(avatar_service, "generate_in_subprocess", fake_generation)
     client = TestClient(avatar_service.app)
     headers = {"Authorization": "Bearer service-token"}
