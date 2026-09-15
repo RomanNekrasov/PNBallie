@@ -307,3 +307,17 @@ De drie transparante PNG-opties zijn gereed. Voorkeur: C, fijne pixelkunst.
 Qwen tekent het hoofd afzonderlijk; de nieuwe body blijft vóór eindschaling
 behouden. De volledige vergelijking en proefgegevens staan in
 `docs/AVATAR_EXPERIMENTS.md`.
+
+## Avatar C naar acceptatie — 15 september 2026
+
+- [x] Optie C in de gewone uploadflow integreren: één lokale Qwen Edit-run
+  voor een herkenbaar pixelportret, gevolgd door plaatsing op het nieuwe sjabloon.
+- [x] De prompt geschikt maken voor verschillende personen, zonder vaste
+  haarkleur, krullen, baard of gezichtsuitdrukking op te leggen.
+- [x] Asynchrone wachtrij, privacy, GPU-reservering, tracing en procesopruiming behouden.
+- [x] Oudere clients ondersteunen; de nieuwe route expliciet laten bevestigen
+  zodat een oude service niet ongemerkt de vorige stijl teruggeeft.
+- [ ] Tests, private imagepublicatie, GitOps-uitrol en een echte geüploade
+  selfie op acceptatie verifiëren, inclusief transparante opslag en geheugenherstel.
+- [x] De twee gevraagde spelers toevoegen aan de bestaande productiecompetitie,
+  na een gecontroleerde backup, met behoud van bestaande spelers en uitslagen.

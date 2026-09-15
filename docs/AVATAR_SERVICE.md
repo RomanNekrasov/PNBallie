@@ -1,5 +1,43 @@
 # Eigen spelersavatars
 
+## Gekozen stijl C — 15 september 2026
+
+Acceptatie gebruikt `AVATAR_LOCAL_STYLE=pixel-v1` voor API en worker. Een gewone
+profielupload doorloopt dezelfde asynchrone wachtrij, maar Qwen Edit tekent nu
+alleen het hoofd en een korte hals. De prompt vraagt fijne pixelkunst met
+herkenbare gelaatstrekken en behoud van de eigen uitdrukking, haar en eventuele
+gezichtsbeharing. Eén BF16 Edit-run gebruikt de bestaande gepinde revisie,
+40 stappen, seed 777, CFG 4 en 1024 × 1024 uitvoer.
+
+Daarna verwijdert CPU-compositie alleen met de beeldrand verbonden bijna-witte
+achtergrondpixels; ingesloten oogwit en highlights blijven behouden. Het hoofd
+komt achter `backend/app/assets/avatar-player-template.png`. De 532.097 zichtbare
+bodypixels blijven op oorspronkelijke resolutie exact behouden, waarna het geheel
+wordt geschaald naar 640 × 640 RGBA met een transparante buitenrand. De originele
+selfie en gegenereerde gezichten staan niet in de repository.
+
+De normale upload respecteert EXIF-oriëntatie en verwijdert metadata. Gebruik een
+scherpe foto met één duidelijk zichtbaar gezicht; deze route heeft geen automatische
+gezichtsuitsnede of aparte identiteitscontrole. De achtergrondextractie is een
+begrensde witte-achtergrondmethode, geen algemene segmentatie. Afgesneden,
+ondoorzichtige of lege modeluitvoer wordt afgewezen. Zeer lichte haren/randen en
+ongebruikelijke uitsnedes kunnen minder goed uitvallen; de profielproef hieronder
+legt de daadwerkelijk geteste invoer vast.
+
+Het private protocol stuurt voor deze stijl `source_png` en `style: pixel-v1`.
+De modelservice bezit het sjabloon en bevestigt de stijl in het antwoord. Een oude
+service zonder bevestiging wordt afgewezen in plaats van stilletjes de oude stijl
+te leveren. Zonder instelling blijft `legacy` actief: oude clients met
+`source_png`/`reference_png` blijven de hieronder beschreven Edit + Layered-route
+gebruiken. De expliciete OpenAI-keuze blijft ongewijzigd.
+
+Uitrolvolgorde: eerst de compatibele private Spark-runtime inclusief het nieuwe
+sjabloon bijwerken terwijl de gedeelde wachtrij leeg is; daarna het nieuwe
+API-/workerimage en `AVATAR_LOCAL_STYLE=pixel-v1` in acceptatie selecteren.
+Modelcache, GPU-reservering, geheugenbudget, tracing en afzonderlijk childproces
+blijven behouden. De proefvarianten duurden ongeveer tien minuten; een nieuwe
+normale upload moet na uitrol afzonderlijk worden geverifieerd.
+
 ## Resultaat van het onderzoek — 9 september 2026
 
 **Qwen kan echte transparante beelden leveren, met het specifieke
@@ -8,7 +46,7 @@ beeldgenerator. Qwen-Image-Edit kan een portret en een referentiepoppetje
 combineren, maar een PNG-bestand uit die pipeline is op zichzelf geen bewijs
 van transparantie. De gewone beeldpipeline heeft een RGB-decoder.
 
-De geïmplementeerde lokale route gebruikt twee opeenvolgende stappen:
+De oorspronkelijke lokale route (`legacy`) gebruikt twee opeenvolgende stappen:
 
 1. **Qwen-Image-Edit-2511** maakt het poppetje uit de eigen foto en de bestaande
    stijl/bodyreferentie. Het model ondersteunt meerdere invoerbeelden en verbeterde
