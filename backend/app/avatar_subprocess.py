@@ -10,6 +10,7 @@ import os
 import sys
 
 from app.avatar_images import MAX_UPLOAD_BYTES, InvalidAvatarImage
+from app.avatar_pixel import LEGACY_STYLE, LOCAL_STYLES
 from app.avatar_service import InferenceUnavailable, QwenRuntime
 from app.telemetry import INFERENCE_SERVICE, Runtime, span_result
 
@@ -27,11 +28,16 @@ def main() -> int:
         if len(request) > limit:
             raise ValueError("Oversized inference request")
         payload = json.loads(request)
+        style = payload.get("style", LEGACY_STYLE)
+        if not isinstance(style, str) or style not in LOCAL_STYLES:
+            raise InvalidAvatarImage("Unknown avatar style")
         source = base64.b64decode(payload["source_png"], validate=True)
         reference = base64.b64decode(payload["reference_png"], validate=True)
         with telemetry.span("avatar.model", parent=payload.get("traceparent") or "", root=True) as span:
             try:
-                png = QwenRuntime().generate(source, reference)
+                runtime = QwenRuntime()
+                png = (runtime.generate(source, reference) if style == LEGACY_STYLE
+                       else runtime.generate(source, reference, style=style))
                 binary_output.write(png)
                 binary_output.flush()
                 span_result(span, outcome="success")

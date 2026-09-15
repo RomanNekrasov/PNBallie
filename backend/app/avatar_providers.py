@@ -10,6 +10,7 @@ from pathlib import Path
 import httpx
 
 from app.avatar_images import MAX_OUTPUT_BYTES, InvalidAvatarImage, normalize_upload
+from app.avatar_pixel import LEGACY_STYLE, LOCAL_STYLES, PIXEL_STYLE
 from app.telemetry import (
     SpanKind,
     operation_span,
@@ -58,6 +59,7 @@ class AvatarSettings:
     openai_model: str
     reference_path: Path
     timeout: float = 3600
+    local_style: str = LEGACY_STYLE
 
     @classmethod
     def from_env(cls) -> "AvatarSettings":
@@ -71,11 +73,13 @@ class AvatarSettings:
                 "AVATAR_REFERENCE_PATH", str(Path(__file__).parent / "assets" / "avatar-body.png"),
             )),
             timeout=max(30, min(3600, float(os.getenv("AVATAR_TIMEOUT_SECONDS", "3600")))),
+            local_style=os.getenv("AVATAR_LOCAL_STYLE", LEGACY_STYLE).strip(),
         )
 
     @property
     def local_available(self) -> bool:
-        return bool(self.local_url and self.local_token and self.reference_path.is_file())
+        return bool(self.local_url and self.local_token and self.local_style in LOCAL_STYLES
+                    and (self.local_style == PIXEL_STYLE or self.reference_path.is_file()))
 
     @property
     def openai_available(self) -> bool:
@@ -129,10 +133,12 @@ class AvatarProvider:
         available = config.local_available if provider == "local" else config.openai_available
         if not available:
             raise AvatarProviderError("Deze afbeeldingsdienst is nog niet ingesteld.")
-        try:
-            reference = normalize_upload(config.reference_path.read_bytes(), "image/png")
-        except (OSError, InvalidAvatarImage) as exc:
-            raise AvatarProviderError("Het referentiepoppetje is niet beschikbaar.") from exc
+        reference = b""
+        if provider != "local" or config.local_style == LEGACY_STYLE:
+            try:
+                reference = normalize_upload(config.reference_path.read_bytes(), "image/png")
+            except (OSError, InvalidAvatarImage) as exc:
+                raise AvatarProviderError("Het referentiepoppetje is niet beschikbaar.") from exc
 
         try:
             # Stream the response so a misbehaving local endpoint cannot allocate
@@ -140,10 +146,14 @@ class AvatarProvider:
             with httpx.Client(timeout=httpx.Timeout(config.timeout, connect=10),
                               transport=self.transport, follow_redirects=False) as client:
                 if provider == "local":
+                    inputs = {"source_png": base64.b64encode(source_png).decode()}
+                    if config.local_style == PIXEL_STYLE:
+                        inputs["style"] = PIXEL_STYLE
+                    else:
+                        inputs["reference_png"] = base64.b64encode(reference).decode()
                     request = client.build_request("POST", config.local_url,
                         headers={"Authorization": f"Bearer {config.local_token}", **trace_headers()},
-                        json={"source_png": base64.b64encode(source_png).decode(),
-                              "reference_png": base64.b64encode(reference).decode()})
+                        json=inputs)
                 else:
                     request = client.build_request("POST", "https://api.openai.com/v1/images/edits",
                         headers={"Authorization": f"Bearer {config.openai_key}"},
@@ -191,4 +201,7 @@ class AvatarProvider:
                                       retryable=provider == "local") from exc
         except (httpx.HTTPError, ValueError) as exc:
             raise AvatarProviderError("Het model gaf geen bruikbaar antwoord.") from exc
+        if provider == "local" and config.local_style == PIXEL_STYLE \
+                and (not isinstance(payload, dict) or payload.get("style") != PIXEL_STYLE):
+            raise AvatarProviderError("De afbeeldingsdienst ondersteunt de gekozen avatarstijl nog niet.")
         return _decode_response(payload)

@@ -33,6 +33,16 @@ from app.avatar_images import (
     remove_alpha_noise,
     validate_transparent_png,
 )
+from app.avatar_pixel import (
+    LEGACY_STYLE,
+    LOCAL_STYLES,
+    PIXEL_NEGATIVE_PROMPT,
+    PIXEL_PROMPT,
+    PIXEL_STYLE,
+    compose_pixel_avatar,
+    on_white,
+    pixel_template,
+)
 from app.avatar_providers import (
     AVATAR_PROMPT,
     LOCAL_BUSY_HEADER,
@@ -136,7 +146,10 @@ def foreground_from_layers(layers: list[Image.Image]) -> bytes:
 
 
 class QwenRuntime:
-    def generate(self, source: bytes, reference: bytes) -> bytes:
+    def generate(self, source: bytes, reference: bytes, *, style: str = LEGACY_STYLE) -> bytes:
+        if style not in LOCAL_STYLES:
+            raise InvalidAvatarImage("Onbekende avatarstijl.")
+        template = pixel_template() if style == PIXEL_STYLE else None
         # Lazy imports keep the API/queue image and the idle service lightweight.
         require_capacity()
         try:
@@ -167,15 +180,18 @@ class QwenRuntime:
             event("avatar.model.loaded", stage="edit", duration_seconds=time.monotonic() - started)
             with torch.inference_mode():
                 edited = pipeline(
-                    image=[Image.open(BytesIO(source)).convert("RGB"),
-                           Image.open(BytesIO(reference)).convert("RGB")],
-                    prompt=AVATAR_PROMPT,
-                    negative_prompt="checkerboard, text, scenery, multiple people, cropped figure",
+                    image=([on_white(Image.open(BytesIO(source)))] if template is not None else
+                           [Image.open(BytesIO(source)).convert("RGB"),
+                            Image.open(BytesIO(reference)).convert("RGB")]),
+                    prompt=PIXEL_PROMPT if template is not None else AVATAR_PROMPT,
+                    negative_prompt=PIXEL_NEGATIVE_PROMPT if template is not None else
+                        "checkerboard, text, scenery, multiple people, cropped figure",
                     true_cfg_scale=4.0, guidance_scale=1.0, num_inference_steps=40,
                     num_images_per_prompt=1,
                     generator=torch.Generator(device="cuda").manual_seed(777),
                     callback_on_step_end=_progress("edit", 40),
                     callback_on_step_end_tensor_inputs=[],
+                    **({"width": 1024, "height": 1024} if template is not None else {}),
                 ).images[0].copy()
         finally:
             # Release model 1 before loading model 2. CPU offload would not free
@@ -184,6 +200,12 @@ class QwenRuntime:
             gc.collect()
             torch.cuda.empty_cache()
             event("avatar.model.released", stage="edit", duration_seconds=time.monotonic() - started)
+
+        if template is not None:
+            with operation_span("avatar.compose") as span:
+                result = compose_pixel_avatar(edited, template)
+                span_result(span, outcome="success")
+                return result
 
         require_capacity()
         pipeline = None
@@ -236,7 +258,7 @@ def _decode_input(value) -> bytes:
         raise HTTPException(422, "Invalid source image") from exc
 
 
-def generate_in_subprocess(source: bytes, reference: bytes) -> bytes:
+def generate_in_subprocess(source: bytes, reference: bytes, *, style: str = LEGACY_STYLE) -> bytes:
     """A fresh process owns all CUDA state, including retained compiler buffers.
 
     PyTorch can retain model-dependent GPU buffers after del/GC/empty_cache.
@@ -244,6 +266,7 @@ def generate_in_subprocess(source: bytes, reference: bytes) -> bytes:
     """
     payload = json.dumps({"source_png": base64.b64encode(source).decode(),
                           "reference_png": base64.b64encode(reference).decode(),
+                          "style": style,
                           "traceparent": current_traceparent()}).encode()
     process = subprocess.Popen(
         [sys.executable, "-m", "app.avatar_subprocess"],
@@ -295,15 +318,21 @@ async def generate(request: Request):
                     raise HTTPException(413, "Image request too large")
             try:
                 payload = json.loads(raw)
+                style = payload.get("style", LEGACY_STYLE)
+                if not isinstance(style, str) or style not in LOCAL_STYLES:
+                    raise HTTPException(422, "Unknown avatar style")
                 source = _decode_input(payload["source_png"])
-                reference = _decode_input(payload["reference_png"])
-            except (json.JSONDecodeError, TypeError, KeyError) as exc:
+                reference = b"" if style == PIXEL_STYLE else _decode_input(payload["reference_png"])
+            except (json.JSONDecodeError, TypeError, KeyError, AttributeError) as exc:
                 raise HTTPException(422, "Invalid image request") from exc
             started = time.monotonic()
             outcome, error_type = "success", "none"
             with operation_span("avatar.inference") as span:
                 try:
-                    png = await run_in_threadpool(generate_in_subprocess, source, reference)
+                    if style == LEGACY_STYLE:
+                        png = await run_in_threadpool(generate_in_subprocess, source, reference)
+                    else:
+                        png = await run_in_threadpool(generate_in_subprocess, source, reference, style=style)
                 except InferenceUnavailable as exc:
                     outcome, error_type = "unavailable", "unavailable"
                     raise HTTPException(503, "Avatar inference is not available on this host") from exc
@@ -317,7 +346,7 @@ async def generate(request: Request):
                     span_result(span, outcome=outcome, error=error_type)
                     event("avatar.inference.finished", outcome=outcome, error_type=error_type,
                           duration_seconds=time.monotonic() - started)
-            return {"data": [{"b64_json": base64.b64encode(png).decode()}]}
+            return {"data": [{"b64_json": base64.b64encode(png).decode()}], "style": style}
     except AvatarGpuBusy as exc:
         raise HTTPException(503, "The model is processing another avatar", headers={
             LOCAL_BUSY_HEADER: "busy", "Retry-After": str(LOCAL_BUSY_RETRY_SECONDS),
