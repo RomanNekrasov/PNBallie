@@ -18,7 +18,7 @@ function job(status: JobStatus) {
   return { id: 'avatar-job', status, provider: 'local', created_at: new Date(Date.now() - 5 * 60_000).toISOString(), error: null as string | null, avatar_url: status === 'succeeded' ? '/api/avatars/players/12.png?v=new' : null }
 }
 let latest: ReturnType<typeof job> | null
-let configuration: { local_available: boolean; openai_available: boolean; max_upload_bytes: number }
+let configuration: { local_available: boolean; openai_available: boolean; max_upload_bytes: number; local_status?: string; local_style?: string }
 let wrapper: VueWrapper | undefined
 
 beforeEach(() => {
@@ -70,6 +70,39 @@ function submissions() {
 }
 
 describe('profile avatar flow', () => {
+  it.each(['image/heic', 'image/heif', ''])('accepts iPhone photo MIME %s and retains the file until submission', async (type) => {
+    const view = await openProfile()
+    const photo = await selectPhoto(view, new File(['encoded heif'], 'IMG_1234.HEIC', { type }))
+    expect(view.get('input[type="file"]').attributes('accept')).toContain('image/*')
+    expect(view.get<HTMLInputElement>('input[type="file"]').element.files?.[0]).toBe(photo)
+    await view.get('img[alt="Geselecteerde foto"]').trigger('error')
+    expect(view.text()).toContain('Foto geselecteerd: IMG_1234.HEIC')
+    expect(submissions()).toHaveLength(0)
+    await uploadForm(view).trigger('submit')
+    await flushPromises()
+    expect(await (submissions()[0]?.[1]?.body as File).text()).toBe(await photo.text())
+    expect(submissions()[0]?.[1]?.headers).toEqual({ 'Content-Type': type || 'image/heic' })
+  })
+
+  it('blocks a known capacity shortage without discarding the photo, then refreshes readiness', async () => {
+    latest = job('failed')
+    configuration.local_status = 'capacity'
+    const view = await openProfile()
+    await selectPhoto(view)
+    expect(view.text()).toContain('onvoldoende vrije capaciteit')
+    expect(view.text()).not.toContain('Kies opnieuw een foto')
+    expect(uploadForm(view).get('button[type="submit"]').attributes('disabled')).toBeDefined()
+    await uploadForm(view).trigger('submit')
+    expect(submissions()).toHaveLength(0)
+    configuration.local_status = 'ready'
+    await view.findAll('button').find(button => button.text() === 'Beschikbaarheid opnieuw controleren')!.trigger('click')
+    await flushPromises()
+    expect(uploadForm(view).get('button[type="submit"]').attributes('disabled')).toBeUndefined()
+    await uploadForm(view).trigger('submit')
+    await flushPromises()
+    expect(submissions()).toHaveLength(1)
+  })
+
   it('counts a newly observed outcome once without uploading job IDs or image URLs to analytics', async () => {
     latest = job('processing')
     await openProfile()
@@ -191,10 +224,10 @@ describe('profile avatar flow', () => {
     expect(submissions()).toHaveLength(0)
   })
 
-  it('retains the selected File when clearing the native input and uploads only on submission', async () => {
+  it('retains the native selection and uploads only on submission', async () => {
     const view = await openProfile()
     const photo = await selectPhoto(view)
-    expect(view.get<HTMLInputElement>('input[type="file"]').element.value).toBe('')
+    expect(view.get<HTMLInputElement>('input[type="file"]').element.files?.[0]).toBe(photo)
     expect(view.get('img[alt="Geselecteerde foto"]').attributes('src')).toBe('blob:selected-portrait')
     expect(submissions()).toHaveLength(0)
     expect(uploadForm(view).get('button[type="submit"]').attributes('disabled')).toBeUndefined()

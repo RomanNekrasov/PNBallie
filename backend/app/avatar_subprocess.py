@@ -11,7 +11,7 @@ import sys
 
 from app.avatar_images import MAX_UPLOAD_BYTES, InvalidAvatarImage
 from app.avatar_pixel import LEGACY_STYLE, LOCAL_STYLES
-from app.avatar_service import InferenceUnavailable, QwenRuntime
+from app.avatar_service import CapacityUnavailable, InferenceUnavailable, QwenRuntime
 from app.telemetry import INFERENCE_SERVICE, Runtime, span_result
 
 
@@ -48,6 +48,9 @@ def main() -> int:
     except InvalidAvatarImage:
         telemetry.log("avatar.inference.finished", level="WARNING", outcome="failure", error_type="invalid_image")
         return 2
+    except CapacityUnavailable:
+        telemetry.log("avatar.inference.finished", level="WARNING", outcome="unavailable", error_type="unavailable")
+        return 4
     except InferenceUnavailable:
         telemetry.log("avatar.inference.finished", level="WARNING", outcome="unavailable", error_type="unavailable")
         return 3

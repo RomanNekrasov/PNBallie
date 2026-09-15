@@ -43,28 +43,33 @@
         <div v-if="job" class="job-status" role="status" aria-live="polite">
           <strong>{{ statusLabel(job.status) }}</strong>
           <small v-if="jobActive">Je kunt deze pagina sluiten en later terugkomen.</small>
-          <small v-if="jobActive && job.provider === 'local'">Dit duurt circa 25–40 minuten, plus eventuele wachttijd.</small>
+          <small v-if="jobActive && job.provider === 'local'">Dit duurt circa {{ config?.local_style === 'pixel-v1' ? '10–15' : '25–40' }} minuten, plus eventuele wachttijd.</small>
           <small v-if="jobActive && requestAge">{{ requestAge }}</small>
           <small v-if="job.status === 'succeeded'">Je nieuwe avatar wordt bij je wedstrijden en statistieken gebruikt.</small>
           <small v-if="job.status === 'failed' && requestTimestamp">Aangevraagd op <time :datetime="requestTimestamp">{{ formatLocalDateTime(job.created_at) }}</time>.</small>
-          <small v-if="job.status === 'failed' && (config?.local_available || config?.openai_available)">Kies opnieuw een foto om een nieuwe aanvraag te starten.</small>
+          <small v-if="job.status === 'failed' && canRequest">Kies opnieuw een foto om een nieuwe aanvraag te starten.</small>
           <details v-if="job.error && job.status === 'failed'">
             <summary>Details vorige aanvraag</summary>
             <small>{{ job.error }}</small>
           </details>
-          <small v-if="job.error && job.status === 'queued'">Wachten op een nieuwe poging: {{ job.error }}</small>
+          <small v-if="job.error && job.status === 'queued'">{{ job.error }}</small>
           <small v-if="pollError" class="account-error" role="alert">{{ pollError }} De status wordt opnieuw opgehaald.</small>
           <small v-if="jobActive || job.status === 'cancelled'">Na annuleren wordt deze avatar niet opgeslagen. De verwerking kan nog doorlopen en een volgende aanvraag vertragen.</small>
           <button v-if="jobActive" class="quiet-button" :disabled="saving" @click="cancelJob">Aanvraag annuleren</button>
         </div>
         <p v-if="config && !config.local_available && !config.openai_available" class="account-notice">Avatars maken is momenteel niet beschikbaar.</p>
         <form v-else-if="config" class="account-form" @submit.prevent="upload">
-          <label>Foto (PNG, JPEG of WebP; maximaal {{ Math.round(config.max_upload_bytes / 1024 / 1024) }} MB)<input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp" :disabled="jobActive || saving" @change="choosePhoto" /></label>
-          <img v-if="previewUrl" :src="previewUrl" alt="Geselecteerde foto" class="upload-preview" />
+          <label>Foto (JPEG, PNG, WebP of HEIC/HEIF; maximaal {{ Math.round(config.max_upload_bytes / 1024 / 1024) }} MB)<input ref="fileInput" type="file" accept="image/*,.heic,.heif" :disabled="jobActive || saving" @change="choosePhoto" /></label>
+          <img v-if="previewUrl && !previewFailed" :src="previewUrl" alt="Geselecteerde foto" class="upload-preview" @error="previewFailed = true" />
+          <p v-if="photo && previewFailed" class="account-muted">Foto geselecteerd: {{ photo.name }}</p>
           <label>Verwerking<select v-model="provider" :disabled="jobActive || saving"><option v-if="config.local_available" value="local">Eigen server</option><option v-if="config.openai_available" value="openai">GPT via OpenAI</option></select></label>
+          <div v-if="provider === 'local' && localBlocked" class="account-notice" role="status">
+            <p>{{ config.local_status === 'capacity' ? 'De eigen server heeft nu onvoldoende vrije capaciteit. Probeer later opnieuw.' : 'De eigen server is niet bereikbaar. Probeer later opnieuw.' }}</p>
+            <button type="button" class="quiet-button" :disabled="checkingStatus" @click="refreshAvailability">Beschikbaarheid opnieuw controleren</button>
+          </div>
           <label v-if="provider === 'openai'" class="checkbox-label"><input v-model="cloudConsent" type="checkbox" required /><span>Ik geef toestemming om deze foto naar OpenAI te sturen voor mijn avatar.</span></label>
           <p class="account-hint">De originele upload wordt verwijderd nadat de aanvraag is afgerond. Je avatar blijft bij je profiel bewaard.</p>
-          <button type="submit" class="primary-button" :disabled="!photo || jobActive || saving || (provider === 'openai' && !cloudConsent)">{{ saving ? 'Even geduld…' : 'Avatar laten maken' }}</button>
+          <button type="submit" class="primary-button" :disabled="!photo || !canRequest || jobActive || saving || (provider === 'openai' && !cloudConsent)">{{ saving ? 'Even geduld…' : 'Avatar laten maken' }}</button>
         </form>
       </section>
     </div>
@@ -83,8 +88,9 @@ import { playerAvatar, playerInitials } from '../playerAvatar'
 import { formatLocalDateTime, parseUtcTimestamp } from '../dateTime'
 import type { Player } from '../types'
 import { trackEvent } from '../analytics'
+import { photoMime } from '../avatarPhoto'
 
-interface AvatarConfig { local_available: boolean; openai_available: boolean; max_upload_bytes: number }
+interface AvatarConfig { local_available: boolean; openai_available: boolean; max_upload_bytes: number; local_status?: string; local_style?: string }
 interface AvatarJob { id: string; status: 'queued' | 'processing' | 'succeeded' | 'failed' | 'cancelled'; provider: 'local' | 'openai'; created_at: string; error: string | null; avatar_url: string | null }
 const player = ref<Player | null>(null)
 const name = ref('')
@@ -92,6 +98,8 @@ const config = ref<AvatarConfig | null>(null)
 const job = ref<AvatarJob | null>(null)
 const photo = ref<File | null>(null)
 const previewUrl = ref('')
+const previewFailed = ref(false)
+const checkingStatus = ref(false)
 const provider = ref<'local' | 'openai'>('local')
 const cloudConsent = ref(false)
 const loading = ref(true)
@@ -107,6 +115,8 @@ const { stats, fetchStats } = useStats()
 const avatarUrl = computed(() => playerAvatar(player.value?.name, player.value?.avatar_url))
 const badges = computed(() => stats.value?.players.find(entry => entry.player_id === player.value?.id)?.badges ?? [])
 const jobActive = computed(() => job.value?.status === 'queued' || job.value?.status === 'processing')
+const localBlocked = computed(() => ['capacity', 'unavailable'].includes(config.value?.local_status ?? ''))
+const canRequest = computed(() => provider.value === 'local' ? config.value?.local_available && !localBlocked.value : config.value?.openai_available)
 const now = ref(Date.now())
 const requestTimestamp = computed(() => {
   if (!job.value?.created_at) return null
@@ -135,22 +145,32 @@ watch(job, (next, previous) => {
 function statusLabel(status: AvatarJob['status']) {
   return { queued: 'In de wachtrij', processing: 'Je avatar wordt gemaakt', succeeded: 'Je avatar is klaar!', failed: 'Vorige aanvraag mislukt', cancelled: 'Aanvraag geannuleerd' }[status]
 }
-function clearPhoto() {
+function clearPhoto(resetInput = true) {
   photo.value = null
   if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
   previewUrl.value = ''
-  if (fileInput.value) fileInput.value.value = ''
+  previewFailed.value = false
+  if (resetInput && fileInput.value) fileInput.value.value = ''
 }
 function choosePhoto(event: Event) {
   const input = event.target as HTMLInputElement
   const selected = input.files?.[0]
-  clearPhoto()
+  clearPhoto(false)
   if (!selected) return
-  if (!['image/jpeg', 'image/png', 'image/webp'].includes(selected.type)) { error.value = 'Kies een PNG-, JPEG- of WebP-afbeelding.'; return }
-  if (selected.size > (config.value?.max_upload_bytes ?? 8 * 1024 * 1024)) { error.value = 'De foto is te groot. Kies een foto van maximaal 8 MB.'; return }
+  if (!photoMime(selected)) { error.value = 'Kies een JPEG-, PNG-, WebP- of HEIC/HEIF-foto.'; return }
+  const maximum = config.value?.max_upload_bytes ?? 20 * 1024 * 1024
+  if (selected.size > maximum) { error.value = `De foto is te groot. Kies een foto van maximaal ${Math.round(maximum / 1024 / 1024)} MB.`; return }
   error.value = ''
   photo.value = selected
   previewUrl.value = URL.createObjectURL(selected)
+}
+async function refreshAvailability() {
+  checkingStatus.value = true
+  try {
+    const result = await api<AvatarConfig>('/api/avatars/config')
+    if (active) config.value = result
+  } catch (cause) { if (active) error.value = cause instanceof Error ? cause.message : 'Beschikbaarheid controleren is niet gelukt.' }
+  finally { checkingStatus.value = false }
 }
 function schedulePoll() {
   clearTimeout(timer)
@@ -203,7 +223,7 @@ async function saveProfile() {
   finally { saving.value = false }
 }
 async function upload() {
-  if (!photo.value || jobActive.value || saving.value || (provider.value === 'openai' && !cloudConsent.value)) return
+  if (!photo.value || !canRequest.value || jobActive.value || saving.value || (provider.value === 'openai' && !cloudConsent.value)) return
   const version = ++jobRequestVersion
   clearTimeout(timer)
   saving.value = true
@@ -212,7 +232,7 @@ async function upload() {
   pollError.value = ''
   try {
     const result = await api<AvatarJob>(`/api/avatars/me/jobs?provider=${provider.value}&cloud_consent=${cloudConsent.value}`, {
-      method: 'POST', headers: { 'Content-Type': photo.value.type }, body: photo.value,
+      method: 'POST', headers: { 'Content-Type': photoMime(photo.value)! }, body: photo.value,
     })
     if (!active || version !== jobRequestVersion) return
     job.value = result

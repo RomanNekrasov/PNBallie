@@ -5,6 +5,17 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 
 ## Unreleased — 2026-09-15
 
+### iPhone-foto's en servercapaciteit
+
+- De fotokiezer ondersteunt HEIC/HEIF en ontbrekende MIME-types en bewaart de
+  native selectie tot de upload klaar is. Foto's tot 20 MB/50 megapixels worden
+  begrensd verkleind, met behoud van oriëntatie en zonder fotometadata.
+- Een private capaciteitcontrole voorkomt onbruikbare uploads en quotaverbruik.
+  Bij later geheugentekort wacht de worker zonder echte pogingen te verbruiken.
+- De embeddingsdienst is op expliciet verzoek gestopt; container en modellen
+  blijven behouden. Een echte C-profielproef en acceptatie-uitrol lopen nog.
+
+
 ### Avatar C op acceptatie
 
 - De gekozen pixelstijl is beschikbaar via `AVATAR_LOCAL_STYLE=pixel-v1`: één

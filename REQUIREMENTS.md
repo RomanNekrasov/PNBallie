@@ -327,3 +327,12 @@ bereikt de nieuwe keten, maar kan geen model laden: een nieuw aangemaakte
 embeddingsdienst gebruikt bijna 95 GiB GPU-geheugen. Volledige PNG-generatie en
 geheugenherstel blijven open. Foutafhandeling, tracing, bronopruiming en behoud
 van demo-/productiegegevens zijn gecontroleerd; zie `docs/AVATAR_SERVICE.md`.
+
+## iPhone-upload en capaciteit — 15 september 2026
+
+- [x] Foto's uit de iPhone-bibliotheek kiezen, inclusief HEIC/HEIF en ontbrekende MIME-types.
+- [x] Foto's tot 20 MB en 50 megapixels begrensd verkleinen; EXIF/GPS verwijderen en oriëntatie behouden.
+- [x] Beschikbare servercapaciteit tonen en onbruikbare uploads weigeren vóór opslag/quotaverbruik.
+- [x] Bij tijdelijk geheugentekort wachten zonder de drie echte pogingen te verbruiken.
+- [ ] Tests, documentatie, publicatie en acceptatie-uitrol; echte iPhone-selectie niet claimen zonder toesteltest.
+- [x] De gebruiker heeft de embeddingsdienst expliciet laten stoppen. Container en modelbestanden blijven behouden; de C-test is hervat.

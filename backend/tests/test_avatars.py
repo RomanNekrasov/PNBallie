@@ -123,7 +123,7 @@ def test_upload_checks_format_cloud_consent_and_configuration(api, monkeypatch):
 
 def test_upload_has_size_and_per_user_daily_limit(api):
     client, database, _ = api
-    assert client.post("/api/avatars/me/jobs", content=b"x" * (8 * 1024 * 1024 + 1),
+    assert client.post("/api/avatars/me/jobs", content=b"x" * (20 * 1024 * 1024 + 1),
                        headers={"Content-Type": "image/png"}).status_code == 413
     for _ in range(5):
         response = enqueue(client)
@@ -436,7 +436,7 @@ def test_image_sanitizing_and_real_alpha_check():
     with pytest.raises(InvalidAvatarImage):
         validate_transparent_png(blank.getvalue())
     with pytest.raises(InvalidAvatarImage):
-        normalize_upload(png(size=(4100, 4100)), "image/png")
+        validate_transparent_png(png(size=(4100, 4100)))
 
 
 def test_upload_applies_exif_orientation_and_removes_metadata():
@@ -564,6 +564,7 @@ def test_service_requires_token_and_does_not_load_model_if_capacity_is_missing(m
     from app.avatar_slot import gpu_slot
 
     monkeypatch.setenv("AVATAR_SERVICE_TOKEN", "service-token")
+    monkeypatch.setattr(avatar_service, "require_capacity", lambda: None)
     monkeypatch.setattr(avatar_service, "generate_in_subprocess", lambda *_: (_ for _ in ()).throw(
         avatar_service.InferenceUnavailable("Insufficient memory")))
     client = TestClient(avatar_service.app)
@@ -604,6 +605,7 @@ def test_service_returns_real_png_protocol_without_gpu_or_cloud(monkeypatch, ser
     from app import avatar_service
 
     monkeypatch.setenv("AVATAR_SERVICE_TOKEN", "service-token")
+    monkeypatch.setattr(avatar_service, "require_capacity", lambda: None)
     monkeypatch.setattr(avatar_service, "generate_in_subprocess", lambda source, reference: png())
     client = TestClient(avatar_service.app)
     encoded = base64.b64encode(png()).decode()

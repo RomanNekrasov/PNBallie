@@ -84,17 +84,23 @@ class InferenceUnavailable(RuntimeError):
     pass
 
 
+class CapacityUnavailable(InferenceUnavailable):
+    pass
+
+
 def require_capacity() -> None:
     """Spark uses unified memory; nvidia-smi reports memory as N/A on this host."""
-    minimum = float(os.getenv("AVATAR_MIN_AVAILABLE_GIB", "80")) * 1024 ** 3
     try:
+        minimum = float(os.getenv("AVATAR_MIN_AVAILABLE_GIB", "80")) * 1024 ** 3
+        if not math.isfinite(minimum) or minimum <= 0:
+            raise ValueError("Invalid memory threshold")
         meminfo = Path("/proc/meminfo").read_text()
         available = next(int(line.split()[1]) * 1024 for line in meminfo.splitlines()
                          if line.startswith("MemAvailable:"))
     except (OSError, StopIteration, ValueError) as exc:
         raise InferenceUnavailable("Spark memory capacity cannot be verified") from exc
     if available < minimum:
-        raise InferenceUnavailable("Insufficient available memory for avatar inference")
+        raise CapacityUnavailable("Insufficient available memory for avatar inference")
 
 
 def cuda_memory_fraction() -> float:
@@ -289,6 +295,8 @@ def generate_in_subprocess(source: bytes, reference: bytes, *, style: str = LEGA
         raise
     if process.returncode == 2:
         raise InvalidAvatarImage("The image model did not produce a transparent avatar")
+    if process.returncode == 4:
+        raise CapacityUnavailable("Memory capacity changed before model loading")
     if process.returncode != 0:
         raise InferenceUnavailable("The isolated model process could not complete this job")
     return validate_transparent_png(result)
@@ -297,6 +305,25 @@ def generate_in_subprocess(source: bytes, reference: bytes, *, style: str = LEGA
 @app.get("/health/live")
 def live():
     return {"status": "ok", "processing": generation_lock.locked()}
+
+
+@app.get("/v1/status")
+def capacity_status(request: Request):
+    token = os.getenv("AVATAR_SERVICE_TOKEN", "")
+    if not token or not hmac.compare_digest(request.headers.get("authorization", ""), f"Bearer {token}"):
+        raise HTTPException(401, "Invalid service credentials")
+    if generation_lock.locked():
+        return {"state": "busy"}
+    try:
+        with gpu_slot():
+            require_capacity()
+        return {"state": "ready"}
+    except AvatarGpuBusy:
+        return {"state": "busy"}
+    except CapacityUnavailable:
+        return {"state": "capacity"}
+    except (InferenceUnavailable, AvatarGpuLockUnavailable):
+        return {"state": "unavailable"}
 
 
 @app.post("/v1/avatar")
@@ -329,10 +356,18 @@ async def generate(request: Request):
             outcome, error_type = "success", "none"
             with operation_span("avatar.inference") as span:
                 try:
+                    # Refuse before launching a child; capacity deferrals must
+                    # not consume a model attempt. The child checks again too.
+                    require_capacity()
                     if style == LEGACY_STYLE:
                         png = await run_in_threadpool(generate_in_subprocess, source, reference)
                     else:
                         png = await run_in_threadpool(generate_in_subprocess, source, reference, style=style)
+                except CapacityUnavailable as exc:
+                    outcome, error_type = "unavailable", "unavailable"
+                    raise HTTPException(503, "Waiting for memory capacity", headers={
+                        LOCAL_BUSY_HEADER: "capacity", "Retry-After": str(LOCAL_BUSY_RETRY_SECONDS),
+                    }) from exc
                 except InferenceUnavailable as exc:
                     outcome, error_type = "unavailable", "unavailable"
                     raise HTTPException(503, "Avatar inference is not available on this host") from exc

@@ -46,8 +46,9 @@ class AvatarProviderError(RuntimeError):
 class AvatarProviderBusy(AvatarProviderError):
     """The private local service accepted no work because its sole slot is busy."""
 
-    def __init__(self, retry_after: int = LOCAL_BUSY_RETRY_SECONDS):
-        super().__init__("De afbeeldingsdienst is bezig. Je opdracht wacht op een vrije plek.", retryable=True)
+    def __init__(self, retry_after: int = LOCAL_BUSY_RETRY_SECONDS, *, capacity: bool = False):
+        super().__init__("De eigen server heeft onvoldoende vrije capaciteit. Je opdracht wacht." if capacity else
+                         "De afbeeldingsdienst is bezig. Je opdracht wacht op een vrije plek.", retryable=True)
         self.retry_after = max(LOCAL_BUSY_RETRY_SECONDS, min(MAX_BUSY_RETRY_SECONDS, retry_after))
 
 
@@ -60,6 +61,7 @@ class AvatarSettings:
     reference_path: Path
     timeout: float = 3600
     local_style: str = LEGACY_STYLE
+    check_capacity: bool = False
 
     @classmethod
     def from_env(cls) -> "AvatarSettings":
@@ -74,6 +76,7 @@ class AvatarSettings:
             )),
             timeout=max(30, min(3600, float(os.getenv("AVATAR_TIMEOUT_SECONDS", "3600")))),
             local_style=os.getenv("AVATAR_LOCAL_STYLE", LEGACY_STYLE).strip(),
+            check_capacity=os.getenv("AVATAR_CHECK_CAPACITY", "false").lower() == "true",
         )
 
     @property
@@ -165,12 +168,12 @@ class AvatarProvider:
                 response = client.send(request, stream=True)
                 try:
                     if provider == "local" and response.status_code == 503 \
-                            and response.headers.get(LOCAL_BUSY_HEADER) == "busy":
+                            and response.headers.get(LOCAL_BUSY_HEADER) in {"busy", "capacity"}:
                         # Only this explicit private protocol signal refunds an
                         # attempt. Generic 503s, cloud responses and timeouts do not.
                         raw_delay = response.headers.get("Retry-After", "")
                         delay = int(raw_delay) if len(raw_delay) <= 3 and raw_delay.isascii() and raw_delay.isdecimal() else LOCAL_BUSY_RETRY_SECONDS
-                        raise AvatarProviderBusy(delay)
+                        raise AvatarProviderBusy(delay, capacity=response.headers.get(LOCAL_BUSY_HEADER) == "capacity")
                     if response.status_code >= 400:
                         raise AvatarProviderError(
                             "De afbeeldingsdienst is tijdelijk niet beschikbaar." if
