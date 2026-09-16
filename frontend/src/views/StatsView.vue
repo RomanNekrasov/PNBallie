@@ -14,27 +14,9 @@
         <div>
           <h1>Clubstatistieken</h1>
         </div>
-        <div class="page-header-actions"><div v-if="stats" class="live-badge"><span></span>{{ stats.global.total_matches }} duels</div><SettingsMenu /></div>
+        <div class="page-header-actions"><SettingsMenu v-model:stats-mode="mode" /></div>
       </header>
-
-      <div class="stats-filters" aria-label="Statistiekfilters">
-        <label>Spelvorm
-          <select v-model="mode" aria-label="Spelvorm">
-            <option value="all">Alles samen</option>
-            <option value="1v1">Alleen 1v1</option>
-            <option value="2v2">Alleen 2v2</option>
-          </select>
-        </label>
-        <label>Periode
-          <select v-model="period" aria-label="Periode">
-            <option value="all">All-time</option>
-            <option value="30d">Laatste 30 dagen</option>
-            <option value="50">Laatste 50 wedstrijden</option>
-          </select>
-        </label>
-      </div>
-      <p v-if="period === '30d'" class="filter-description">Vandaag en de vorige 29 dagen, volgens de Nederlandse tijd.</p>
-      <p v-else-if="period === '50'" class="filter-description">De laatste 50 wedstrijden van de gekozen spelvorm.</p>
+      <p v-if="mode !== 'all'" class="active-mode" role="status">Alleen {{ mode }}</p>
 
       <section v-if="loading" class="state-panel">Statistieken worden geladen…</section>
       <section v-else-if="error" class="state-panel state-error">
@@ -564,9 +546,8 @@ function selectPair(first: number, second: number) {
 .page-header h1, .section-intro h2, .player-hero h2 { font: 800 clamp(30px, 6vw, 44px)/.94 'Barlow Condensed', system-ui, sans-serif; letter-spacing: .01em; }
 .back-button { width: 44px; height: 44px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 14px; border: 1px solid var(--line); background: #202a38; color: white; }
 .back-button:active { transform: scale(.94); }
+.active-mode { margin: -8px 0 16px; color: var(--muted); font-size: 12px; }
 .page-header-actions { margin-left: auto; display: flex; align-items: center; gap: 15px; flex: 0 0 auto; }
-.live-badge { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; }
-.live-badge span { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 12px var(--green); }
 
 .state-panel, .broadcast-panel { border: 1px solid var(--line); background: var(--panel); box-shadow: 0 12px 28px #05070b; }
 .state-panel { border-radius: 18px; padding: 44px 20px; text-align: center; color: var(--muted); }
@@ -579,10 +560,6 @@ function selectPair(first: number, second: number) {
 .tab-bar button:hover, .player-picker button:hover { color: white; background: #34435a; }
 .tab-bar button.active:hover { background: #ed7038; }
 .stats-shell button:focus-visible, .stats-shell select:focus-visible { outline: 2px solid #ffbd8c; outline-offset: 3px; }
-.stats-filters { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 15px; }
-.stats-filters label { flex: 1 1 140px; display: grid; gap: 6px; color: var(--muted); font-size: 11px; }
-.stats-filters select { width: 100%; min-height: 44px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 11px; background: var(--panel-soft); color: white; font-size: 16px; }
-.filter-description { margin: -5px 0 15px; color: var(--muted); font-size: 11px; }
 .streak-flame { font-size: .6em; vertical-align: middle; }
 .tab-content { animation: enter .22s ease-out both; }
 
@@ -768,7 +745,6 @@ function selectPair(first: number, second: number) {
 
 @media (max-width: 719px) {
   .stats-container { padding-left: 14px; padding-right: 14px; }
-  .live-badge { display: none; }
   .tab-bar button { font-size: 12px; }
   .ranking-head { display: none; }
   .ranking-row { grid-template-columns: 32px minmax(0, 1fr) 62px 48px; padding: 12px 9px; }

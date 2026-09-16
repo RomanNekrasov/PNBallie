@@ -20,7 +20,7 @@ beforeEach(async () => {
   logoutMock.mockResolvedValue(undefined)
   router = createRouter({
     history: createMemoryHistory(),
-    routes: ['/stats', '/profile', '/groups', '/admin', '/login'].map(path => ({ path, component: { template: '<main>Page</main>' } })),
+    routes: ['/stats', '/profile', '/groups', '/admin', '/admin/matches', '/login'].map(path => ({ path, component: { template: '<main>Page</main>' } })),
   })
   await router.push('/stats')
   await router.isReady()
@@ -42,13 +42,14 @@ describe('compact account menu', () => {
     await wrapper!.get('.settings-toggle').trigger('click')
     expect(wrapper!.get('.settings-toggle').attributes('aria-expanded')).toBe('true')
     expect(wrapper!.get('.settings-group').text()).toContain('De kantinetoppers')
-    expect(wrapper!.findAll('nav a').map(link => link.attributes('href'))).toEqual(['/profile', '/groups', '/admin'])
+    expect(wrapper!.findAll('nav a').map(link => link.attributes('href'))).toEqual(['/profile', '/groups', '/admin/matches', '/admin'])
   })
 
   it('hides group administration from members and group-dependent destinations without a selected group', async () => {
     groups.value = [{ id: 2, name: 'Pool', role: 'member', player_id: 3 }]
     await wrapper!.get('.settings-toggle').trigger('click')
     expect(wrapper!.find('a[href="/admin"]').exists()).toBe(false)
+    expect(wrapper!.find('a[href="/admin/matches"]').exists()).toBe(false)
     groups.value = []
     await flushPromises()
     expect(wrapper!.find('a[href="/profile"]').exists()).toBe(false)
@@ -95,4 +96,13 @@ describe('compact account menu', () => {
     expect(router.currentRoute.value.path).toBe('/stats')
     expect(wrapper!.get('.settings-logout').attributes('disabled')).toBeUndefined()
   })
+})
+
+it('keeps optional match-mode controls inside the existing collapsed menu', async () => {
+  await wrapper!.setProps({statsMode:'all'})
+  expect(wrapper!.find('select').exists()).toBe(false)
+  await wrapper!.get('.settings-toggle').trigger('click')
+  expect(wrapper!.get('details').attributes('open')).toBeUndefined()
+  await wrapper!.get('select').setValue('2v2')
+  expect(wrapper!.emitted('update:statsMode')).toEqual([['2v2']])
 })

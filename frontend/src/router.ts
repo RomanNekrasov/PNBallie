@@ -14,6 +14,7 @@ const router = createRouter({
     { path: '/', component: GameView, meta: { requiresAuth: true, requiresGroup: true } },
     { path: '/stats', component: () => import('./views/StatsView.vue'), meta: { requiresAuth: true, requiresGroup: true } },
     { path: '/profile', component: () => import('./views/ProfileView.vue'), meta: { requiresAuth: true, requiresGroup: true } },
+    { path: '/admin/matches', component: () => import('./views/MatchAdminView.vue'), meta: { requiresAuth: true, requiresGroup: true, requiresAdmin: true } },
     { path: '/admin', component: () => import('./views/AdminView.vue'), meta: { requiresAuth: true, requiresGroup: true, requiresAdmin: true } },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],

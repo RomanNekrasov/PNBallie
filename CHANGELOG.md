@@ -5,6 +5,17 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 
 ## Unreleased — 2026-09-16
 
+### Statistiekmenu en wedstrijdbeheer
+
+- Periodekeuze en dubbele duelteller uit de statistiekkop verwijderd; spelvorm
+  staat onder het bestaande tandwiel, in Statistieken bekijken.
+- Groepsbeheerders kunnen via het tandwiel wedstrijden wijzigen en bevestigd
+  verwijderen, met paginering, teamvalidatie en bescherming tegen verouderde invoer.
+- Het aangewezen geverifieerde acceptatieaccount is beheerder van Democompetitie.
+  De overige gegevens zijn behouden na een versleutelde, gecontroleerde backup.
+- 221 backendtests, 108 frontendtests en lokale browserchecks slagen. Uitrol volgt.
+
+
 ### Wachtwoordherstel en inlogtafel
 
 - Wachtwoord vergeten via de bestaande SMTP-dienst: eenmalige link van 30 minuten,

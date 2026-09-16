@@ -315,3 +315,27 @@ vreemde origins. De browser bevestigt de inlogtafel en mobiele herstelpagina's.
 Prometheus, Loki, Tempo en de privacycontrole slagen; productie houdt zijn images.
 De controles versturen geen nieuwe echte mail en wijzigen geen bestaand wachtwoord.
 De gebruiker kan het mailboxtraject zelf testen via **Wachtwoord vergeten?**.
+
+
+## Wedstrijden beheren
+
+Een groepsbeheerder opent **tandwiel → Wedstrijden beheren**. De lijst toont
+50 uitslagen per pagina, ook oudere wedstrijden. Wijzig scores, spelers,
+posities en datum/tijd. Het formulier toont lokale tijd en verstuurt UTC;
+een ongewijzigd tijdstip behoudt het exacte oorspronkelijke moment, ook tijdens
+een terugkerend wintertijd-uur. Nieuwe tijdstippen zonder tijdzone weigert de API.
+De validatie voor 1v1/2v2, unieke deelnemers en een winnaar met tien goals blijft
+gelden. Een reeds deelnemende inactieve speler mag behouden blijven.
+
+Verwijderen vraagt eerst expliciete bevestiging met teams, score en tijdstip.
+Het verwijdert de uitslag en deelnemerskoppelingen definitief; herstel kan via
+backup. De webclient stuurt bij wijzigingen en verwijderen de oorspronkelijke
+wedstrijd mee. De server vergelijkt die onder een schrijfslot en weigert een
+inmiddels gewijzigde uitslag met 409. Herlaad dan de lijst. De oudere DELETE-API
+blijft compatibel zonder snapshot; groepsbeheer en CSRF blijven altijd verplicht.
+Groepsgrenzen worden ook server-side gecontroleerd.
+
+Statistieken, ELO en historisch afgeleide badges worden bij de volgende aanvraag
+uit de gecorrigeerde geschiedenis berekend. Clubstatistieken toont alle historie;
+spelvorm staat onder **tandwiel → Statistieken bekijken → Spelvorm**. Een actieve
+1v1/2v2-filter wordt kort vermeld; de periodekeuze en dubbele duelteller zijn weg.
