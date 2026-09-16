@@ -37,7 +37,7 @@
     <p v-else-if="!matches.length" class="account-notice">Geen wedstrijden.</p>
     <div v-else class="admin-list">
       <article v-for="match in matches" :key="match.id" class="admin-row match-row">
-        <div class="match-summary"><strong>{{ names(match, 'orange') }} <span class="match-score">{{ match.orange_score }}–{{ match.blue_score }}</span> {{ names(match, 'blue') }}</strong><small>{{ formatLocalDateTime(match.played_at) }} · {{ match.players.length === 2 ? '1v1' : '2v2' }}</small></div>
+        <div class="match-summary"><strong>{{ names(match, 'orange') }} <span class="match-score">{{ match.orange_score }}–{{ match.blue_score }}</span> {{ names(match, 'blue') }}</strong><small>{{ formatLocalDateTime(match.played_at) }} · {{ match.players.length === 2 ? '1v1' : '2v2' }}</small><small>Ingevoerd door {{ match.recorded_by?.name ?? 'Onbekend' }}</small></div>
         <div class="action-row"><button class="secondary-button" :disabled="busy" @click="edit(match)">Wijzigen</button><button class="quiet-button" :disabled="busy" @click="confirmDelete(match)">Verwijderen</button></div>
       </article>
     </div>

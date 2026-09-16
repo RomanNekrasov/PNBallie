@@ -64,6 +64,7 @@ JOBS = Counter("pnballie_avatar_jobs_total", "Avatar lifecycle transitions", ["s
 JOB_DURATION = Histogram("pnballie_avatar_job_duration_seconds", "Avatar processing attempt latency", ["service", "provider", "outcome"], buckets=(1, 5, 10, 30, 60, 300, 600, 1800, 3600), registry=_REGISTRY)
 QUEUE_WAIT = Histogram("pnballie_avatar_queue_wait_seconds", "Age of avatar jobs when claimed", ["service", "provider"], buckets=(1, 5, 15, 60, 300, 900, 3600, 21600, 86400), registry=_REGISTRY)
 QUEUE_JOBS = Gauge("pnballie_avatar_queue_jobs", "Durable pending avatar jobs", ["service", "provider", "state"], registry=_REGISTRY)
+ENTITY_COUNTS = Gauge("pnballie_entities", "Current database records by bounded entity type", ["service", "entity"], registry=_REGISTRY)
 QUEUE_OLDEST = Gauge("pnballie_avatar_oldest_queued_seconds", "Age of oldest queued avatar job", ["service"], registry=_REGISTRY)
 PROVIDER_REQUESTS = Counter("pnballie_avatar_provider_requests_total", "Avatar provider attempts", ["service", "provider", "outcome"], registry=_REGISTRY)
 PROVIDER_DURATION = Histogram("pnballie_avatar_provider_duration_seconds", "Avatar provider latency", ["service", "provider", "outcome"], buckets=(1, 5, 10, 30, 60, 300, 600, 1800, 3600), registry=_REGISTRY)
@@ -326,6 +327,27 @@ class Runtime:
             # Never affect request handling or job processing in that case.
             pass
 
+    def refresh_entities(self) -> None:
+        if not enabled("METRICS_ENABLED") or self.database is None:
+            return
+        try:
+            from app.models import Group, Player, User
+
+            with Session(self.database) as session:
+                # One statement gives a consistent snapshot with bounded labels.
+                row = session.exec(select(
+                    select(func.count()).select_from(Group).scalar_subquery(),
+                    select(func.count()).select_from(User).scalar_subquery(),
+                    select(func.count()).select_from(Player).scalar_subquery(),
+                    select(func.count()).select_from(Player).where(Player.is_active.is_(True)).scalar_subquery(),
+                )).one()
+            for entity, count in zip(("groups", "accounts", "players", "active_players"), row, strict=True):
+                ENTITY_COUNTS.labels(self.service, entity).set(count)
+        except Exception:
+            # Do not leave stale counts looking current during a failed scrape.
+            for entity in ("groups", "accounts", "players", "active_players"):
+                ENTITY_COUNTS.labels(self.service, entity).set(float("nan"))
+
     def worker_metrics(self) -> None:
         if enabled("METRICS_ENABLED"):
             try:
@@ -421,4 +443,5 @@ def install_http(app, runtime: Runtime, *, accept_parent=False) -> None:
         if not enabled("METRICS_ENABLED"):
             raise HTTPException(status_code=404, detail="Not found")
         runtime.refresh_queue()
+        runtime.refresh_entities()
         return Response(generate_latest(_REGISTRY), media_type=CONTENT_TYPE_LATEST, headers={"Cache-Control": "no-store"})

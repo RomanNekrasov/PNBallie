@@ -5,6 +5,12 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 
 ## Unreleased — 2026-09-16
 
+- Nieuwe wedstrijden bewaren wie ze heeft ingevoerd; groepsbeheerders zien de
+  oorspronkelijke invoerder bij de wedstrijd. Historische invoerders blijven onbekend.
+- Nieuwe private metrics tellen groepen, accounts en spelers rechtstreeks uit
+  de database voor het Grafana-dashboard. 231 backendtests, 109 frontendtests,
+  lint/build en de lokale beheerweergave slagen.
+
 - Koppelen aan een bestaande speler ruimt het vorige profiel zonder wedstrijden op,
   zodat geen inactief dubbel profiel achterblijft. Bestaande doelavatars en
   wedstrijdhistorie blijven behouden; lopende oude avataropdrachten worden geannuleerd.

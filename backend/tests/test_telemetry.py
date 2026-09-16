@@ -294,3 +294,28 @@ def test_otlp_http_exports_actual_protobuf_traces_and_logs_with_correlation(monk
         server.shutdown()
         server.server_close()
         thread.join(timeout=2)
+
+
+def test_entity_counts_are_current_and_have_no_personal_labels(runtime_factory, db_engine):
+    from prometheus_client import generate_latest
+    runtime, *_ = runtime_factory(database=db_engine)
+    runtime.refresh_entities()
+    assert telemetry.ENTITY_COUNTS.labels(runtime.service, 'groups')._value.get() == 0
+    with Session(db_engine) as session:
+        session.add(Group(id=1, name='Private group name'))
+        session.add(User(id=1, email='private-count@example.test', display_name='Private account'))
+        session.commit()
+        session.add(Player(group_id=1, name='Private active', user_id=1))
+        session.add(Player(group_id=1, name='Private inactive', is_active=False))
+        session.commit()
+    runtime.refresh_entities()
+    for entity, count in {'groups':1, 'accounts':1, 'players':2, 'active_players':1}.items():
+        assert telemetry.ENTITY_COUNTS.labels(runtime.service, entity)._value.get() == count
+    with Session(db_engine) as session:
+        session.exec(__import__('sqlalchemy').delete(Player).where(Player.is_active.is_(False)))
+        session.commit()
+    runtime.refresh_entities()
+    assert telemetry.ENTITY_COUNTS.labels(runtime.service, 'players')._value.get() == 1
+    text = generate_latest(telemetry._REGISTRY).decode()
+    assert 'Private' not in text and 'private-count' not in text
+    assert telemetry.ENTITY_COUNTS._labelnames == ('service', 'entity')

@@ -10,6 +10,7 @@ from app.models import (
     MatchPlayer,
     MatchPlayerOut,
     MatchRead,
+    MatchRecorder,
     Player,
     as_utc,
 )
@@ -64,12 +65,13 @@ def _validate_match(match: MatchCreate, session: Session, group_id: int = 1, ret
         raise HTTPException(status_code=422, detail="Draws are not allowed")
 
 
-def _match_to_read(match: Match) -> MatchRead:
+def _match_to_read(match: Match, *, include_recorder: bool = False) -> MatchRead:
     return MatchRead(
         id=match.id,
         orange_score=match.orange_score,
         blue_score=match.blue_score,
         played_at=match.played_at,
+        recorded_by=MatchRecorder(user_id=match.recorded_by_user_id, name=match.recorded_by_name) if include_recorder and match.recorded_by_name else None,
         players=[
             MatchPlayerOut(player_id=mp.player_id, side=mp.side, position=mp.position)
             for mp in match.players
@@ -82,7 +84,7 @@ def list_matches(limit: int = Query(50, ge=1, le=100), offset: int = Query(0, ge
     matches = session.exec(
         select(Match).where(Match.group_id == group.id).order_by(Match.played_at.desc(), Match.id.desc()).offset(offset).limit(limit)
     ).all()
-    return [_match_to_read(m) for m in matches]
+    return [_match_to_read(m, include_recorder=group.role == "admin") for m in matches]
 
 
 @router.post("", response_model=MatchRead, status_code=201)
@@ -90,6 +92,8 @@ def create_match(match: MatchCreate, group: GroupContext = Depends(require_group
     _validate_match(match, session, group.id)
     db_match = Match(
         group_id=group.id,
+        recorded_by_user_id=group.user.id,
+        recorded_by_name=group.user.display_name,
         orange_score=match.orange_score,
         blue_score=match.blue_score,
     )
@@ -107,7 +111,7 @@ def create_match(match: MatchCreate, group: GroupContext = Depends(require_group
 
     session.commit()
     session.refresh(db_match)
-    return _match_to_read(db_match)
+    return _match_to_read(db_match, include_recorder=group.role == "admin")
 
 
 class MatchUpdate(MatchCreate):
@@ -124,7 +128,7 @@ def _locked_match(match_id: int, group_id: int, session: Session, expected: Matc
     if expected:
         current = _match_to_read(match)
         def comparable(value):
-            result = value.model_dump()
+            result = value.model_dump(exclude={"recorded_by"})
             result["players"] = sorted(result["players"], key=lambda player: player["player_id"])
             return result
         if comparable(current) != comparable(expected):
@@ -147,7 +151,7 @@ def update_match(match_id: int, payload: MatchUpdate, group: GroupContext = Depe
     session.commit()
     session.refresh(match)
     session.expire(match, ["players"])
-    return _match_to_read(match)
+    return _match_to_read(match, include_recorder=True)
 
 
 @router.delete("/{match_id}", status_code=204)

@@ -76,3 +76,45 @@ def test_formations_and_pagination(registered):
     assert len(first)==len(second)==1 and first[0]['id'] != second[0]['id']
     assert admin.get('/api/matches?limit=101').status_code==422
     assert admin.get('/api/matches?offset=-1').status_code==422
+
+
+def test_recorder_is_authenticated_account_immutable_and_admin_only(registered, db_engine):
+    from app.models import Match, User
+    admin, admin_user = registered()
+    group = make_group(admin)
+    second = admin.post('/api/players', json={'name': 'Second'}).json()['id']
+    member, member_user = registered('recorder@example.org', 'Scorekeeper')
+    join(member, make_invite(admin)['code'])
+    # The recorder need not be a participant and cannot impersonate another user.
+    created = member.post('/api/matches', json={**match_body(group['player_id'], second),
+        'recorded_by_user_id': admin_user['id'], 'recorded_by_name': 'Forged',
+        'recorded_by': {'user_id': admin_user['id'], 'name': 'Forged'}}).json()
+    assert created['recorded_by'] is None
+    visible = admin.get('/api/matches').json()[0]
+    assert visible['recorded_by'] == {'user_id': member_user['id'], 'name': 'Scorekeeper'}
+    with Session(db_engine) as session:
+        user = session.get(User, member_user['id'])
+        user.display_name = 'Changed later'
+        session.add(user)
+        session.commit()
+    edited = admin.put(f"/api/matches/{visible['id']}", json=update_body(visible, blue_score=4,
+        recorded_by={'user_id': admin_user['id'], 'name': 'Forged'})).json()
+    assert edited['recorded_by'] == visible['recorded_by']
+    assert member.get('/api/matches').json()[0]['recorded_by'] is None
+    assert admin.get('/api/stats').json()['recent_matches'][0]['recorded_by'] is None
+    with Session(db_engine) as session:
+        row = session.get(Match, visible['id'])
+        assert row.recorded_by_user_id == member_user['id']
+        assert row.recorded_by_name == 'Scorekeeper'
+
+
+def test_old_match_has_unknown_recorder(registered, db_engine):
+    from app.models import Match
+    admin, group, match = setup_match(registered)
+    with Session(db_engine) as session:
+        row = session.get(Match, match['id'])
+        row.recorded_by_user_id = None
+        row.recorded_by_name = None
+        session.add(row)
+        session.commit()
+    assert admin.get('/api/matches').json()[0]['recorded_by'] is None

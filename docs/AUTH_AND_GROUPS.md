@@ -358,3 +358,16 @@ geweigerd. Vergelijking met backup `38036556` bewaart alle oorspronkelijke
 account-, competitie-, wedstrijd- en avatarrecords. Alleen het expliciet
 gevraagde lidmaatschap in Democompetitie is naar beheerder gewijzigd. Productie
 houdt zijn bestaande images. Vernieuw de pagina om groepsrechten opnieuw te laden.
+
+
+### Wie heeft een wedstrijd ingevoerd?
+
+Nieuwe wedstrijden bewaren `recorded_by_user_id` en `recorded_by_name` uit het
+geverifieerde account dat de score indient. Die persoon hoeft niet mee te spelen.
+De naam wordt vastgelegd op het moment van invoeren en blijft behouden bij
+scorecorrecties, profielkoppelingen en latere naamswijzigingen. Een eventueel
+verwijderd account laat de naam staan en maakt de accountreferentie leeg.
+Alleen groepsbeheerders ontvangen deze gegevens in de wedstrijden-API; in
+wedstrijdbeheer staat **Ingevoerd door**. Voor oudere wedstrijden blijven beide
+velden leeg en staat **Onbekend**. Er wordt geen invoerder geraden uit spelers,
+logs of de datum.
