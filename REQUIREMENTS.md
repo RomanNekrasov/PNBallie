@@ -364,7 +364,7 @@ geen echte mailbox en krijgt geen stilzwijgende verificatie-uitzondering.
 ## Wins per kleur — 16 september 2026
 
 - [x] Toon één kleurverdeling voor de spelvorm onder Tandwiel → Statistieken bekijken; standaard alles samen, optioneel alleen 1v1 of 2v2.
-- [ ] Controleer alle drie keuzes en rol de frontend via acceptatie uit naar productie.
+- [x] Controleer alle drie keuzes en rol de frontend via acceptatie uit naar productie (app PR 37; homelab PR 77/78; beide omgevingen leveren dezelfde gecontroleerde statistiekbundel).
 
 ## Productiepromotie — 16 september 2026
 
