@@ -359,4 +359,4 @@ geen echte mailbox en krijgt geen stilzwijgende verificatie-uitzondering.
 - [x] Reset via mailbox bewijst e-mailbezit; ook een nog onbevestigd lokaal account kan zo veilig herstellen.
 - [x] Formulier voor nieuw wachtwoord met bevestiging; geen automatische reset door link openen of mailscanner.
 - [x] Illustratie links verwijderen en één gecentreerde login binnen de herkenbare voetbaltafel plaatsen, met dezelfde veld- en tafelkleuren als scoreregistratie.
-- [ ] Mobiel/desktop controleren, documenteren en naar acceptatie uitrollen; productie blijft ongewijzigd.
+- [x] Mobiel/desktop controleren, documenteren en naar acceptatie uitrollen; productie blijft ongewijzigd.
