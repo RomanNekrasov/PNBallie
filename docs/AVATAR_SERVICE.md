@@ -763,3 +763,21 @@ zijn eigen images, configuratie en Qwen-standaard tot een aparte promotie.
 
 Lokale validatie: 240 backendtests, 111 frontendtests, Ruff/ESLint en de
 TypeScript/productiebouw slagen. Live acceptatiecontrole volgt de imagepublicatie.
+
+### Acceptatiebewijs — 16 september 2026
+
+App PR 42 is via homelab PR 86 uitgerold op `https://acceptatie.pnballie.nl`.
+De volledige publieke HTTPS-upload met expliciete Azure-toestemming slaagt:
+183,8 seconden, één poging, 1024 × 1024 RGBA, 60% volledig transparante pixels.
+De worker bewaart de avatar, verwijdert de bronfoto en het profiel haalt de
+private PNG op. Het tijdelijke testaccount/de groep/de avatar zijn verwijderd.
+Een gelijktijdige echte gebruikersaanvraag is behouden en wordt verder verwerkt.
+Vergelijking met de versleutelde backup bevestigt ongewijzigde accounts, rollen,
+spelers, scores, uitnodigingen en alle oudere avatarjobs.
+
+De live configuratie kiest Azure standaard; Qwen meldt ready. De publieke
+profielbundle bevat beide keuzes. Tests bewijzen wisselen en verse toestemming;
+een aparte fysieke iPhone-test van deze nieuwe keuze is nog aan de gebruiker.
+Grafana bevat de succesvolle Azure-metric, het workerlog en de gekoppelde
+API/worker/providertrace. De analyticsview accepteert de providerwaarde azure.
+Productie behoudt zijn eerdere backend-/frontendimages en configuratie.

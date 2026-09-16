@@ -11,7 +11,9 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
   alongside the existing Qwen and direct OpenAI options. The profile respects
   a configurable default and requests fresh consent for cloud processing.
   Queued jobs retain their provider when the default changes; Azure is selected
-  for the acceptance rollout only.
+  for acceptance only. A real public upload completed in one attempt in about
+  three minutes, with transparent private PNG storage, source cleanup and
+  correlated telemetry verified. Qwen remains ready; production is unchanged.
 
 - Nieuwe wedstrijden bewaren wie ze heeft ingevoerd; groepsbeheerders zien de
   oorspronkelijke invoerder bij de wedstrijd. Historische invoerders blijven onbekend.

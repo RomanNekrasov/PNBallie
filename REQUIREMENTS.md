@@ -410,4 +410,4 @@ geen echte mailbox en krijgt geen stilzwijgende verificatie-uitzondering.
 - [x] De geteste selfie/template-prompt, template, hoge kwaliteit en transparante PNG-output gebruiken.
 - [x] Azure als configureerbare standaard op acceptatie; Qwen blijft handmatig kiesbaar en kan later weer standaard worden.
 - [x] Bestaande asynchrone verwerking, toestemming per cloudupload, beveiliging, bronverwijdering en telemetrie behouden.
-- [ ] Tests, documentatie, versleutelde configuratie en acceptatierollout; productie wordt niet gepromoveerd.
+- [x] Tests, documentatie, versleutelde configuratie en acceptatierollout; productie wordt niet gepromoveerd.
