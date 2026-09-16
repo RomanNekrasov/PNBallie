@@ -1,8 +1,11 @@
 from datetime import timedelta
 
+import pytest
 from sqlmodel import Session, select
 
 from app.admin import claim_legacy
+from app.avatar_models import AvatarJob, PlayerAvatar
+from app.avatar_worker import claim_job, complete_job, renew_lease
 from app.models import Group, Invite, MatchPlayer, Membership, Player, utc_now
 
 
@@ -142,8 +145,7 @@ def test_profile_binding_by_user_id_preserves_historic_player(registered):
     assert response.status_code == 200
     assert admin.get("/api/players/me").json()["id"] == historical["id"]
     assert admin.get("/api/groups/current").json()["player_id"] == historical["id"]
-    old = next(p for p in admin.get("/api/players?include_inactive=true").json() if p["id"] == group["player_id"])
-    assert old["user_id"] is None and not old["is_active"]
+    assert all(p["id"] != group["player_id"] for p in admin.get("/api/players?include_inactive=true").json())
     other, other_user = registered("other@example.org")
     make_group(other)
     assert admin.patch(f"/api/players/{historical['id']}", json={"user_id": other_user["id"]}).status_code == 422
@@ -203,3 +205,54 @@ def test_historical_names_read_without_new_input_limits(registered, db_engine):
     assert any(player["name"] == historical_name for player in admin.get("/api/players").json())
     assert admin.post("/api/players", json={"name": historical_name}).status_code == 422
     assert admin.post("/api/players", json={"name": " "}).status_code == 422
+
+
+@pytest.mark.parametrize("target_has_avatar", [False, True])
+@pytest.mark.parametrize("job_status", ["queued", "processing", "succeeded"])
+def test_rebinding_preserves_avatar_and_fences_old_jobs(registered, db_engine, target_has_avatar, job_status):
+    admin, user = registered()
+    group = make_group(admin)
+    old_id = group["player_id"]
+    target = admin.post("/api/players", json={"name": "Historical"}).json()
+    with Session(db_engine) as session:
+        session.add(PlayerAvatar(player_id=old_id, group_id=group["id"], version="old", png=b"old-png"))
+        if target_has_avatar:
+            session.add(PlayerAvatar(player_id=target["id"], group_id=group["id"], version="target", png=b"target-png"))
+        session.add(AvatarJob(group_id=group["id"], player_id=old_id, user_id=user["id"],
+                              active_player_id=old_id, provider="local", source_png=b"private-source"))
+        session.commit()
+    claimed = claim_job(db_engine) if job_status == "processing" else None
+    with Session(db_engine) as session:
+        job = session.exec(select(AvatarJob)).one()
+        job_id = job.id
+        if job_status == "succeeded":
+            job.status = "succeeded"
+            job.active_player_id = None
+            job.source_png = None
+            session.add(job)
+            session.commit()
+    assert admin.patch(f"/api/players/{target['id']}", json={"user_id": user["id"]}).status_code == 200
+    if claimed:
+        assert not renew_lease(db_engine, claimed)
+        assert not complete_job(db_engine, claimed, b"late-image")
+    with Session(db_engine) as session:
+        assert session.get(Player, old_id) is None
+        assert session.get(PlayerAvatar, old_id) is None
+        avatar = session.get(PlayerAvatar, target["id"])
+        assert avatar.png == (b"target-png" if target_has_avatar else b"old-png")
+        job = session.get(AvatarJob, job_id)
+        assert job.player_id == target["id"]
+        assert job.status == ("succeeded" if job_status == "succeeded" else "cancelled")
+        assert job.source_png is None and job.active_player_id is None and job.lease_token is None
+
+
+def test_rebinding_conflict_rolls_back_all_changes(registered, db_engine):
+    admin, user = registered()
+    group = make_group(admin)
+    target = admin.post("/api/players", json={"name": "Historical"}).json()
+    other = admin.post("/api/players", json={"name": "Other"}).json()
+    response = admin.patch(f"/api/players/{target['id']}", json={"user_id": user["id"], "name": other["name"]})
+    assert response.status_code == 409
+    assert admin.get("/api/players/me").json()["id"] == group["player_id"]
+    with Session(db_engine) as session:
+        assert session.get(Player, target["id"]).name == "Historical"

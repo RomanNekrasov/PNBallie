@@ -16,6 +16,12 @@ scope en houdt de acceptatiestatus bij. Wijzigingen en controles staan in
       identifiers van een andere groep.
 - [x] Bestaande spelers en wedstrijden blijven behouden in een bestaande groep.
 
+### Koppelen aan een bestaande speler — vervolg
+
+- [x] Na koppelen verdwijnt het vorige profiel zonder wedstrijdhistorie uit alle spelerslijsten.
+- [x] Historie blijft beschermd; een bestaande avatar wordt overgenomen als het doelprofiel nog geen avatar heeft. Lopende aanvragen worden veilig geannuleerd.
+- [x] Het al achtergebleven dubbele profiel op productie wordt na backup gericht opgeruimd.
+
 ## 2. Open authenticatie
 
 - [x] Verplichte Entra ID-/provincieafhankelijkheid vervangen door een oplossing
