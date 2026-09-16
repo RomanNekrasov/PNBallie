@@ -1,6 +1,6 @@
 <template>
   <router-view v-slot="{ Component, route: viewRoute }">
-    <component :is="Component" :key="`${viewRoute.path}:${currentGroup?.id ?? 0}`" />
+    <component :is="Component" :key="`${viewRoute.path}:${viewRoute.path === '/verify-email' ? 0 : currentGroup?.id ?? 0}`" />
   </router-view>
 </template>
 

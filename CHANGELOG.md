@@ -13,6 +13,9 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
   vastgelegd. De link vereist inloggen en bevestigen, met behoud van uitnodigingen.
 - 206 backendtests en 99 frontendtests, lint, migratiebehoud en productiebuild
   slagen. Brevo TLS/authenticatie is gecontroleerd; uitrol en echte mail volgen.
+- Behoud de uitnodiging ook wanneer bevestigen een bestaande groep herlaadt.
+  Toon een duidelijke melding en wachttijd als de eerste mail niet verstuurd is.
+  De aanvullende regressietest brengt het frontendtotaal op 100.
 
 ## Unreleased — 2026-09-15
 
