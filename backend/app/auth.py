@@ -170,6 +170,12 @@ def require_user(request: Request, session: Session = Depends(get_session)) -> U
     return user
 
 
+def require_verified_user(user: User = Depends(require_user)) -> User:
+    if env_bool("AUTH_REQUIRE_EMAIL_VERIFICATION", False) and user.email_verified_at is None:
+        raise HTTPException(status_code=403, detail="Bevestig eerst je e-mailadres.")
+    return user
+
+
 @dataclass(frozen=True)
 class GroupContext:
     id: int
@@ -177,7 +183,7 @@ class GroupContext:
     user: User
 
 
-def require_group(request: Request, user: User = Depends(require_user), session: Session = Depends(get_session)) -> GroupContext:
+def require_group(request: Request, user: User = Depends(require_verified_user), session: Session = Depends(get_session)) -> GroupContext:
     raw = request.headers.get("x-group-id", "")
     try:
         group_id = int(raw)

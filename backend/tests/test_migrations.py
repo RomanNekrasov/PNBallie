@@ -50,3 +50,15 @@ def test_downgrade_refuses_to_merge_distinct_groups(tmp_path, monkeypatch):
     with pytest.raises(RuntimeError, match="isolated groups"):
         command.downgrade(config, "2895eb84caa9")
     engine.dispose()
+
+
+def test_existing_accounts_are_not_silently_verified(tmp_path, monkeypatch):
+    config, engine = migration_config(tmp_path / "email.db", monkeypatch)
+    command.upgrade(config, "20260910_telemetry")
+    with engine.begin() as connection:
+        connection.execute(sa.text("INSERT INTO app_user(email,display_name,created_at) VALUES ('existing@example.org','Existing','2026-09-01')"))
+    command.upgrade(config, "head")
+    with engine.connect() as connection:
+        assert connection.execute(sa.text("SELECT email_verified_at FROM app_user")).scalar() is None
+        assert connection.execute(sa.text("SELECT count(*) FROM app_user")).scalar() == 1
+    engine.dispose()

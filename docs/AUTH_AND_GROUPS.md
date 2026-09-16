@@ -8,7 +8,9 @@ wachtwoordhashing en OIDC. Een externe identityserver is optioneel.
 ## Lokale accounts en sessies
 
 Registratie vraagt een naam, e-mailadres en wachtwoord van minstens 12 tekens.
-Het e-mailadres is een inlognaam; de app stuurt geen verificatie- of resetmails.
+Met `AUTH_REQUIRE_EMAIL_VERIFICATION=true` stuurt registratie een verificatiemail.
+Nieuwe en bestaande lokale accounts moeten bevestigen vóór toegang tot groepen.
+Wachtwoordresetmails vallen nog buiten deze uitbreiding.
 Het geeft op zichzelf geen toegang tot een bestaande competitie. Toegang volgt
 uitsluitend uit groepsaanmaak, een geldige uitnodiging of expliciet operatorbeheer.
 
@@ -23,6 +25,47 @@ de gebruiker lid is. De app wist groepsgegevens direct bij groepswissel of logou
 en negeert antwoorden van oudere aanvragen. Onbekende en vreemde groepen geven
 dezelfde 404-respons. Login, registratie, uitnodigingen en avataruploads hebben
 limieten die ook na een procesherstart gelden.
+
+## E-mailverificatie via SMTP
+
+Stel `AUTH_REQUIRE_EMAIL_VERIFICATION=true`, `SMTP_HOST`, `SMTP_PORT`,
+`SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL` en `SMTP_FROM_NAME` in op
+alleen de API. Poort 587 vereist STARTTLS; 465 gebruikt directe TLS, steeds met
+certificaatcontrole. Brevo is de eerste provider; er is geen providerspecifieke API.
+De afzender en het domein moeten bij de mailprovider geverifieerd zijn. Ontbrekende
+configuratie verhindert starten als verificatie verplicht is. Standaard staat de
+functie uit zodat lokale ontwikkeling zonder maildienst blijft werken.
+
+Registratie maakt een sessie en probeert één mail te sturen. Een mailstoring
+verwijdert het account niet: de gebruiker kan inloggen en opnieuw aanvragen.
+Er is geen achtergrond-mailqueue; verzending heeft begrensde SMTP-timeouts.
+Limieten: eenmaal per minuut en vijfmaal per dag per account, tienmaal per uur
+per client-IP, tweehonderdmaal per dag per installatie. Opnieuw aanvragen vervangt
+de vorige link. Na een onduidelijke SMTP-timeout kan een mail toch bezorgd worden;
+alleen de nieuwste link blijft geldig. Bezorging in de inbox moet apart worden
+gecontroleerd: SMTP-acceptatie alleen bewijst dat niet.
+
+De server bewaart uitsluitend een SHA-256-hash van een willekeurig 256-bit-token,
+het account/adres, de veilige terugkeerroute en een vervaltijd van 24 uur.
+`/verify-email#token=…` houdt het token buiten HTTP-URLs en Referer-headers.
+De pagina verwijdert het fragment en bewaart het token alleen in componentgeheugen.
+De link opnieuw openen is nodig na verversen. Alleen een expliciete POST met een
+sessie van hetzelfde account en geldige CSRF-token kan bevestigen. GET/scanners,
+verkeerde accounts, verlopen links en hergebruik bevestigen niets. Verificatie
+maakt geen nieuwe sessie en koppelt geen bestaande speler. Een uitnodigingsroute
+blijft bij het challenge opgeslagen zodat de gebruiker na bevestiging kan doorgaan.
+Mailadressen, SMTP-responses en tokens worden niet naar telemetry gestuurd.
+
+De migratie markeert geen bestaande accounts automatisch als geverifieerd.
+Een succesvolle OIDC-login legt bewijs vast als de provider `email_verified: true`
+levert voor exact het opgeslagen adres. Groeps-/spelers-/score-/avatar-API's
+weigeren onbevestigde accounts wanneer verificatie verplicht is. Inloggen,
+uitloggen en mailverificatie blijven beschikbaar.
+
+Acceptatie heeft een fictieve demoaccount zonder echte mailbox. Ook die is na
+inschakelen geblokkeerd voor groepsgebruik; geef testers een uitnodiging en laat
+ze hun eigen e-mailadres bevestigen. De demoaccount krijgt geen bypass. Productie
+krijgt deze wijziging pas bij een afzonderlijke promotie, inclusief SMTP-secret.
 
 ## Configuratie
 

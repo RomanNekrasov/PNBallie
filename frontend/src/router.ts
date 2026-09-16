@@ -5,6 +5,7 @@ import GameView from './views/GameView.vue'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    { path: '/verify-email', component: () => import('./views/VerifyEmailView.vue') },
     { path: '/login', component: () => import('./views/LoginView.vue') },
     { path: '/groups', component: () => import('./views/GroupsView.vue'), meta: { requiresAuth: true } },
     { path: '/join/:code', component: () => import('./views/GroupsView.vue'), meta: { requiresAuth: true } },
@@ -18,6 +19,7 @@ const router = createRouter({
 
 router.beforeEach(to => {
   if (to.meta.requiresAuth && !authUser.value) return { path: '/login', query: { redirect: to.fullPath } }
+  if (to.meta.requiresAuth && authUser.value?.verification_required) return { path: '/verify-email', query: { redirect: to.fullPath } }
   if (to.meta.requiresGroup && !currentGroup.value) return '/groups'
   if (to.meta.requiresAdmin && !isGroupAdmin.value) return '/'
 })

@@ -43,3 +43,14 @@ describe('portable authentication', () => {
     expect(safeReturnPath('/join/code-example')).toBe('/join/code-example')
   })
 })
+
+it('restores an unverified session without requesting protected group data', async () => {
+  const fetchMock = vi.fn()
+    .mockResolvedValueOnce(json({ local: true, registration_enabled: true, oidc: null }))
+    .mockResolvedValueOnce(json({ user: { id: 9, email: 'pending@example.test', verification_required: true }, csrf_token: 'csrf' }))
+  vi.stubGlobal('fetch', fetchMock)
+  await initAuth()
+  expect(authUser.value?.verification_required).toBe(true)
+  expect(currentGroup.value).toBeNull()
+  expect(fetchMock).toHaveBeenCalledTimes(2)
+})

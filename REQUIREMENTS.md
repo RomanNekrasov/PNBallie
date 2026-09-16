@@ -336,3 +336,16 @@ De oorspronkelijke demo-/productiegegevens zijn behouden; zie `docs/AVATAR_SERVI
 - [x] Tests, documentatie, publicatie en acceptatie-uitrol; live 48-MP-HEIC-upload en bronopruiming gecontroleerd.
 - [ ] Fotoselectie op de echte iPhone bevestigen; backend- en componenttests vervangen de toesteltest niet.
 - [x] De gebruiker heeft de embeddingsdienst expliciet laten stoppen. Container en modelbestanden blijven behouden; de C-test is geslaagd.
+
+## E-mailverificatie — 16 september 2026
+
+- [x] SMTP via Brevo (standaard SMTP/STARTTLS), secrets alleen server-side/SOPS.
+- [x] Nieuwe en bestaande lokale accounts moeten hun e-mailadres bevestigen voordat groepsgegevens toegankelijk zijn.
+- [x] Eenmalige willekeurige link, uitsluitend tokenhash opgeslagen, 24 uur geldig; opnieuw versturen met limieten.
+- [x] Bevestigen via expliciete POST, geen automatische login of verificatie door mail-scanners; token uit URL-fragment en niet in telemetry.
+- [x] Heldere registratie-/verificatiepagina, behoud van uitnodiging, foutafhandeling bij mailstoring.
+- [x] OIDC-verificatie expliciet vastleggen; geen automatische koppeling op e-mailadres.
+- [ ] Migratie, veiligheids-/frontendtests, documentatie, acceptatie-uitrol en echte SMTP-verzending testen.
+
+Productie blijft op zijn bestaande release. De gedeelde fictieve demoaccount heeft
+geen echte mailbox en krijgt geen stilzwijgende verificatie-uitzondering.
