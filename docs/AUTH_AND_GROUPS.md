@@ -174,6 +174,11 @@ groepen een eigen spelersprofiel hebben. Een automatische profielkoppeling
 gebruikt de account-ID, nooit een voornaam. Koppelen aan een historische speler
 kan de automatisch aangemaakte lege speler vervangen; als die al wedstrijden
 heeft, weigert de server dit om geschiedenis niet ongemerkt te verplaatsen.
+Het vervangen lege profiel wordt verwijderd, ook uit de beheerlijst. Zijn avatar
+wordt overgenomen als de historische speler nog geen avatar heeft; een bestaande
+doelavatar blijft staan. Oude avataropdrachten blijven als historie beschikbaar,
+maar lopende aanvragen worden geannuleerd en bronfoto’s gewist. Een nieuwe
+aanvraag kan daarna vanuit het gekoppelde profiel worden gestart.
 
 Uitnodigingen bevatten een willekeurige code van 144 bits. Alleen de hash wordt
 opgeslagen; de code wordt bij aanmaak één keer getoond. Ze zijn 1–30 dagen geldig,

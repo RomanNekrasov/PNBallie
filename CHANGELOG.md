@@ -5,6 +5,12 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 
 ## Unreleased — 2026-09-16
 
+- Koppelen aan een bestaande speler ruimt het vorige profiel zonder wedstrijden op,
+  zodat geen inactief dubbel profiel achterblijft. Bestaande doelavatars en
+  wedstrijdhistorie blijven behouden; lopende oude avataropdrachten worden geannuleerd.
+  228 backendtests en lint slagen. Het gemelde lege dubbele productieprofiel is
+  na gecontroleerde backup verwijderd; alle overige rijen zijn identiek.
+
 - Wins per kleur toont één verdeling die de spelvorm onder het tandwiel volgt,
   in plaats van totaal, 1v1 en 2v2 tegelijk. Alle keuzes en mobiel gecontroleerd;
   de frontend is via acceptatie naar productie uitgerold.
