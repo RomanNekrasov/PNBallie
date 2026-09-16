@@ -6,7 +6,8 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 ## Unreleased — 2026-09-16
 
 - Witte doellijnen lopen achter de bruine tafelrand, zowel bij inloggen als bij
-  scoreregistratie; stangen blijven boven de rand liggen.
+  scoreregistratie; stangen blijven boven de rand liggen. Uitgerold naar acceptatie
+  en visueel gecontroleerd op de live mobiele inlogpagina.
 
 ### Statistiekmenu en wedstrijdbeheer
 
