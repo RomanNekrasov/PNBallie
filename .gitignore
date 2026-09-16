@@ -51,3 +51,5 @@ frontend/public/config.json
 *.tfstate.backup
 *.tfplan
 infra/prod/terraform.tfvars
+
+.local-data/

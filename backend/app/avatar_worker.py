@@ -254,11 +254,15 @@ def run_once(database: Engine = engine, provider: AvatarProvider | None = None) 
 
 
 def main():
+    from app.release import WorkerHeartbeat
+
     parser = argparse.ArgumentParser(description="Process PNBallie avatar jobs")
     parser.add_argument("--once", action="store_true", help="Process at most one job and exit")
     args = parser.parse_args()
     telemetry.configure()
     telemetry.worker_metrics()
+    heartbeat = WorkerHeartbeat()
+    heartbeat.start()
     try:
         while True:
             try:
@@ -271,6 +275,7 @@ def main():
             if not processed:
                 time.sleep(5)
     finally:
+        heartbeat.stop()
         telemetry.close()
 
 

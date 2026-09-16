@@ -51,8 +51,9 @@ def test_known_capacity_shortage_rejects_upload_without_job_or_source(api, monke
     assert response.status_code == 503 and "capaciteit" in response.json()["detail"]
     with Session(database) as session:
         assert session.exec(select(AvatarJob)).all() == []
-    # No silent cloud switch, but an explicitly consented cloud request remains available.
-    assert enqueue(client, params={"provider": "openai", "cloud_consent": True}).status_code == 202
+    # Only an operator default change can select the cloud provider.
+    monkeypatch.setenv("AVATAR_DEFAULT_PROVIDER", "openai")
+    assert enqueue(client).status_code == 202
 
 
 def test_capacity_race_preserves_source_and_refunds_attempt(api):

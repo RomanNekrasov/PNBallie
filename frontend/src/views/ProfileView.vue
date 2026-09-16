@@ -58,19 +58,13 @@
           <small v-if="jobActive || job.status === 'cancelled'">Na annuleren wordt deze avatar niet opgeslagen. De verwerking kan nog doorlopen en een volgende aanvraag vertragen.</small>
           <button v-if="jobActive" class="quiet-button" :disabled="saving" @click="cancelJob">Aanvraag annuleren</button>
         </div>
-        <p v-if="config && !config.local_available && !config.openai_available && !config.azure_available" class="account-notice">Avatars maken is momenteel niet beschikbaar.</p>
+        <p v-if="config && !config.available" class="account-notice">Avatars maken is momenteel niet beschikbaar.</p>
         <form v-else-if="config" class="account-form" @submit.prevent="upload">
           <label>Foto (JPEG, PNG, WebP of HEIC/HEIF; maximaal {{ Math.round(config.max_upload_bytes / 1024 / 1024) }} MB)<input ref="fileInput" type="file" accept="image/*,.heic,.heif" :disabled="jobActive || saving" @change="choosePhoto" /></label>
           <img v-if="previewUrl && !previewFailed" :src="previewUrl" alt="Geselecteerde foto" class="upload-preview" @error="previewFailed = true" />
           <p v-if="photo && previewFailed" class="account-muted">Foto geselecteerd: {{ photo.name }}</p>
-          <label>Verwerking<select v-model="provider" :disabled="jobActive || saving"><option v-if="provider === 'azure' && !config.azure_available" disabled value="azure">OpenAI · Azure (niet beschikbaar)</option><option v-if="config.azure_available" value="azure">OpenAI · Azure</option><option v-if="config.local_available" value="local">Qwen · eigen server</option><option v-if="config.openai_available" value="openai">GPT via OpenAI</option></select></label>
-          <div v-if="provider === 'local' && localBlocked" class="account-notice" role="status">
-            <p>{{ config.local_status === 'capacity' ? 'De eigen server heeft nu onvoldoende vrije capaciteit. Probeer later opnieuw.' : 'De eigen server is niet bereikbaar. Probeer later opnieuw.' }}</p>
-            <button type="button" class="quiet-button" :disabled="checkingStatus" @click="refreshAvailability">Beschikbaarheid opnieuw controleren</button>
-          </div>
-          <label v-if="cloudProvider" class="checkbox-label"><input v-model="cloudConsent" type="checkbox" required /><span>Ik geef toestemming om deze foto naar {{ provider === 'azure' ? 'Azure OpenAI (Microsoft)' : 'OpenAI' }} te sturen voor mijn avatar.</span></label>
-          <p class="account-hint">De originele upload wordt verwijderd nadat de aanvraag is afgerond. Je avatar blijft bij je profiel bewaard.</p>
-          <button type="submit" class="primary-button" :disabled="!photo || !canRequest || jobActive || saving || (cloudProvider && !cloudConsent)">{{ saving ? 'Even geduld…' : 'Avatar laten maken' }}</button>
+          <p v-if="provider === 'local' && localBlocked" class="account-notice">Avatars maken is tijdelijk niet beschikbaar. Probeer later opnieuw.</p>
+          <button type="submit" class="primary-button" :disabled="!photo || !canRequest || jobActive || saving">{{ saving ? 'Even geduld…' : 'Avatar laten maken' }}</button>
         </form>
       </section>
     </div>
@@ -92,7 +86,7 @@ import { trackEvent } from '../analytics'
 import { photoMime } from '../avatarPhoto'
 
 type AvatarProvider = 'local' | 'openai' | 'azure'
-interface AvatarConfig { azure_available?: boolean; default_provider?: AvatarProvider; local_available: boolean; openai_available: boolean; max_upload_bytes: number; local_status?: string; local_style?: string }
+interface AvatarConfig { available: boolean; default_provider: AvatarProvider; max_upload_bytes: number; local_status?: string; local_style?: string }
 interface AvatarJob { id: string; status: 'queued' | 'processing' | 'succeeded' | 'failed' | 'cancelled'; provider: AvatarProvider; created_at: string; error: string | null; avatar_url: string | null }
 const player = ref<Player | null>(null)
 const name = ref('')
@@ -101,9 +95,7 @@ const job = ref<AvatarJob | null>(null)
 const photo = ref<File | null>(null)
 const previewUrl = ref('')
 const previewFailed = ref(false)
-const checkingStatus = ref(false)
 const provider = ref<AvatarProvider>('local')
-const cloudConsent = ref(false)
 const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
@@ -118,8 +110,7 @@ const avatarUrl = computed(() => playerAvatar(player.value?.name, player.value?.
 const badges = computed(() => stats.value?.players.find(entry => entry.player_id === player.value?.id)?.badges ?? [])
 const jobActive = computed(() => job.value?.status === 'queued' || job.value?.status === 'processing')
 const localBlocked = computed(() => ['capacity', 'unavailable'].includes(config.value?.local_status ?? ''))
-const cloudProvider = computed(() => provider.value !== 'local')
-const canRequest = computed(() => provider.value === 'local' ? config.value?.local_available && !localBlocked.value : provider.value === 'azure' ? config.value?.azure_available : config.value?.openai_available)
+const canRequest = computed(() => config.value?.available && (provider.value !== 'local' || !localBlocked.value))
 const now = ref(Date.now())
 const requestTimestamp = computed(() => {
   if (!job.value?.created_at) return null
@@ -137,7 +128,6 @@ let timer: ReturnType<typeof setTimeout> | undefined
 let ageTimer: ReturnType<typeof setInterval> | undefined
 let active = true
 let jobRequestVersion = 0
-watch(provider, () => { cloudConsent.value = false })
 watch(job, (next, previous) => {
   if (next && previous?.id === next.id && ['queued', 'processing'].includes(previous.status)
     && ['succeeded', 'failed', 'cancelled'].includes(next.status)) {
@@ -166,14 +156,6 @@ function choosePhoto(event: Event) {
   error.value = ''
   photo.value = selected
   previewUrl.value = URL.createObjectURL(selected)
-}
-async function refreshAvailability() {
-  checkingStatus.value = true
-  try {
-    const result = await api<AvatarConfig>('/api/avatars/config')
-    if (active) config.value = result
-  } catch (cause) { if (active) error.value = cause instanceof Error ? cause.message : 'Beschikbaarheid controleren is niet gelukt.' }
-  finally { checkingStatus.value = false }
 }
 function schedulePoll() {
   clearTimeout(timer)
@@ -207,7 +189,7 @@ onMounted(async () => {
     const [settings, latest] = await Promise.all([api<AvatarConfig>('/api/avatars/config'), api<AvatarJob | null>('/api/avatars/me/latest')])
     if (!active) return
     config.value = settings
-    provider.value = settings.default_provider ?? (settings.local_available ? 'local' : settings.azure_available ? 'azure' : 'openai')
+    provider.value = settings.default_provider
     job.value = latest
     schedulePoll()
   } catch (cause) { if (active) error.value = cause instanceof Error ? cause.message : 'Profiel laden is niet gelukt.' }
@@ -226,7 +208,7 @@ async function saveProfile() {
   finally { saving.value = false }
 }
 async function upload() {
-  if (!photo.value || !canRequest.value || jobActive.value || saving.value || (cloudProvider.value && !cloudConsent.value)) return
+  if (!photo.value || !canRequest.value || jobActive.value || saving.value) return
   const version = ++jobRequestVersion
   clearTimeout(timer)
   saving.value = true
@@ -234,7 +216,7 @@ async function upload() {
   notice.value = ''
   pollError.value = ''
   try {
-    const result = await api<AvatarJob>(`/api/avatars/me/jobs?provider=${provider.value}&cloud_consent=${cloudConsent.value}`, {
+    const result = await api<AvatarJob>('/api/avatars/me/jobs', {
       method: 'POST', headers: { 'Content-Type': photoMime(photo.value)! }, body: photo.value,
     })
     if (!active || version !== jobRequestVersion) return

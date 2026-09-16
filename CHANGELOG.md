@@ -482,3 +482,9 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 - Publicatie en uitrol via Flux. De private lokale Spark-runtime, modelcache en
   SSH-verbinding zijn inmiddels beschikbaar; productie-uitrol blijft afzonderlijk.
   Er is niets naar productie uitgerold en er zijn geen productiescores gewijzigd.
+
+## 2026-09-16 — Avatarflow en delivery
+
+- Alleen foto uploaden en avatar maken; provider via serverconfiguratie, Azure als standaard.
+- Originele uploads privé en persistent bewaren; tijdelijke werkfoto apart opruimen.
+- Automatische acceptatierelease en productiepromotie na GitHub-goedkeuring, met identieke images en live versiecontrole.

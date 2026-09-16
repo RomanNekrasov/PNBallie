@@ -18,13 +18,13 @@ function job(status: JobStatus) {
   return { id: 'avatar-job', status, provider: 'local', created_at: new Date(Date.now() - 5 * 60_000).toISOString(), error: null as string | null, avatar_url: status === 'succeeded' ? '/api/avatars/players/12.png?v=new' : null }
 }
 let latest: ReturnType<typeof job> | null
-let configuration: { azure_available?: boolean; default_provider?: 'local' | 'openai' | 'azure'; local_available: boolean; openai_available: boolean; max_upload_bytes: number; local_status?: string; local_style?: string }
+let configuration: { available: boolean; default_provider: 'local' | 'openai' | 'azure'; max_upload_bytes: number; local_status?: string; local_style?: string }
 let wrapper: VueWrapper | undefined
 
 beforeEach(() => {
   vi.useFakeTimers()
   latest = null
-  configuration = { local_available: true, openai_available: true, max_upload_bytes: 8 * 1024 * 1024 }
+  configuration = { available: true, default_provider: 'local', max_upload_bytes: 8 * 1024 * 1024 }
   fetchStatsMock.mockResolvedValue(undefined)
   vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:selected-portrait')
   vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
@@ -32,7 +32,7 @@ beforeEach(() => {
     if (path === '/api/players/me') return { id: 12, group_id: 7, user_id: 1, name: 'Ada', is_active: true, created_at: '2026-01-01T00:00:00Z', avatar_url: null }
     if (path === '/api/avatars/config') return { ...configuration }
     if (path === '/api/avatars/me/latest') return latest ? { ...latest } : null
-    if (path.startsWith('/api/avatars/me/jobs?')) return job('queued')
+    if (path === '/api/avatars/me/jobs') return job('queued')
     if (path === '/api/avatars/jobs/avatar-job') return job(options?.method === 'DELETE' ? 'cancelled' : 'succeeded')
     throw new Error(`Unexpected test API call: ${path}`)
   })
@@ -66,44 +66,24 @@ function uploadForm(view: VueWrapper) {
 }
 
 function submissions() {
-  return apiMock.mock.calls.filter(([path]) => path.startsWith('/api/avatars/me/jobs?'))
+  return apiMock.mock.calls.filter(([path]) => path === '/api/avatars/me/jobs')
 }
 
 describe('profile avatar flow', () => {
-  it('defaults to Azure, requires fresh consent and lets the player switch back to Qwen', async () => {
-    configuration.azure_available = true
+  it('uploads with the server default without provider controls or a consent checkbox', async () => {
     configuration.default_provider = 'azure'
     const view = await openProfile()
-    await selectPhoto(view)
-    expect(view.get<HTMLSelectElement>('select').element.value).toBe('azure')
-    expect(view.text()).toContain('Azure OpenAI (Microsoft)')
-    expect(view.text()).toContain('Qwen · eigen server')
-    await uploadForm(view).trigger('submit')
-    expect(submissions()).toHaveLength(0)
-    await view.get('input[type="checkbox"]').setValue(true)
-    await view.get('select').setValue('local')
+    expect(view.find('select').exists()).toBe(false)
     expect(view.find('input[type="checkbox"]').exists()).toBe(false)
-    expect(uploadForm(view).get('button[type="submit"]').attributes('disabled')).toBeUndefined()
-    await view.get('select').setValue('azure')
-    expect(view.get<HTMLInputElement>('input[type="checkbox"]').element.checked).toBe(false)
-    await view.get('input[type="checkbox"]').setValue(true)
+    expect(view.text()).not.toContain('toestemming')
+    expect(view.text()).not.toContain('originele upload')
+    await selectPhoto(view)
     await uploadForm(view).trigger('submit')
     await flushPromises()
-    expect(submissions()[0]?.[0]).toBe('/api/avatars/me/jobs?provider=azure&cloud_consent=true')
+    expect(submissions()[0]?.[0]).toBe('/api/avatars/me/jobs')
   })
 
-  it('keeps an unavailable Azure default blocked instead of silently choosing a different provider', async () => {
-    configuration.azure_available = false
-    configuration.default_provider = 'azure'
-    const view = await openProfile()
-    await selectPhoto(view)
-    expect(view.get<HTMLSelectElement>('select').element.value).toBe('azure')
-    await view.get('input[type="checkbox"]').setValue(true)
-    await uploadForm(view).trigger('submit')
-    expect(submissions()).toHaveLength(0)
-    await view.get('select').setValue('local')
-    expect(uploadForm(view).get('button[type="submit"]').attributes('disabled')).toBeUndefined()
-  })
+
 
   it.each(['image/heic', 'image/heif', ''])('accepts iPhone photo MIME %s and retains the file until submission', async (type) => {
     const view = await openProfile()
@@ -119,23 +99,17 @@ describe('profile avatar flow', () => {
     expect(submissions()[0]?.[1]?.headers).toEqual({ 'Content-Type': type || 'image/heic' })
   })
 
-  it('blocks a known capacity shortage without discarding the photo, then refreshes readiness', async () => {
+  it('blocks a known capacity shortage without discarding the photo', async () => {
     latest = job('failed')
     configuration.local_status = 'capacity'
     const view = await openProfile()
     await selectPhoto(view)
-    expect(view.text()).toContain('onvoldoende vrije capaciteit')
+    expect(view.text()).toContain('Avatars maken is tijdelijk niet beschikbaar')
     expect(view.text()).not.toContain('Kies opnieuw een foto')
     expect(uploadForm(view).get('button[type="submit"]').attributes('disabled')).toBeDefined()
     await uploadForm(view).trigger('submit')
     expect(submissions()).toHaveLength(0)
-    configuration.local_status = 'ready'
-    await view.findAll('button').find(button => button.text() === 'Beschikbaarheid opnieuw controleren')!.trigger('click')
-    await flushPromises()
-    expect(uploadForm(view).get('button[type="submit"]').attributes('disabled')).toBeUndefined()
-    await uploadForm(view).trigger('submit')
-    await flushPromises()
-    expect(submissions()).toHaveLength(1)
+
   })
 
   it('counts a newly observed outcome once without uploading job IDs or image URLs to analytics', async () => {
@@ -236,7 +210,7 @@ describe('profile avatar flow', () => {
   it('keeps a current upload error visible separately from the previous failed request', async () => {
     latest = { ...job('failed'), error: 'De afbeeldingsdienst is tijdelijk niet beschikbaar.' }
     const respond = apiMock.getMockImplementation()!
-    apiMock.mockImplementation((path: string, options?: RequestInit) => path.startsWith('/api/avatars/me/jobs?')
+    apiMock.mockImplementation((path: string, options?: RequestInit) => path === '/api/avatars/me/jobs'
       ? Promise.reject(new Error('De afbeeldingsdienst is nog niet ingesteld.')) : respond(path, options))
     const view = await openProfile()
     await selectPhoto(view)
@@ -250,7 +224,7 @@ describe('profile avatar flow', () => {
 
   it('still shows unavailable configuration without suggesting an upload that cannot be made', async () => {
     latest = { ...job('failed'), error: 'De afbeeldingsdienst is tijdelijk niet beschikbaar.' }
-    configuration.local_available = configuration.openai_available = false
+    configuration.available = false
     const view = await openProfile()
     expect(view.get('.job-status strong').text()).toBe('Vorige aanvraag mislukt')
     expect(view.text()).toContain('Avatars maken is momenteel niet beschikbaar.')
@@ -269,7 +243,7 @@ describe('profile avatar flow', () => {
     await uploadForm(view).trigger('submit')
     await flushPromises()
     expect(submissions()).toHaveLength(1)
-    expect(submissions()[0]?.[0]).toBe('/api/avatars/me/jobs?provider=local&cloud_consent=false')
+    expect(submissions()[0]?.[0]).toBe('/api/avatars/me/jobs')
     const body = submissions()[0]?.[1]?.body as File
     expect(body).toBeInstanceOf(File)
     expect(body.name).toBe(photo.name)
@@ -280,33 +254,7 @@ describe('profile avatar flow', () => {
     expect(view.text()).toContain('In de wachtrij')
   })
 
-  it('requires explicit OpenAI consent even when OpenAI is the only configured provider', async () => {
-    configuration.local_available = false
-    const view = await openProfile()
-    await selectPhoto(view)
-    expect(view.get<HTMLSelectElement>('select').element.value).toBe('openai')
-    expect(uploadForm(view).get('button[type="submit"]').attributes('disabled')).toBeDefined()
-    // Submit directly as well: consent is checked by the handler, not just the button.
-    await uploadForm(view).trigger('submit')
-    expect(submissions()).toHaveLength(0)
-    await view.get('input[type="checkbox"]').setValue(true)
-    expect(submissions()).toHaveLength(0)
-    await uploadForm(view).trigger('submit')
-    await flushPromises()
-    expect(submissions()[0]?.[0]).toBe('/api/avatars/me/jobs?provider=openai&cloud_consent=true')
-  })
 
-  it('clears cloud consent after switching provider', async () => {
-    const view = await openProfile()
-    await selectPhoto(view)
-    await view.get('select').setValue('openai')
-    await view.get('input[type="checkbox"]').setValue(true)
-    await view.get('select').setValue('local')
-    await view.get('select').setValue('openai')
-    expect(view.get<HTMLInputElement>('input[type="checkbox"]').element.checked).toBe(false)
-    await uploadForm(view).trigger('submit')
-    expect(submissions()).toHaveLength(0)
-  })
 
   it('resumes an existing job, polls to completion and displays the generated avatar', async () => {
     latest = job('processing')
