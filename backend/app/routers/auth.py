@@ -7,16 +7,23 @@ from urllib.parse import unquote, urlencode
 
 import httpx
 import jwt
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    Request,
+    Response,
+)
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import delete
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
-from app import auth, email_verification
+from app import auth, email_verification, password_reset
 from app.database import get_session
-from app.models import LoginSession, OIDCLogin, User, as_utc, utc_now
+from app.models import LoginSession, OIDCLogin, PasswordReset, User, as_utc, utc_now
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
@@ -73,6 +80,7 @@ def providers():
     settings = auth.oidc_settings()
     return {
         "local": True,
+        "password_reset_enabled": email_verification.enabled(),
         "registration_enabled": auth.env_bool("AUTH_ALLOW_REGISTRATION", True),
         "oidc": {"name": settings["name"], "login_url": "/api/auth/oidc/login"} if settings else None,
     }
@@ -103,6 +111,34 @@ def register(payload: Registration, request: Request, response: Response, sessio
                 raise
             result.verification_sent = False
     return result
+
+
+class ResetRequest(BaseModel):
+    email: str = Field(min_length=3, max_length=254, pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        return Credentials.normalize_email(value)
+
+
+class ResetConfirmation(BaseModel):
+    token: str = Field(min_length=43, max_length=43, pattern=r"^[A-Za-z0-9_-]+$")
+    new_password: str = Field(min_length=12, max_length=1024)
+
+
+@router.post("/password/forgot", status_code=202)
+def forgot_password(payload: ResetRequest, request: Request, response: Response, delivery: BackgroundTasks, session: Session = Depends(get_session)):
+    password_reset.request_reset(payload.email, request, session, delivery)
+    response.headers["Cache-Control"] = "no-store"
+    return {"message": "Als dit adres bij een account met wachtwoord hoort, ontvang je een herstellink. Controleer ook je spammap."}
+
+
+@router.post("/password/reset", status_code=204)
+def complete_password_reset(payload: ResetConfirmation, request: Request, response: Response, session: Session = Depends(get_session)):
+    password_reset.reset_password(payload.token, payload.new_password, request, session)
+    response.delete_cookie(auth.SESSION_COOKIE, path="/", httponly=True, secure=auth.cookie_secure(), samesite="lax")
+    response.headers["Cache-Control"] = "no-store"
 
 
 @router.post("/login", response_model=AuthRead)
@@ -161,6 +197,7 @@ def change_password(payload: PasswordChange, request: Request, response: Respons
     if not user.password_hash or not auth.verify_password(payload.current_password, user.password_hash):
         raise HTTPException(status_code=401, detail="Current password is incorrect")
     user.password_hash = auth.password_hash(payload.new_password)
+    session.exec(delete(PasswordReset).where(PasswordReset.user_id == user.id))
     session.add(user)
     session.exec(delete(LoginSession).where(LoginSession.user_id == user.id))
     session.commit()

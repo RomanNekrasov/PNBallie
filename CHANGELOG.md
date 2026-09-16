@@ -5,6 +5,18 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 
 ## Unreleased — 2026-09-16
 
+### Wachtwoordherstel en inlogtafel
+
+- Wachtwoord vergeten via de bestaande SMTP-dienst: eenmalige link van 30 minuten,
+  neutrale aanvraagreactie, limieten en intrekken van alle oude sessies bij herstel.
+- Eén gecentreerd inlogformulier binnen dezelfde voetbaltafel als de scoreregistratie,
+  zonder losse illustratie links. Herstelpagina's gebruiken dezelfde indeling.
+- De SPA-entry wordt bij herladen opnieuw gevalideerd, zodat nieuwe routes niet
+  langdurig achter een gecachte oude versie blijven.
+- Lokale veiligheids-, frontend- en browsercontroles slagen; publicatie en
+  acceptatie-uitrol volgen. Productie blijft op de bestaande release.
+
+
 ### E-mailverificatie
 
 - Verificatie via standaard SMTP met TLS, eenmalige links, begrensd opnieuw

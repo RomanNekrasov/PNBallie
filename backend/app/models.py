@@ -37,6 +37,15 @@ class EmailVerification(SQLModel, table=True):
     expires_at: datetime
 
 
+class PasswordReset(SQLModel, table=True):
+    __tablename__ = "password_reset"
+    user_id: int = Field(primary_key=True, foreign_key="app_user.id")
+    token_hash: str = Field(unique=True, index=True)
+    email: str = Field(max_length=254)
+    password_fingerprint: str
+    expires_at: datetime
+
+
 class LoginSession(SQLModel, table=True):
     __tablename__ = "login_session"
     token_hash: str = Field(primary_key=True)

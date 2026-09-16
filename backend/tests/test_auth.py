@@ -15,7 +15,7 @@ from app.models import AuthThrottle, LoginSession, OIDCLogin, User, utc_now
 
 def test_public_providers_and_health(client):
     assert client.get("/health/live").status_code == 200
-    assert client.get("/api/auth/providers").json() == {"local": True, "registration_enabled": True, "oidc": None}
+    assert client.get("/api/auth/providers").json() == {"local": True, "password_reset_enabled": False, "registration_enabled": True, "oidc": None}
 
 
 @pytest.mark.parametrize("path", ["/api/players", "/api/players/me", "/api/groups", "/api/groups/members", "/api/groups/invites", "/api/matches", "/api/stats", "/api/auth/me"])

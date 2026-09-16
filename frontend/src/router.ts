@@ -6,6 +6,8 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/verify-email', component: () => import('./views/VerifyEmailView.vue') },
+    { path: '/forgot-password', component: () => import('./views/ForgotPasswordView.vue') },
+    { path: '/reset-password', component: () => import('./views/ResetPasswordView.vue') },
     { path: '/login', component: () => import('./views/LoginView.vue') },
     { path: '/groups', component: () => import('./views/GroupsView.vue'), meta: { requiresAuth: true } },
     { path: '/join/:code', component: () => import('./views/GroupsView.vue'), meta: { requiresAuth: true } },

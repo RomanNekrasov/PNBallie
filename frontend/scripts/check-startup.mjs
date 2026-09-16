@@ -13,7 +13,7 @@ let browser
 try {
   const origin = `http://127.0.0.1:${server.httpServer.address().port}`
   browser = await chromium.launch({ headless: true })
-  for (const path of ['/login', '/', '/profile', '/stats', '/join/private-invite-canary']) {
+  for (const path of ['/login', '/', '/profile', '/stats', '/join/private-invite-canary', '/forgot-password', '/reset-password#token=' + 'x'.repeat(43)]) {
     const context = await browser.newContext()
     const page = await context.newPage()
     const errors = []
@@ -30,7 +30,17 @@ try {
       body: 'window.startupEvents=[];window.umami={track:payload=>{window.startupEvents.push(payload);return Promise.resolve()}}',
     }))
     await page.goto(origin + path, { waitUntil: 'domcontentloaded' })
-    await page.getByLabel('E-mailadres').waitFor({ timeout: 5000 })
+    const recovery = path.startsWith('/forgot-password') || path.startsWith('/reset-password')
+    if (path.startsWith('/reset-password')) await page.getByLabel('Herhaal wachtwoord').waitFor({ timeout: 5000 })
+    else await page.getByLabel('E-mailadres').waitFor({ timeout: 5000 })
+    if (recovery) {
+      await page.waitForFunction(() => Boolean(window.umami), undefined, { timeout: 5000 })
+      assert.deepEqual(await page.evaluate(() => window.startupEvents), [])
+      assert.equal(new URL(page.url()).hash, '')
+      assert.deepEqual(errors, [])
+      await context.close()
+      continue
+    }
     await page.waitForFunction(() => window.startupEvents?.length > 0, undefined, { timeout: 5000 })
     const events = await page.evaluate(() => window.startupEvents)
     assert.deepEqual(events.map(event => event.url), ['/app/login'], path)
@@ -38,7 +48,7 @@ try {
     assert.deepEqual(errors, [])
     await context.close()
   }
-  console.log('Production bundle startup passed: five cold routes render login and emit only its safe screen.')
+  console.log('Production bundle startup passed: five cold routes render login; two recovery routes strip tokens and emit no analytics.')
 } finally {
   await browser?.close()
   await new Promise((resolve, reject) => server.httpServer.close(error => error ? reject(error) : resolve()))

@@ -2,7 +2,7 @@
   <svg
     viewBox="0 0 400 700"
     class="w-full h-full"
-    preserveAspectRatio="xMidYMid meet"
+    :preserveAspectRatio="stretch ? 'none' : 'xMidYMid meet'"
     xmlns="http://www.w3.org/2000/svg"
   >
     <!-- Table border -->
@@ -96,6 +96,7 @@
 
 <script setup lang="ts">
 defineProps<{
+  stretch?: boolean
   wiggle?: 'orange' | 'blue' | null
 }>()
 </script>
