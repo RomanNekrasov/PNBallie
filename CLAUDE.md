@@ -71,14 +71,14 @@ phone acceptance from backend or desktop checks.
 
 ## Migration status
 
-The k3s application and tunnel are active with the final Azure data. Full
-source comparison passed after replacing the backend pod, and a fresh
-encrypted database backup was verified. The retained Azure backend passed a
-restart/rollback rehearsal and is stopped again.
-`https://pnballie.nl` now serves the frontend and runtime configuration over
-HTTPS, and the public health check passes. The operator confirmed public
-Entra sign-in and existing player/score visibility. Authenticated score entry
-still needs confirmation, so Phase 6 remains in progress. The current
-acceptance checklist and evidence live in
-`spark-homelab/docs/phase-6-pnballie.md`. Preserve SQLite and the Azure rollback
-set; do not mark the migration complete until every acceptance gate is demonstrated.
+The k3s application and tunnel serve pnballie.nl with the retained real score
+history. The operator authorized promotion of verified local authentication,
+groups, email recovery, avatars and observability on 16 September 2026. The
+verified operator identity is linked to the historic Roman player as group admin;
+only the unused Beheerder player was removed. Acceptance/demo data is separate.
+Production uses the exact tested acceptance digests, its own origin/analytics ID
+and encrypted SMTP/avatar credentials. Subsequent password changes are independent
+between environments. See `docs/RELEASE_PROMOTION.md` and the homelab Phase 6
+checklist for rollout and verification evidence. Preserve encrypted score backups
+and the frozen Azure set. Old Entra images cannot automatically roll back the new
+schema; restore a compatible image/database pair after freezing API/worker writes.

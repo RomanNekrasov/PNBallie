@@ -35,9 +35,10 @@ digests als acceptatie; opnieuw bouwen is niet nodig.
 
 ## Eerste promotie van de nieuwe authenticatie
 
-De huidige productieversie gebruikt nog Entra-only authenticatie. De eerste
-promotie van deze versie bevat ook de overstap naar lokale accounts/optioneel
-OIDC en groepsgebonden data. Alleen images vervangen is daarvoor onvoldoende.
+De eerste productiepromotie op 16 september 2026 vervangt Entra-only
+authenticatie door lokale accounts/optioneel OIDC en groepsgebonden data.
+Alleen images vervangen is daarvoor onvoldoende. De operator heeft deze
+overgang expliciet aangevraagd; live status en bewijs staan in Phase 6.
 
 - Maak een verse, gecontroleerde productiebackup en plan de overgang zodat
   tijdens de migratie geen scorewijzigingen verloren gaan.
@@ -84,5 +85,9 @@ Een imagepromotie kopieert geen SMTP-secret of runtime-instelling automatisch.
   SMTP-acceptatie is geen bewijs van inboxbezorging. De synthetische demoaccount
   zonder mailbox is geen productieaccount of verificatie-uitzondering.
 
-Deze stappen beschrijven een latere productiepromotie; productie is voor de
-mailverificatie-uitrol op acceptatie niet aangepast.
+De eerste productiepromotie neemt deze configuratie mee. Mailboxverificatie
+van het persoonlijke operatoraccount is al bewezen op acceptatie en wordt
+expliciet overgenomen, samen met de bestaande wachtwoordhash. Er worden geen
+sessies of demoaccounts gekopieerd; latere wachtwoordwijzigingen blijven per
+omgeving gescheiden. Andere gebruikers registreren en verifiëren hun adres
+zelf, waarna ze via een uitnodiging toetreden en aan hun speler worden gekoppeld.

@@ -73,18 +73,19 @@ OIDC, back-up, verificatie en terugval. Productie vereist
 `APP_ENV=production`, een expliciete HTTPS-`AUTH_APP_ORIGIN` en
 `AUTH_COOKIE_SECURE=true`.
 
-De publieke app op https://pnballie.nl draait op k3s met de definitief uit Azure
-overgedragen SQLite-gegevens. Publieke Entra-login en het bekijken van bestaande
-scores zijn bevestigd; de actuele acceptatiestatus staat in
-`spark-homelab/docs/phase-6-pnballie.md`. De portable authenticatie, groepen en
-analytics uit deze release draaien op de aparte
-[private Spark-preview](https://pnballie-preview.tail67de92.ts.net).
-Je kunt daar een eigen account en testcompetitie maken.
+De publieke app op https://pnballie.nl draait sinds de promotie van 16 september
+met lokale accounts, verplichte e-mailverificatie, groepen, avatars en analytics.
+De echte competitiegegevens blijven behouden. Het expliciet aangewezen, al
+geverifieerde operatoraccount is aan Roman gekoppeld als groepsbeheerder.
+Nieuwe groepsleden registreren, bevestigen hun e-mail en krijgen een uitnodiging;
+de beheerder koppelt hun historische speler. De actuele verificatiestatus staat
+in `spark-homelab/docs/phase-6-pnballie.md`. De
+[private Spark-preview](https://pnballie-preview.tail67de92.ts.net) blijft apart.
 De [acceptatieomgeving](https://acceptatie.pnballie.nl) gebruikt dezelfde nieuwe
 release met acht fictieve spelers en 180 startwedstrijden in een eigen database.
 Zie de [acceptatiehandleiding](docs/ACCEPTANCE.md) voor inloggen, demodata en
 verificatie. De [promotiehandleiding](docs/RELEASE_PROMOTION.md) beschrijft hoe
-dezelfde geteste image-digests later via een aparte GitOps-PR naar productie gaan.
+dezelfde geteste image-digests via een aparte GitOps-PR naar productie gaan.
 Imagepublicatie en de testomgevingen voeren die productie-upgrade niet uit.
 Kubernetes-/Flux-configuratie hoort in
 `spark-homelab`; de historische Azure/Terraform-bestanden blijven als terugvalset.
