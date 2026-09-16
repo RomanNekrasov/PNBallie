@@ -3,6 +3,17 @@
 Alle relevante wijzigingen aan deze uitbreiding worden hier bijgehouden.
 Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 
+## Unreleased — 2026-09-16
+
+### E-mailverificatie
+
+- Verificatie via standaard SMTP met TLS, eenmalige links, begrensd opnieuw
+  versturen en verplichte bevestiging voor toegang tot groepen. Bestaande lokale
+  accounts krijgen geen automatische verificatiestatus; OIDC-bewijs wordt expliciet
+  vastgelegd. De link vereist inloggen en bevestigen, met behoud van uitnodigingen.
+- 206 backendtests en 99 frontendtests, lint, migratiebehoud en productiebuild
+  slagen. Brevo TLS/authenticatie is gecontroleerd; uitrol en echte mail volgen.
+
 ## Unreleased — 2026-09-15
 
 ### iPhone-foto's en servercapaciteit

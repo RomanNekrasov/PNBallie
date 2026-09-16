@@ -5,6 +5,7 @@ from sqlalchemy import text
 
 from app.auth import validate_auth_configuration
 from app.database import engine
+from app.email_verification import validate_configuration
 from app.routers import auth, avatars, groups, matches, players, stats
 from app.telemetry import API_SERVICE, Runtime, install_http
 
@@ -16,6 +17,7 @@ async def lifespan(_: FastAPI):
     telemetry.configure()
     try:
         validate_auth_configuration()
+        validate_configuration()
         yield
     finally:
         telemetry.close()

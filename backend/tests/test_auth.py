@@ -176,6 +176,7 @@ def test_oidc_pkce_state_nonce_and_return_path(client, oidc, monkeypatch, db_eng
     assert response.status_code == 302
     assert response.headers["location"] == "http://testserver/join/invitation"
     assert client.get("/api/auth/me").json()["user"]["email"] == "oidc@example.org"
+    assert client.get("/api/auth/me").json()["user"]["email_verified"] is True
     assert client.get(callback, follow_redirects=False).status_code == 400
 
 

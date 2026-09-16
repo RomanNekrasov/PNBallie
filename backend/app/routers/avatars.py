@@ -5,7 +5,7 @@ from sqlalchemy import func, update
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
-from app.auth import GroupContext, require_group, require_user
+from app.auth import GroupContext, require_group, require_verified_user
 from app.avatar_images import (
     ALLOWED_MIME,
     MAX_UPLOAD_BYTES,
@@ -146,7 +146,7 @@ def cancel(job_id: str, group: GroupContext = Depends(require_group),
 
 
 @router.get("/players/{player_id}.png", include_in_schema=False)
-def player_image(player_id: int, user: User = Depends(require_user),
+def player_image(player_id: int, user: User = Depends(require_verified_user),
                  session: Session = Depends(get_session)):
     player = session.get(Player, player_id)
     # Browser image requests have cookies, but cannot set X-Group-ID. Authorize

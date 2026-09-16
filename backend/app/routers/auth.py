@@ -14,7 +14,7 @@ from sqlalchemy import delete
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
-from app import auth
+from app import auth, email_verification
 from app.database import get_session
 from app.models import LoginSession, OIDCLogin, User, as_utc, utc_now
 
@@ -31,7 +31,12 @@ class Credentials(BaseModel):
         return value.strip().lower() if isinstance(value, str) else value
 
 
-class Registration(Credentials):
+class VerificationRequest(BaseModel):
+    next_path: str = Field(default="/", max_length=500)
+    _valid_return_path = field_validator("next_path")(email_verification.return_path)
+
+
+class Registration(Credentials, VerificationRequest):
     display_name: str = Field(min_length=1, max_length=80)
     password: str = Field(min_length=12, max_length=1024)
 
@@ -49,15 +54,18 @@ class UserRead(BaseModel):
     email: str
     display_name: str
     has_password: bool
+    email_verified: bool
+    verification_required: bool
 
 
 class AuthRead(BaseModel):
     user: UserRead
     csrf_token: str
+    verification_sent: bool | None = None
 
 
 def authenticated(user: User, csrf_token: str) -> AuthRead:
-    return AuthRead(user=UserRead(id=user.id, email=user.email, display_name=user.display_name, has_password=user.password_hash is not None), csrf_token=csrf_token)
+    return AuthRead(user=UserRead(id=user.id, email=user.email, display_name=user.display_name, has_password=user.password_hash is not None, email_verified=user.email_verified_at is not None, verification_required=email_verification.enabled() and user.email_verified_at is None), csrf_token=csrf_token)
 
 
 @router.get("/providers")
@@ -86,7 +94,15 @@ def register(payload: Registration, request: Request, response: Response, sessio
     except IntegrityError as exc:
         session.rollback()
         raise HTTPException(status_code=409, detail="This e-mail address is already registered") from exc
-    return authenticated(user, auth.create_session(user, response, session))
+    result = authenticated(user, auth.create_session(user, response, session))
+    if email_verification.enabled():
+        try:
+            result.verification_sent = email_verification.request_verification(user, request, session, payload.next_path)
+        except HTTPException as exc:
+            if exc.status_code != 429:
+                raise
+            result.verification_sent = False
+    return result
 
 
 @router.post("/login", response_model=AuthRead)
@@ -104,6 +120,27 @@ def login(payload: Credentials, request: Request, response: Response, session: S
 def me(request: Request, response: Response, user: User = Depends(auth.require_user)):
     response.headers["Cache-Control"] = "no-store"
     return authenticated(user, request.state.login_session.csrf_token)
+
+
+class VerificationConfirmation(BaseModel):
+    token: str = Field(min_length=43, max_length=43, pattern=r"^[A-Za-z0-9_-]+$")
+
+
+@router.post("/email/request")
+def request_email(request: Request, response: Response, payload: VerificationRequest | None = None, user: User = Depends(auth.require_user), session: Session = Depends(get_session)):
+    response.headers["Cache-Control"] = "no-store"
+    if not email_verification.request_verification(user, request, session, payload.next_path if payload else "/"):
+        raise HTTPException(503, "De mail kon niet worden verstuurd. Probeer het over een minuut opnieuw.")
+    return {"sent": True}
+
+
+@router.post("/email/confirm")
+def confirm_email(payload: VerificationConfirmation, request: Request, response: Response,
+                  user: User = Depends(auth.require_user), session: Session = Depends(get_session)):
+    auth.rate_limit(session, f"verify-confirm:{user.id}", 20, 900)
+    next_path = email_verification.confirm(user, payload.token, session)
+    response.headers["Cache-Control"] = "no-store"
+    return {"verified": True, "next_path": next_path}
 
 
 @router.post("/logout", status_code=204)
@@ -207,6 +244,10 @@ def oidc_callback(request: Request, state: str = "", code: str = "", session: Se
         except IntegrityError as exc:
             session.rollback()
             raise HTTPException(status_code=409, detail="This account already exists; please sign in again") from exc
+    if claims.get("email_verified") is True and str(claims.get("email", "")).strip().lower() == user.email:
+        user.email_verified_at = user.email_verified_at or utc_now()
+        session.add(user)
+        session.commit()
     response = RedirectResponse(f"{auth.app_origin()}{next_path}", status_code=302)
     auth.create_session(user, response, session)
     response.delete_cookie(auth.OIDC_COOKIE, path="/api/auth/oidc")

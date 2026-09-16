@@ -24,7 +24,17 @@ class User(SQLModel, table=True):
     password_hash: str | None = None
     oidc_issuer: str | None = None
     oidc_subject: str | None = None
+    email_verified_at: datetime | None = None
     created_at: datetime = Field(default_factory=utc_now)
+
+
+class EmailVerification(SQLModel, table=True):
+    __tablename__ = "email_verification"
+    next_path: str = Field(default="/", max_length=500)
+    user_id: int = Field(primary_key=True, foreign_key="app_user.id")
+    token_hash: str = Field(unique=True, index=True)
+    email: str = Field(max_length=254)
+    expires_at: datetime
 
 
 class LoginSession(SQLModel, table=True):

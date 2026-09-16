@@ -43,7 +43,7 @@ async function submit() {
   busy.value = true
   error.value = ''
   try {
-    if (creating.value) await register(email.value.trim(), password.value, displayName.value.trim())
+    if (creating.value) await register(email.value.trim(), password.value, displayName.value.trim(), safeReturnPath(route.query.redirect))
     else await login(email.value.trim(), password.value)
     password.value = ''
     await router.replace(safeReturnPath(route.query.redirect))

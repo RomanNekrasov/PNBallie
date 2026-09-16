@@ -14,7 +14,7 @@ from app.auth import (
     rate_limit,
     require_group,
     require_group_admin,
-    require_user,
+    require_verified_user,
     token_hash,
 )
 from app.database import get_session
@@ -125,13 +125,13 @@ def _keep_admin(session: Session, member: Membership) -> None:
 
 
 @router.get("", response_model=list[GroupRead])
-def list_groups(user: User = Depends(require_user), session: Session = Depends(get_session)):
+def list_groups(user: User = Depends(require_verified_user), session: Session = Depends(get_session)):
     rows = session.exec(select(Group, Membership).join(Membership).where(Membership.user_id == user.id).order_by(Group.name, Group.id)).all()
     return [group_read(session, group, membership) for group, membership in rows]
 
 
 @router.post("", response_model=GroupRead, status_code=201)
-def create_group(payload: GroupCreate, user: User = Depends(require_user), session: Session = Depends(get_session)):
+def create_group(payload: GroupCreate, user: User = Depends(require_verified_user), session: Session = Depends(get_session)):
     rate_limit(session, f"create-group:{user.id}", 10, 3600)
     group = Group(name=payload.name)
     session.add(group)
@@ -144,7 +144,7 @@ def create_group(payload: GroupCreate, user: User = Depends(require_user), sessi
 
 
 @router.post("/join", response_model=GroupRead)
-def join_group(payload: JoinGroup, request: Request, user: User = Depends(require_user), session: Session = Depends(get_session)):
+def join_group(payload: JoinGroup, request: Request, user: User = Depends(require_verified_user), session: Session = Depends(get_session)):
     rate_limit(session, f"join-user:{user.id}", 20, 900)
     rate_limit(session, f"join-ip:{client_key(request)}", 50, 900)
     invite = session.exec(select(Invite).where(Invite.code_hash == token_hash(payload.code.strip()))).first()

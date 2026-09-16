@@ -5,6 +5,8 @@ export interface AuthUser {
   email: string
   display_name: string
   has_password?: boolean
+  email_verified?: boolean
+  verification_required?: boolean
 }
 export interface Group {
   id: number
@@ -20,9 +22,11 @@ export interface AuthProviders {
 interface AuthSession {
   user: AuthUser
   csrf_token: string
+  verification_sent?: boolean | null
 }
 
 const GROUP_STORAGE_KEY = 'pnballie.group'
+export const verificationSent = ref<boolean | null>(null)
 export const authUser = ref<AuthUser | null>(null)
 export const groups = ref<Group[]>([])
 export const csrfToken = ref<string | null>(null)
@@ -51,6 +55,7 @@ const API_MESSAGES: Record<string, string> = {
 }
 
 export function clearSession(): void {
+  verificationSent.value = null
   authUser.value = null
   csrfToken.value = null
   groups.value = []
@@ -75,7 +80,11 @@ async function authRequest<T>(path: string, options: RequestInit = {}): Promise<
 }
 
 export async function refreshGroups(): Promise<void> {
-  if (!authUser.value) return
+  if (!authUser.value || authUser.value.verification_required) {
+    groups.value = []
+    selectedGroupId.value = null
+    return
+  }
   const response = await fetch('/api/groups', { credentials: 'same-origin', cache: 'no-store' })
   if (response.status === 401) {
     clearSession()
@@ -103,6 +112,7 @@ export async function initAuth(): Promise<void> {
   }
   if (!response.ok) throw new Error(await responseError(response))
   const session = await response.json() as AuthSession
+  verificationSent.value = session.verification_sent ?? null
   authUser.value = session.user
   csrfToken.value = session.csrf_token
   await refreshGroups()
@@ -110,15 +120,17 @@ export async function initAuth(): Promise<void> {
 
 export async function login(email: string, password: string): Promise<void> {
   const session = await authRequest<AuthSession>('login', { method: 'POST', body: JSON.stringify({ email, password }) })
+  verificationSent.value = session.verification_sent ?? null
   authUser.value = session.user
   csrfToken.value = session.csrf_token
   await refreshGroups()
 }
 
-export async function register(email: string, password: string, displayName: string): Promise<void> {
+export async function register(email: string, password: string, displayName: string, nextPath = "/"): Promise<void> {
   const session = await authRequest<AuthSession>('register', {
-    method: 'POST', body: JSON.stringify({ email, password, display_name: displayName }),
+    method: 'POST', body: JSON.stringify({ email, password, display_name: displayName, next_path: safeReturnPath(nextPath) }),
   })
+  verificationSent.value = session.verification_sent ?? null
   authUser.value = session.user
   csrfToken.value = session.csrf_token
   await refreshGroups()
@@ -134,6 +146,7 @@ export async function changePassword(currentPassword: string, newPassword: strin
   const session = await authRequest<AuthSession>('password', {
     method: 'POST', body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
   })
+  verificationSent.value = session.verification_sent ?? null
   authUser.value = session.user
   csrfToken.value = session.csrf_token
 }
@@ -146,4 +159,15 @@ export function safeReturnPath(value: unknown): string {
       || Array.from(decoded).some(char => char.charCodeAt(0) < 32) || decoded.startsWith('/login')) return '/'
     return value
   } catch { return '/' }
+}
+
+export async function requestVerification(nextPath = "/"): Promise<void> {
+  await authRequest('email/request', { method: 'POST', body: JSON.stringify({ next_path: safeReturnPath(nextPath) }) })
+  verificationSent.value = true
+}
+
+export async function confirmVerification(token: string): Promise<string> {
+  const result = await authRequest<{next_path: string}>('email/confirm', { method: 'POST', body: JSON.stringify({ token }) })
+  await initAuth()
+  return safeReturnPath(result.next_path)
 }
