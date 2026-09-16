@@ -10,7 +10,7 @@ wachtwoordhashing en OIDC. Een externe identityserver is optioneel.
 Registratie vraagt een naam, e-mailadres en wachtwoord van minstens 12 tekens.
 Met `AUTH_REQUIRE_EMAIL_VERIFICATION=true` stuurt registratie een verificatiemail.
 Nieuwe en bestaande lokale accounts moeten bevestigen vóór toegang tot groepen.
-Wachtwoordresetmails vallen nog buiten deze uitbreiding.
+Dezelfde SMTP-instelling activeert wachtwoordherstel per mail.
 Het geeft op zichzelf geen toegang tot een bestaande competitie. Toegang volgt
 uitsluitend uit groepsaanmaak, een geldige uitnodiging of expliciet operatorbeheer.
 
@@ -259,7 +259,8 @@ de eigen browsersessie van de gebruiker blijven beschikbaar.
 
 Een bestaande testbrowser had een oudere SPA-entry in zijn cache. Een verse
 URL laadde de nieuwe verificatiepagina correct; bij een oude pagina kan een
-harde refresh nodig zijn. Automatische cache-invalidering is niet gewijzigd.
+harde refresh nodig zijn. Dit is in de hierna beschreven herstelrelease verholpen door de SPA-entry bij
+herladen opnieuw te laten valideren.
 
 
 ## Wachtwoord vergeten
@@ -299,3 +300,18 @@ inlog-/herstelpagina's hergebruiken de tafel van de scoreregistratie. Nginx laat
 de SPA-entry hervalideren (`Cache-Control: no-cache`) bij een volgend bezoek,
 zodat nieuw gepubliceerde routes niet langdurig achter een oude entry blijven.
 Een al geopende pagina krijgt pas na vernieuwen de nieuwe versie.
+
+App-PR 30 is gepubliceerd als `044e1de5`; alle CI-checks slagen (217 backendtests,
+104 frontendtests, zeven koude routes en containerchecks). De migratieproef op
+de versleutelde acceptatiebackup `60184514` behoudt alle oorspronkelijke rijen.
+De echte browsercontrole op desktop en 320/393px bevestigt de tafelindeling,
+16px-invoervelden en het verwijderen van de resetcode uit de adresbalk.
+Homelab-PR 69 is gereconcilieerd als `53e8a6a1`. Alle twaalf Flux-resources zijn
+ready en API, frontend en worker gebruiken de gepubliceerde images. De live
+vergelijking behoudt alle oorspronkelijke account-/competitierijen; schema,
+integriteit en foreign keys slagen. De publieke herstelroutes leveren de juiste
+cacheheaders, een neutrale aanvraagreactie en afwijzing van ongeldige codes en
+vreemde origins. De browser bevestigt de inlogtafel en mobiele herstelpagina's.
+Prometheus, Loki, Tempo en de privacycontrole slagen; productie houdt zijn images.
+De controles versturen geen nieuwe echte mail en wijzigen geen bestaand wachtwoord.
+De gebruiker kan het mailboxtraject zelf testen via **Wachtwoord vergeten?**.

@@ -159,3 +159,6 @@ toegang tot groepen. Configureer `AUTH_REQUIRE_EMAIL_VERIFICATION=true` en de
 `SMTP_*`-waarden uitsluitend op de API. Bestaande lokale accounts moeten dan ook
 bevestigen. Zie [authenticatie en SMTP](docs/AUTH_AND_GROUPS.md#e-mailverificatie-via-smtp)
 voor TLS, afzenderinstellingen, limieten, foutafhandeling en acceptatie.
+Deze instelling activeert ook **Wachtwoord vergeten?** op het inlogscherm.
+De herstellink is 30 minuten geldig; een reset trekt alle oude sessies in.
+Zie [wachtwoordherstel](docs/AUTH_AND_GROUPS.md#wachtwoord-vergeten).

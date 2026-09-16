@@ -13,8 +13,10 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
   zonder losse illustratie links. Herstelpagina's gebruiken dezelfde indeling.
 - De SPA-entry wordt bij herladen opnieuw gevalideerd, zodat nieuwe routes niet
   langdurig achter een gecachte oude versie blijven.
-- Lokale veiligheids-, frontend- en browsercontroles slagen; publicatie en
-  acceptatie-uitrol volgen. Productie blijft op de bestaande release.
+- Gepubliceerd en via Flux uitgerold naar acceptatie. 217 backendtests,
+  104 frontendtests, zeven koude routes en containerchecks slagen. Live routes,
+  mobiel/desktop, migratiebehoud, cacheheaders en telemetry zijn gecontroleerd.
+  Productie blijft op de bestaande release.
 
 
 ### E-mailverificatie
