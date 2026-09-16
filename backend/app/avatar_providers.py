@@ -6,6 +6,7 @@ import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -31,6 +32,8 @@ AVATAR_PROMPT = (
     "no other people, no scene, no shadow outside the figure. Transparent PNG "
     "background, never draw a checkerboard to imitate transparency."
 )
+
+AZURE_AVATAR_PROMPT = 'We hebben een kleine app om tafelvoetbal ranking bij te houden, kan je een kleine animated voetbal retro avatar stijl profielfoto maken met transparante achtergrond van die profielfoto.\n\nAfbeelding 1 is mijn selfie: gebruik deze voor mijn herkenbare gezicht, kapsel en gezichtsuitdrukking. Afbeelding 2 is de template: zet mijn getekende hoofd op dit tafelvoetbalpoppetje en behoud het groen-witte shirt, de houding, de horizontale stang, de voetbal en de volledige omlijning van het poppetje. Laat het gezicht aansluiten bij de getekende retrostijl van de template, met voldoende detail om mij makkelijk te herkennen. Geen fotografisch uitgeknipt hoofd en geen grove pixelblokken. Met animated bedoel ik hier de uitstraling van een getekend personage in één stilstaande afbeelding. Eén compleet poppetje met ruimte rondom, geen tekst of extra objecten. Lever een PNG met echte transparantie, geen getekend schaakbordpatroon of achtergrondkleur.\n'
 
 LOCAL_BUSY_HEADER = "X-PNBallie-Avatar-State"
 LOCAL_BUSY_RETRY_SECONDS = 30
@@ -63,9 +66,19 @@ class AvatarSettings:
     local_style: str = LEGACY_STYLE
     check_capacity: bool = False
 
+    azure_key: str = ""
+    azure_endpoint: str = ""
+    azure_deployment: str = ""
+    azure_reference_path: Path = Path(__file__).parent / "assets" / "avatar-cloud-template.png"
+    default_provider: str = "local"
+
     @classmethod
     def from_env(cls) -> "AvatarSettings":
         return cls(
+            azure_key=os.getenv("AZURE_OPENAI_API_KEY", "").strip(),
+            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT", "").strip().rstrip("/"),
+            azure_deployment=os.getenv("AZURE_OPENAI_IMAGE_DEPLOYMENT", "").strip(),
+            default_provider=os.getenv("AVATAR_DEFAULT_PROVIDER", "local").strip(),
             local_url=os.getenv("AVATAR_LOCAL_URL", "").strip(),
             local_token=os.getenv("AVATAR_SERVICE_TOKEN", "").strip(),
             openai_key=os.getenv("OPENAI_API_KEY", "").strip(),
@@ -87,6 +100,23 @@ class AvatarSettings:
     @property
     def openai_available(self) -> bool:
         return bool(self.openai_key and self.openai_model and self.reference_path.is_file())
+
+    @property
+    def azure_available(self) -> bool:
+        try:
+            url = urlsplit(self.azure_endpoint)
+            # Credentials are only sent to explicitly configured Azure HTTPS hosts.
+            valid_url = (url.scheme == "https" and url.hostname is not None
+                         and url.hostname.endswith((".openai.azure.com", ".cognitiveservices.azure.com"))
+                         and not url.username and not url.password and url.port in {None, 443}
+                         and url.path in {"", "/"} and not url.query and not url.fragment)
+        except ValueError:
+            return False
+        return bool(valid_url and self.azure_key and self.azure_deployment and self.azure_reference_path.is_file())
+
+    def available(self, provider: str) -> bool:
+        return {"local": self.local_available, "openai": self.openai_available,
+                "azure": self.azure_available}.get(provider, False)
 
 
 def _decode_response(payload: dict) -> bytes:
@@ -129,17 +159,18 @@ class AvatarProvider:
     def _generate(self, *, source_png: bytes, provider: str, cloud_consent: bool,
                   job_id: str) -> bytes:
         config = self.settings
-        if provider not in {"local", "openai"}:
+        if provider not in {"local", "openai", "azure"}:
             raise AvatarProviderError("Deze afbeeldingsdienst wordt niet ondersteund.")
-        if provider == "openai" and not cloud_consent:
-            raise AvatarProviderError("Toestemming voor verwerking door OpenAI ontbreekt.")
-        available = config.local_available if provider == "local" else config.openai_available
+        if provider in {"openai", "azure"} and not cloud_consent:
+            raise AvatarProviderError("Toestemming voor verwerking door de clouddienst ontbreekt.")
+        available = config.available(provider)
         if not available:
             raise AvatarProviderError("Deze afbeeldingsdienst is nog niet ingesteld.")
         reference = b""
         if provider != "local" or config.local_style == LEGACY_STYLE:
             try:
-                reference = normalize_upload(config.reference_path.read_bytes(), "image/png")
+                reference_path = config.azure_reference_path if provider == "azure" else config.reference_path
+                reference = normalize_upload(reference_path.read_bytes(), "image/png")
             except (OSError, InvalidAvatarImage) as exc:
                 raise AvatarProviderError("Het referentiepoppetje is niet beschikbaar.") from exc
 
@@ -158,11 +189,15 @@ class AvatarProvider:
                         headers={"Authorization": f"Bearer {config.local_token}", **trace_headers()},
                         json=inputs)
                 else:
-                    request = client.build_request("POST", "https://api.openai.com/v1/images/edits",
-                        headers={"Authorization": f"Bearer {config.openai_key}"},
-                        data={"model": config.openai_model, "prompt": AVATAR_PROMPT,
+                    azure = provider == "azure"
+                    url = (config.azure_endpoint.rstrip("/") + "/openai/v1/images/edits?api-version=preview"
+                           if azure else "https://api.openai.com/v1/images/edits")
+                    headers = {"api-key": config.azure_key} if azure else {"Authorization": f"Bearer {config.openai_key}"}
+                    request = client.build_request("POST", url, headers=headers,
+                        data={"model": config.azure_deployment if azure else config.openai_model,
+                              "prompt": AZURE_AVATAR_PROMPT if azure else AVATAR_PROMPT,
                               "background": "transparent", "output_format": "png",
-                              "size": "1024x1024", "quality": "medium", "n": "1"},
+                              "size": "1024x1024", "quality": "high" if azure else "medium", "n": "1"},
                         files=[("image[]", ("portrait.png", source_png, "image/png")),
                                ("image[]", ("body.png", reference, "image/png"))])
                 response = client.send(request, stream=True)

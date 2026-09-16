@@ -403,3 +403,11 @@ geen echte mailbox en krijgt geen stilzwijgende verificatie-uitzondering.
 - [x] Wedstrijdbeheer toont ‘Ingevoerd door …’; bestaande wedstrijden blijven onbekend en wijzigen overschrijft de oorspronkelijke invoerder niet.
 - [x] Grafana toont actuele groepen, accounts, spelersprofielen en actieve spelers per omgeving, rechtstreeks uit de database en zonder persoonsgegevens in metrics.
 - [x] Migratie, toegangsrechten, vervalsingsbescherming en live acceptatie/productie worden gecontroleerd; documentatie en changelog worden bijgewerkt.
+
+## Azure OpenAI-avatar op acceptatie — 16 september 2026
+
+- [x] Azure OpenAI `gpt-image-2` toevoegen naast de bestaande lokale Qwen- en directe OpenAI-provider.
+- [x] De geteste selfie/template-prompt, template, hoge kwaliteit en transparante PNG-output gebruiken.
+- [x] Azure als configureerbare standaard op acceptatie; Qwen blijft handmatig kiesbaar en kan later weer standaard worden.
+- [x] Bestaande asynchrone verwerking, toestemming per cloudupload, beveiliging, bronverwijdering en telemetrie behouden.
+- [ ] Tests, documentatie, versleutelde configuratie en acceptatierollout; productie wordt niet gepromoveerd.

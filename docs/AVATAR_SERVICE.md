@@ -711,3 +711,55 @@ Tijdstippen hebben een expliciete UTC-offset.
 - [x] Afzonderlijke lokale Spark-runtime gestart met gepinde modellen, geteste
   GPU-kernels, private compiler-cache en loopback-/SSH-netwerk.
 - [ ] Eventuele productieimage publiceren en de service via Flux uitrollen.
+
+## Azure OpenAI naast Qwen
+
+De keuze `azure` gebruikt Azure OpenAI Images Edits v1 rechtstreeks, met twee
+referentiebeelden: de genormaliseerde selfie en de meegeleverde
+`avatar-cloud-template.png`. De geteste Nederlandse prompt staat in
+`AZURE_AVATAR_PROMPT`; kwaliteit `high`, 1024 × 1024, PNG en
+`background=transparent`. Dit is dezelfde aanpak als het lokale experiment
+van 16 september 2026. Een extra chatmodel/Responses-aanroep is niet nodig.
+
+Configureer API én worker met:
+
+```dotenv
+AVATAR_DEFAULT_PROVIDER=azure
+AZURE_OPENAI_ENDPOINT=https://YOUR-RESOURCE.cognitiveservices.azure.com
+AZURE_OPENAI_IMAGE_DEPLOYMENT=gpt-image-2
+AZURE_OPENAI_API_KEY=<alleen via secretbeheer>
+```
+
+De v1-route gebruikt `api-version=preview`. De oude algemene
+`AZURE_OPENAI_DEPLOYMENT` voor een chatmodel en `AZURE_OPENAI_API_VERSION`
+worden hiervoor niet gebruikt. De key blijft op de server en staat op Spark
+alleen in een SOPS-versleuteld secret. Endpointvalidatie vereist een Azure
+HTTPS-host; redirects worden niet gevolgd. Cloudrequests bevatten geen
+traceheaders, accountgegevens of job-ID.
+
+Op Mijn profiel is **OpenAI · Azure** de voorgeselecteerde optie wanneer
+`AVATAR_DEFAULT_PROVIDER=azure`. De gebruiker bevestigt per upload verwerking
+door Azure OpenAI (Microsoft), en kan in **Verwerking** kiezen voor
+**Qwen · eigen server**. Wisselen wist de aangevinkte toestemming. De dienst
+valt nooit automatisch terug op een andere provider. Ontbrekende Azure-
+configuratie blokkeert die keuze; Qwen kan nog steeds handmatig worden gekozen.
+
+Terugschakelen voor nieuwe uploads: stel `AVATAR_DEFAULT_PROVIDER=local` in
+en herstart API/worker via de deploymentconfiguratie. Laat de Azure- en
+Qwen-instellingen aanwezig om beide opties te behouden. De bestaande waarden
+`local` en `openai` blijven werken; `openai` is de directe OpenAI API.
+De provider wordt bij het aanmaken van iedere job opgeslagen en verandert
+niet door een nieuwe standaard. Geen databasemigratie nodig. Rond Azure-jobs
+af of annuleer ze voordat je naar een oude release zonder Azure-ondersteuning
+teruggaat; alleen de standaard terugzetten vereist geen oude release.
+
+Alle providers gebruiken dezelfde duurzame worker, eigendomscontroles,
+annulering, transparantievalidatie en verwijdering van de bronfoto. Een
+cloudtimeout wordt niet automatisch opnieuw verstuurd. Telemetrie en
+gebruiksanalytics onderscheiden de vaste providerwaarden local/openai/azure.
+
+Uitrol van deze wijziging is uitsluitend naar acceptatie. Productie behoudt
+zijn eigen images, configuratie en Qwen-standaard tot een aparte promotie.
+
+Lokale validatie: 240 backendtests, 111 frontendtests, Ruff/ESLint en de
+TypeScript/productiebouw slagen. Live acceptatiecontrole volgt de imagepublicatie.

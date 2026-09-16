@@ -62,7 +62,7 @@ def avatar_url(session: Session, player_id: int) -> str | None:
 class AvatarJobRead(BaseModel):
     id: str
     player_id: int
-    provider: Literal["local", "openai"]
+    provider: Literal["local", "openai", "azure"]
     status: Literal["queued", "processing", "succeeded", "failed", "cancelled"]
     attempts: int
     error: str | None

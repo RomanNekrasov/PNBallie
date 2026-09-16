@@ -18,7 +18,7 @@ function job(status: JobStatus) {
   return { id: 'avatar-job', status, provider: 'local', created_at: new Date(Date.now() - 5 * 60_000).toISOString(), error: null as string | null, avatar_url: status === 'succeeded' ? '/api/avatars/players/12.png?v=new' : null }
 }
 let latest: ReturnType<typeof job> | null
-let configuration: { local_available: boolean; openai_available: boolean; max_upload_bytes: number; local_status?: string; local_style?: string }
+let configuration: { azure_available?: boolean; default_provider?: 'local' | 'openai' | 'azure'; local_available: boolean; openai_available: boolean; max_upload_bytes: number; local_status?: string; local_style?: string }
 let wrapper: VueWrapper | undefined
 
 beforeEach(() => {
@@ -70,6 +70,41 @@ function submissions() {
 }
 
 describe('profile avatar flow', () => {
+  it('defaults to Azure, requires fresh consent and lets the player switch back to Qwen', async () => {
+    configuration.azure_available = true
+    configuration.default_provider = 'azure'
+    const view = await openProfile()
+    await selectPhoto(view)
+    expect(view.get<HTMLSelectElement>('select').element.value).toBe('azure')
+    expect(view.text()).toContain('Azure OpenAI (Microsoft)')
+    expect(view.text()).toContain('Qwen · eigen server')
+    await uploadForm(view).trigger('submit')
+    expect(submissions()).toHaveLength(0)
+    await view.get('input[type="checkbox"]').setValue(true)
+    await view.get('select').setValue('local')
+    expect(view.find('input[type="checkbox"]').exists()).toBe(false)
+    expect(uploadForm(view).get('button[type="submit"]').attributes('disabled')).toBeUndefined()
+    await view.get('select').setValue('azure')
+    expect(view.get<HTMLInputElement>('input[type="checkbox"]').element.checked).toBe(false)
+    await view.get('input[type="checkbox"]').setValue(true)
+    await uploadForm(view).trigger('submit')
+    await flushPromises()
+    expect(submissions()[0]?.[0]).toBe('/api/avatars/me/jobs?provider=azure&cloud_consent=true')
+  })
+
+  it('keeps an unavailable Azure default blocked instead of silently choosing a different provider', async () => {
+    configuration.azure_available = false
+    configuration.default_provider = 'azure'
+    const view = await openProfile()
+    await selectPhoto(view)
+    expect(view.get<HTMLSelectElement>('select').element.value).toBe('azure')
+    await view.get('input[type="checkbox"]').setValue(true)
+    await uploadForm(view).trigger('submit')
+    expect(submissions()).toHaveLength(0)
+    await view.get('select').setValue('local')
+    expect(uploadForm(view).get('button[type="submit"]').attributes('disabled')).toBeUndefined()
+  })
+
   it.each(['image/heic', 'image/heif', ''])('accepts iPhone photo MIME %s and retains the file until submission', async (type) => {
     const view = await openProfile()
     const photo = await selectPhoto(view, new File(['encoded heif'], 'IMG_1234.HEIC', { type }))

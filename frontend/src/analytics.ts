@@ -23,8 +23,8 @@ const eventFields = {
   comparison_selected: {}, profile_saved: {}, group_created: {}, group_joined: {},
   group_updated: {}, player_added: {}, player_updated: {}, member_updated: {}, member_removed: {},
   invite_created: {}, invite_revoked: {},
-  avatar_queued: { provider: ['local', 'openai'] },
-  avatar_outcome: { provider: ['local', 'openai'], outcome: ['succeeded', 'failed', 'cancelled'] },
+  avatar_queued: { provider: ['local', 'openai', 'azure'] },
+  avatar_outcome: { provider: ['local', 'openai', 'azure'], outcome: ['succeeded', 'failed', 'cancelled'] },
   screen_visible_30s: {},
 } as const
 export type AnalyticsEvent = keyof typeof eventFields
