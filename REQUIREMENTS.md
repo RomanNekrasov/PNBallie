@@ -350,3 +350,13 @@ De oorspronkelijke demo-/productiegegevens zijn behouden; zie `docs/AVATAR_SERVI
 
 Productie blijft op zijn bestaande release. De gedeelde fictieve demoaccount heeft
 geen echte mailbox en krijgt geen stilzwijgende verificatie-uitzondering.
+
+## Wachtwoord vergeten en inloggen op de tafel — 16 september 2026
+
+- [x] Link ‘Wachtwoord vergeten’ op het inlogscherm en mail via bestaande SMTP-dienst.
+- [x] Geen accountlek via antwoord; limieten op aanvragen en bevestigen, willekeurig gehashte link van 30 minuten.
+- [x] Eenmalige reset zonder vooraf inloggen; alle oude sessies en herstel-/verificatielinks intrekken. Geen lokaal wachtwoord toevoegen aan OIDC-only accounts.
+- [x] Reset via mailbox bewijst e-mailbezit; ook een nog onbevestigd lokaal account kan zo veilig herstellen.
+- [x] Formulier voor nieuw wachtwoord met bevestiging; geen automatische reset door link openen of mailscanner.
+- [x] Illustratie links verwijderen en één gecentreerde login binnen de herkenbare voetbaltafel plaatsen, met dezelfde veld- en tafelkleuren als scoreregistratie.
+- [ ] Mobiel/desktop controleren, documenteren en naar acceptatie uitrollen; productie blijft ongewijzigd.

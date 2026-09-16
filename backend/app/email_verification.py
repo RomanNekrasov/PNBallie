@@ -43,19 +43,24 @@ def validate_configuration() -> None:
 
 
 def send_verification(recipient: str, token: str) -> None:
-    message = EmailMessage()
-    message["Subject"] = "Bevestig je e-mailadres voor PNBallie"
-    message["From"] = formataddr((os.getenv("SMTP_FROM_NAME", "PNBallie"), os.environ["SMTP_FROM_EMAIL"]))
-    message["To"] = recipient
     # A fragment never reaches HTTP access logs or Referer headers. The browser
     # clears it before displaying the explicit confirmation form.
     link = f"{auth.app_origin()}/verify-email#token={token}"
-    message.set_content(
+    body = (
         "Bevestig je e-mailadres voor PNBallie:\n\n" + link
         + "\n\nLog in met je eigen account en kies ‘E-mailadres bevestigen’."
         " De link is 24 uur geldig en kan één keer worden gebruikt."
         "\n\nHeb je dit niet aangevraagd? Dan hoef je niets te doen.\n"
     )
+    send_mail(recipient, "Bevestig je e-mailadres voor PNBallie", body)
+
+
+def send_mail(recipient: str, subject: str, body: str) -> None:
+    message = EmailMessage()
+    message["Subject"] = subject
+    message["From"] = formataddr((os.getenv("SMTP_FROM_NAME", "PNBallie"), os.environ["SMTP_FROM_EMAIL"]))
+    message["To"] = recipient
+    message.set_content(body)
     host, port = os.environ["SMTP_HOST"], int(os.getenv("SMTP_PORT", "587"))
     context = ssl.create_default_context()
     connection = smtplib.SMTP_SSL(host, port, timeout=15, context=context) if port == 465 else smtplib.SMTP(host, port, timeout=15)

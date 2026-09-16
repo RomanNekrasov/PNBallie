@@ -17,6 +17,7 @@ export interface Group {
 export interface AuthProviders {
   local: boolean
   registration_enabled: boolean
+  password_reset_enabled?: boolean
   oidc: { name: string; login_url: string } | null
 }
 interface AuthSession {
@@ -170,4 +171,14 @@ export async function confirmVerification(token: string): Promise<string> {
   const result = await authRequest<{next_path: string}>('email/confirm', { method: 'POST', body: JSON.stringify({ token }) })
   await initAuth()
   return safeReturnPath(result.next_path)
+}
+
+export async function requestPasswordReset(email: string): Promise<string> {
+  const result = await authRequest<{ message: string }>('password/forgot', { method: 'POST', body: JSON.stringify({ email }) })
+  return result.message
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
+  await authRequest<void>('password/reset', { method: 'POST', body: JSON.stringify({ token, new_password: newPassword }) })
+  clearSession()
 }

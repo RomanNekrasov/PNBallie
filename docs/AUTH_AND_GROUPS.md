@@ -260,3 +260,42 @@ de eigen browsersessie van de gebruiker blijven beschikbaar.
 Een bestaande testbrowser had een oudere SPA-entry in zijn cache. Een verse
 URL laadde de nieuwe verificatiepagina correct; bij een oude pagina kan een
 harde refresh nodig zijn. Automatische cache-invalidering is niet gewijzigd.
+
+
+## Wachtwoord vergeten
+
+Als `AUTH_REQUIRE_EMAIL_VERIFICATION=true` is en SMTP is ingesteld, verschijnt
+**Wachtwoord vergeten?** bij het inloggen. De bestaande Brevo-configuratie op
+acceptatie volstaat; er is geen tweede maildienst of extra secret nodig.
+
+1. Open `/forgot-password` en vul het accountadres in. De reactie is hetzelfde
+   voor bekende, onbekende en OIDC-only adressen, ook bij bezorgproblemen.
+2. Open de mail binnen 30 minuten. `/reset-password#token=…` haalt het token
+   direct uit de adresbalk en bewaart het alleen in het geheugen van die pagina.
+   Alleen de link openen of scannen wijzigt niets.
+3. Vul tweemaal een nieuw wachtwoord in (minimaal 12 tekens). Na opslaan zijn
+   alle eerdere sessies en herstel-/verificatielinks voor dat account ongeldig.
+   Log opnieuw in. De groepslidmaatschappen en scores blijven behouden.
+
+De database bevat alleen een hash van de willekeurige 256-bit herstelcode.
+Een volgende aanvraag vervangt de vorige code. Verlopen codes en codes voor een
+gewijzigd adres/wachtwoord worden geweigerd; een schrijfslot voorkomt dubbel
+gebruik. Een reset bewijst mailboxbezit, vervangt het oude wachtwoord en trekt
+alle oude sessies in; daarmee kan ook een nog onbevestigd lokaal account veilig
+worden bevestigd. Een account met alleen OIDC krijgt zo geen lokaal wachtwoord.
+Gebruik daarvoor het herstelproces van de identity provider.
+
+Limieten: 10 aanvragen per IP per uur, één mail per adres per minuut, vijf per
+dag, en samen met verificatiemails maximaal 200 per dag. Bevestigen is beperkt
+tot 20 pogingen per IP per kwartier. SMTP-verzending gebeurt na de neutrale
+HTTP-reactie; SMTP-fouten worden uitsluitend als veilige uitkomst gelogd.
+Dit is geen duurzame mailqueue: bij een processtop of bezorgfout vraagt de
+gebruiker later opnieuw een link aan. Mailadres, code en wachtwoord gaan niet
+naar analytics of logging. Resetpagina's worden niet als gebruiksevent verstuurd.
+
+Migratie `20260916_reset` voegt alleen de tabel `password_reset` toe. Maak vóór
+uitrol een consistente backup en controleer behoud op een kopie. De nieuwe
+inlog-/herstelpagina's hergebruiken de tafel van de scoreregistratie. Nginx laat
+de SPA-entry hervalideren (`Cache-Control: no-cache`) bij een volgend bezoek,
+zodat nieuw gepubliceerde routes niet langdurig achter een oude entry blijven.
+Een al geopende pagina krijgt pas na vernieuwen de nieuwe versie.
