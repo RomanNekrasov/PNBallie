@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import AwareDatetime
 from sqlmodel import Session, select
 
 from app.auth import GroupContext, require_group, require_group_admin
@@ -10,6 +11,7 @@ from app.models import (
     MatchPlayerOut,
     MatchRead,
     Player,
+    as_utc,
 )
 
 router = APIRouter(prefix="/api/matches", tags=["matches"])
@@ -18,7 +20,7 @@ VALID_SIDES = {"orange", "blue"}
 VALID_POSITIONS = {"voor", "achter", "solo"}
 
 
-def _validate_match(match: MatchCreate, session: Session, group_id: int = 1):
+def _validate_match(match: MatchCreate, session: Session, group_id: int = 1, retained_ids: set[int] | None = None):
     if len(match.players) not in {2, 4}:
         raise HTTPException(status_code=422, detail="A match must be 1v1 or 2v2")
 
@@ -50,7 +52,7 @@ def _validate_match(match: MatchCreate, session: Session, group_id: int = 1):
         raise HTTPException(status_code=422, detail="Duplicate players across positions")
 
     existing_ids = set(
-        session.exec(select(Player.id).where(Player.id.in_(all_ids), Player.group_id == group_id, Player.is_active.is_(True))).all()
+        session.exec(select(Player.id).where(Player.id.in_(all_ids), Player.group_id == group_id, (Player.is_active.is_(True) | Player.id.in_(retained_ids or set())))).all()
     )
     missing_ids = sorted(set(all_ids) - existing_ids)
     if missing_ids:
@@ -76,9 +78,9 @@ def _match_to_read(match: Match) -> MatchRead:
 
 
 @router.get("", response_model=list[MatchRead])
-def list_matches(group: GroupContext = Depends(require_group), session: Session = Depends(get_session)):
+def list_matches(limit: int = Query(50, ge=1, le=100), offset: int = Query(0, ge=0), group: GroupContext = Depends(require_group), session: Session = Depends(get_session)):
     matches = session.exec(
-        select(Match).where(Match.group_id == group.id).order_by(Match.played_at.desc(), Match.id.desc()).limit(50)
+        select(Match).where(Match.group_id == group.id).order_by(Match.played_at.desc(), Match.id.desc()).offset(offset).limit(limit)
     ).all()
     return [_match_to_read(m) for m in matches]
 
@@ -108,11 +110,49 @@ def create_match(match: MatchCreate, group: GroupContext = Depends(require_group
     return _match_to_read(db_match)
 
 
+class MatchUpdate(MatchCreate):
+    played_at: AwareDatetime
+    expected: MatchRead
+
+
+def _locked_match(match_id: int, group_id: int, session: Session, expected: MatchRead | None = None):
+    session.rollback()
+    session.connection().exec_driver_sql("BEGIN IMMEDIATE")
+    match = session.get(Match, match_id, populate_existing=True)
+    if not match or match.group_id != group_id:
+        raise HTTPException(404, "Match not found")
+    if expected:
+        current = _match_to_read(match)
+        def comparable(value):
+            result = value.model_dump()
+            result["players"] = sorted(result["players"], key=lambda player: player["player_id"])
+            return result
+        if comparable(current) != comparable(expected):
+            raise HTTPException(409, "Deze wedstrijd is intussen gewijzigd. Laad de lijst opnieuw.")
+    return match
+
+
+@router.put("/{match_id}", response_model=MatchRead)
+def update_match(match_id: int, payload: MatchUpdate, group: GroupContext = Depends(require_group_admin), session: Session = Depends(get_session)):
+    match = _locked_match(match_id, group.id, session, payload.expected)
+    _validate_match(payload, session, group.id, {player.player_id for player in match.players})
+    match.orange_score = payload.orange_score
+    match.blue_score = payload.blue_score
+    match.played_at = as_utc(payload.played_at)
+    for player in match.players:
+        session.delete(player)
+    session.flush()
+    for player in payload.players:
+        session.add(MatchPlayer(match_id=match.id, **player.model_dump()))
+    session.commit()
+    session.refresh(match)
+    session.expire(match, ["players"])
+    return _match_to_read(match)
+
+
 @router.delete("/{match_id}", status_code=204)
-def delete_match(match_id: int, group: GroupContext = Depends(require_group_admin), session: Session = Depends(get_session)):
-    match = session.get(Match, match_id)
-    if not match or match.group_id != group.id:
-        raise HTTPException(status_code=404, detail="Match not found")
+def delete_match(match_id: int, expected: MatchRead | None = None, group: GroupContext = Depends(require_group_admin), session: Session = Depends(get_session)):
+    match = _locked_match(match_id, group.id, session, expected)
     # Delete match players first
     for mp in match.players:
         session.delete(mp)

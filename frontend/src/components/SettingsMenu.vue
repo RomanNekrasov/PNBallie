@@ -18,9 +18,20 @@
     </button>
     <div v-if="open" :id="panelId" class="settings-panel">
       <p class="settings-group"><span>{{ currentGroup ? 'Huidige groep' : 'PNBallie' }}</span><strong>{{ currentGroup?.name ?? authUser?.display_name }}</strong></p>
+      <details v-if="statsMode !== undefined" class="settings-analysis">
+        <summary>Statistieken bekijken</summary>
+        <label>Spelvorm
+          <select aria-label="Spelvorm" :value="statsMode" @change="changeMode">
+            <option value="all">Alles samen</option>
+            <option value="1v1">Alleen 1v1</option>
+            <option value="2v2">Alleen 2v2</option>
+          </select>
+        </label>
+      </details>
       <nav aria-label="Instellingen en account">
         <RouterLink v-if="currentGroup" to="/profile" class="settings-link" @click="close()">Mijn profiel</RouterLink>
         <RouterLink to="/groups" class="settings-link" @click="close()">Groepen</RouterLink>
+        <RouterLink v-if="isGroupAdmin" to="/admin/matches" class="settings-link" @click="close()">Wedstrijden beheren</RouterLink>
         <RouterLink v-if="isGroupAdmin" to="/admin" class="settings-link" @click="close()">Groepsbeheer</RouterLink>
       </nav>
       <button class="settings-link settings-logout" type="button" :disabled="busy" @click="signOut">{{ busy ? 'Uitloggen…' : 'Uitloggen' }}</button>
@@ -35,6 +46,14 @@ import { nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authUser, currentGroup, isGroupAdmin, logout } from '../auth'
 import AnalyticsNotice from './AnalyticsNotice.vue'
+import type { StatsMode } from '../types'
+defineProps<{ statsMode?: StatsMode }>()
+const emit = defineEmits<{ 'update:statsMode': [value: StatsMode] }>()
+function changeMode(event: Event) {
+  const value = (event.target as HTMLSelectElement).value
+  if (value === 'all' || value === '1v1' || value === '2v2') emit('update:statsMode', value)
+}
+
 
 const router = useRouter()
 const route = useRoute()
@@ -83,6 +102,10 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
 </script>
 
 <style scoped>
+.settings-analysis { border-bottom: 1px solid #394456; margin-bottom: 5px; padding: 4px 10px 10px; }
+.settings-analysis summary { cursor: pointer; padding: 10px 0; font-size: 12px; font-weight: 600; }
+.settings-analysis label { display: grid; gap: 7px; color: #cbd6e5; font-size: 12px; }
+.settings-analysis select { min-width: 0; width: 100%; min-height: 44px; font-size: 16px; color: #fff; background: #101722; border: 1px solid #47546a; border-radius: 8px; padding: 8px; }
 .settings-menu { position: relative; flex: 0 0 auto; z-index: 40; }
 .settings-toggle { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid #435069; border-radius: 12px; color: #becce0; background: #1c2736; transition: background .15s, border-color .15s, color .15s; }
 .settings-toggle[aria-expanded=true] { border-color: #d99962; color: #ffd0a0; background: #3b2e26; }

@@ -360,3 +360,14 @@ geen echte mailbox en krijgt geen stilzwijgende verificatie-uitzondering.
 - [x] Formulier voor nieuw wachtwoord met bevestiging; geen automatische reset door link openen of mailscanner.
 - [x] Illustratie links verwijderen en één gecentreerde login binnen de herkenbare voetbaltafel plaatsen, met dezelfde veld- en tafelkleuren als scoreregistratie.
 - [x] Mobiel/desktop controleren, documenteren en naar acceptatie uitrollen; productie blijft ongewijzigd.
+
+## Rustige statistieken en wedstrijdbeheer — 16 september 2026
+
+- [x] Verwijder periodekeuze en de dubbele duelteller uit de kop; statistieken tonen standaard alle historie.
+- [x] Verplaats Alles samen / 1v1 / 2v2 naar het bestaande tandwielmenu, met zichtbare aanduiding bij een actieve beperking.
+- [x] Wedstrijdbeheer via het tandwiel, uitsluitend voor beheerders van de actieve groep; blader ook door oudere wedstrijden.
+- [x] Wijzig scores, spelers/opstelling en lokaal tijdstip; valideer teams en sla UTC op. Behoud reeds deelnemende inactieve spelers.
+- [x] Verwijder met expliciete bevestiging; voorkom overschrijven/verwijderen van inmiddels gewijzigde wedstrijden.
+- [x] Pas statistieken, ELO en historisch afgeleide badges toe op de gecorrigeerde geschiedenis.
+- [x] Maak het expliciet aangewezen, geverifieerde acceptatieaccount beheerder van Democompetitie; behoud overige rechten en gegevens.
+- [ ] Documenteer/test/publiceer en controleer op acceptatie; productie blijft op de bestaande release.
