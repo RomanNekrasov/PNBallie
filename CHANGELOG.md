@@ -13,7 +13,10 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 - Een private capaciteitcontrole voorkomt onbruikbare uploads en quotaverbruik.
   Bij later geheugentekort wacht de worker zonder echte pogingen te verbruiken.
 - De embeddingsdienst is op expliciet verzoek gestopt; container en modellen
-  blijven behouden. Een echte C-profielproef en acceptatie-uitrol lopen nog.
+  blijven behouden. De echte C-profielproef slaagt in circa tien minuten;
+  de iPhone-fix draait via homelab-PR 65 op acceptatie. Een echte HTTP-upload
+  van een synthetische 48-MP-HEIC en bronopruiming zijn geverifieerd.
+  Fotoselectie op het eigen iPhone-toestel moet nog worden bevestigd.
 
 
 ### Avatar C op acceptatie
@@ -23,9 +26,9 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
   behoudt de eigen gelaatstrekken; het private protocol bevestigt de stijl.
   Oudere clients houden de bestaande route. De private release is via Flux
   op acceptatie uitgerold; API en worker bevestigen de nieuwe stijl.
-- De echte upload bereikt de uitgerolde keten, maar de nieuwe embeddingsdienst
-  houdt bijna 95 GiB GPU-geheugen bezet. Volledige generatie blijft open;
-  fouttraces, bronopruiming en behoud van bestaande demoavatars zijn geverifieerd.
+- Na het expliciete stopverzoek slaagt de echte C-upload op de eerste poging:
+  transparante PNG-opslag, alle traceverwijzingen, geheugenherstel en behoud
+  van bestaande demoavatars zijn geverifieerd.
 - De twee gevraagde spelers zijn aan productie toegevoegd met geverifieerde
   versleutelde backups vóór en na de wijziging. Alle bestaande spelers,
   39 wedstrijden en 90 deelnames zijn ongewijzigd; productie blijft op zijn
