@@ -414,8 +414,8 @@ geen echte mailbox en krijgt geen stilzwijgende verificatie-uitzondering.
 
 ## Eenvoudige avatars, originele foto's en CI/CD — 16 september 2026
 
-- [ ] Alleen foto kiezen en avatar maken; geen providerkeuze, cloudcheckbox of opslagtekst. De server kiest Azure, Qwen blijft als configureerbare provider behouden.
-- [ ] Gevalideerde originele uploadbytes privé en persistent bewaren; geen publieke route. Bestaande tijdelijke werkfoto's blijven na verwerking opgeruimd.
-- [ ] Automatische acceptatie na geslaagde imagepublicatie; productie via een zichtbare GitHub environment-goedkeuring, met dezelfde geteste images.
-- [ ] GitOps-PR's en verplichte checks automatisch afhandelen; echte releaseversies controleren en wijzigingen documenteren.
-- [ ] Deze wijziging testen, naar productie promoveren en originele opslag/backups controleren.
+- [x] Alleen foto kiezen en avatar maken; geen providerkeuze, cloudcheckbox of opslagtekst. De server kiest Azure, Qwen blijft als configureerbare provider behouden.
+- [x] Gevalideerde originele uploadbytes privé en persistent bewaren; geen publieke route. Bestaande tijdelijke werkfoto's blijven na verwerking opgeruimd.
+- [x] Automatische acceptatie na geslaagde imagepublicatie; productie via een zichtbare GitHub environment-goedkeuring, met dezelfde geteste images.
+- [x] GitOps-PR's en verplichte checks automatisch afhandelen; echte releaseversies controleren en wijzigingen documenteren.
+- [x] Deze wijziging testen, naar productie promoveren en originele opslag/backups controleren.

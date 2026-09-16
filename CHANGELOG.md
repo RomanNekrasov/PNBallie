@@ -488,3 +488,7 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 - Alleen foto uploaden en avatar maken; provider via serverconfiguratie, Azure als standaard.
 - Originele uploads privé en persistent bewaren; tijdelijke werkfoto apart opruimen.
 - Automatische acceptatierelease en productiepromotie na GitHub-goedkeuring, met identieke images en live versiecontrole.
+
+- Acceptatieproef: echte Azure-avatar, origineel byte-identiek na backendherstart en versleutelde back-up teruggelezen. De productiejob wacht aantoonbaar op GitHub-review.
+
+- Productiepromotie voltooid via dezelfde pipeline; publieke provider-/versiecontrole geslaagd en bestaande productiedata behouden.
