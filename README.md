@@ -163,3 +163,5 @@ voor TLS, afzenderinstellingen, limieten, foutafhandeling en acceptatie.
 Deze instelling activeert ook **Wachtwoord vergeten?** op het inlogscherm.
 De herstellink is 30 minuten geldig; een reset trekt alle oude sessies in.
 Zie [wachtwoordherstel](docs/AUTH_AND_GROUPS.md#wachtwoord-vergeten).
+
+Release volgen of naar productie promoveren: zie [de deliveryhandleiding](docs/DELIVERY.md).
