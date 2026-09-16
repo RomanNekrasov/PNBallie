@@ -18,6 +18,7 @@
         <p>{{ authUser.email }}</p>
         <p v-if="token">Bevestig dat dit jouw e-mailadres is.</p>
         <p v-else-if="verificationSent">Open de link in je mail. Controleer ook je spammap.</p>
+        <p v-else-if="verificationSent === false" class="account-error">Je account is aangemaakt, maar de mail kon niet worden verstuurd. Probeer het over een minuut opnieuw.</p>
         <p v-else>Vraag een mail aan om je e-mailadres te bevestigen.</p>
         <button v-if="token" class="primary-button" :disabled="busy" @click="confirm">E-mailadres bevestigen</button>
         <button class="secondary-button" :disabled="busy || cooldown > 0" @click="resend">{{ cooldown > 0 ? `Opnieuw versturen over ${cooldown}s` : 'Verificatiemail versturen' }}</button>
@@ -44,7 +45,7 @@ const email = ref('')
 const password = ref('')
 const error = ref('')
 const busy = ref(false)
-const cooldown = ref(verificationSent.value ? 60 : 0)
+const cooldown = ref(verificationSent.value !== null ? 60 : 0)
 const timer = setInterval(() => { cooldown.value = Math.max(0, cooldown.value - 1) }, 1000)
 onUnmounted(() => clearInterval(timer))
 
