@@ -1,11 +1,13 @@
+import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from sqlalchemy import text
 
 from app.auth import validate_auth_configuration
 from app.database import engine
 from app.email_verification import validate_configuration
+from app.release import worker_revision
 from app.routers import auth, avatars, groups, matches, players, stats
 from app.telemetry import API_SERVICE, Runtime, install_http
 
@@ -39,6 +41,15 @@ def ready():
     except Exception as exc:
         raise HTTPException(status_code=503, detail="Database is not ready") from exc
     return {"status": "ok"}
+
+
+@app.get("/api/version", include_in_schema=False)
+def version(response: Response):
+    response.headers["Cache-Control"] = "no-store"
+    with engine.connect() as connection:
+        schema = connection.execute(text("SELECT version_num FROM alembic_version")).scalar()
+    return {"revision": os.getenv("APP_REVISION", "development"),
+            "schema": schema, "worker_revision": worker_revision()}
 
 
 app.include_router(auth.router)

@@ -108,7 +108,7 @@ def test_upload_is_queued_durable_and_does_not_call_provider(api):
 
 def test_upload_checks_format_cloud_consent_and_configuration(api, monkeypatch):
     client, _, _ = api
-    assert enqueue(client, params={"provider": "openai"}).status_code == 422
+    assert enqueue(client, params={"provider": "openai"}).status_code == 409
     assert client.post("/api/avatars/me/jobs", content=b"not a photo",
                        headers={"Content-Type": "image/png"}).status_code == 422
     assert client.post("/api/avatars/me/jobs", content=png(),
@@ -117,8 +117,9 @@ def test_upload_checks_format_cloud_consent_and_configuration(api, monkeypatch):
                        headers={"Content-Type": "image/svg+xml"}).status_code == 415
     monkeypatch.delenv("AVATAR_LOCAL_URL")
     assert enqueue(client).status_code == 503
-    assert client.get("/api/avatars/config").json()["local_available"] is False
-    assert enqueue(client, params={"provider": "openai", "cloud_consent": True}).status_code == 202
+    assert client.get("/api/avatars/config").json()["available"] is False
+    monkeypatch.setenv("AVATAR_DEFAULT_PROVIDER", "openai")
+    assert enqueue(client).status_code == 202
 
 
 def test_upload_has_size_and_per_user_daily_limit(api):
@@ -785,18 +786,18 @@ def test_isolated_model_timeout_terminates_its_process_group(monkeypatch):
     assert events == [(1234, signal.SIGTERM), "reaped"]
 
 
-def test_azure_queue_requires_consent_and_keeps_provider_after_default_switch(api, monkeypatch):
+def test_azure_queue_uses_server_default_and_keeps_provider_after_switch(api, monkeypatch):
     client, database, _ = api
     monkeypatch.setenv("AZURE_OPENAI_API_KEY", "test-azure-key")
     monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://example.cognitiveservices.azure.com/")
     monkeypatch.setenv("AZURE_OPENAI_IMAGE_DEPLOYMENT", "gpt-image-2")
     monkeypatch.setenv("AVATAR_DEFAULT_PROVIDER", "azure")
     config = client.get("/api/avatars/config").json()
-    assert config["azure_available"] and config["local_available"]
+    assert config["available"] and "local_available" not in config
     assert config["default_provider"] == "azure"
     assert "test-azure-key" not in str(config) and "endpoint" not in str(config)
-    assert enqueue(client, params={"provider": "azure"}).status_code == 422
-    result = enqueue(client, params={"provider": "azure", "cloud_consent": True})
+    assert enqueue(client, params={"provider": "local"}).status_code == 409
+    result = enqueue(client)
     assert result.status_code == 202
     job_id = result.json()["id"]
     monkeypatch.setenv("AVATAR_DEFAULT_PROVIDER", "local")
@@ -866,3 +867,43 @@ def test_azure_rejects_invalid_endpoint_before_sending_credentials(tmp_path, end
     with pytest.raises(AvatarProviderError):
         AvatarProvider(settings, transport=httpx.MockTransport(unexpected)).generate(
             source_png=png(), provider="azure", cloud_consent=True, job_id="a")
+
+
+def test_original_upload_bytes_survive_job_completion_and_worker_restart(api, monkeypatch, tmp_path):
+    client, database, _ = api
+    archive = tmp_path / 'archive'
+    monkeypatch.setenv('AVATAR_ORIGINALS_DIR', str(archive))
+    photo = BytesIO()
+    exif = Image.Exif()
+    exif[270] = 'Original photograph metadata'
+    Image.new('RGB', (96, 64), 'green').save(photo, format='JPEG', exif=exif)
+    raw = photo.getvalue()
+    result = client.post('/api/avatars/me/jobs', content=raw, headers={'Content-Type': 'image/jpeg'})
+    assert result.status_code == 202
+    job_id = result.json()['id']
+    original = archive / '1' / '1' / (job_id + '.jpg')
+    assert original.read_bytes() == raw
+    assert original.stat().st_mode & 0o777 == 0o600
+    assert original.parent.stat().st_mode & 0o777 == 0o700
+    with Session(database) as session:
+        assert session.get(AvatarJob, job_id).source_png != raw
+    assert run_once(database, StubProvider())
+    with Session(database) as session:
+        assert session.get(AvatarJob, job_id).source_png is None
+    assert original.read_bytes() == raw
+    assert client.get('/api/avatars/originals/' + job_id).status_code == 404
+    assert not list(archive.rglob('.upload-*'))
+
+
+def test_invalid_or_unstored_upload_never_leaves_a_queued_job(api, monkeypatch, tmp_path):
+    client, database, _ = api
+    archive = tmp_path / 'archive'
+    monkeypatch.setenv('AVATAR_ORIGINALS_DIR', str(archive))
+    assert client.post('/api/avatars/me/jobs', content=b'invalid', headers={'Content-Type': 'image/png'}).status_code == 422
+    assert not archive.exists()
+    def unavailable(*args, **kwargs):
+        raise OSError('No space left on device')
+    monkeypatch.setattr(avatars, 'store_original', unavailable)
+    assert enqueue(client).status_code == 503
+    with Session(database) as session:
+        assert session.exec(select(AvatarJob)).all() == []

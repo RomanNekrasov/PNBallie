@@ -13,6 +13,7 @@ from app.avatar_images import (
     normalize_upload,
 )
 from app.avatar_models import AvatarJob, AvatarJobRead, PlayerAvatar, read_job, utcnow
+from app.avatar_originals import store_original
 from app.avatar_providers import AvatarSettings
 from app.avatar_readiness import CAPACITY_MESSAGE, UNAVAILABLE_MESSAGE, local_status
 from app.avatar_worker import SOURCE_RETENTION, _terminal_values
@@ -38,20 +39,21 @@ def own_player(group: GroupContext, session: Session) -> Player:
 @router.get("/config")
 async def configuration(group: GroupContext = Depends(require_group)):
     config = AvatarSettings.from_env()
-    return {"local_available": config.local_available, "openai_available": config.openai_available,
-            "azure_available": config.azure_available, "default_provider": config.default_provider,
-            "max_upload_bytes": MAX_UPLOAD_BYTES, "local_status": await local_status(config),
+    state = await local_status(config) if config.default_provider == "local" else "unknown"
+    return {"available": config.available(config.default_provider),
+            "default_provider": config.default_provider,
+            "max_upload_bytes": MAX_UPLOAD_BYTES, "local_status": state,
             "local_style": config.local_style}
 
 
 @router.post("/me/jobs", status_code=202, response_model=AvatarJobRead)
-async def upload(request: Request, provider: Literal["local", "openai", "azure"] = "local",
-                 cloud_consent: bool = False, group: GroupContext = Depends(require_group),
+async def upload(request: Request, provider: Literal["local", "openai", "azure"] | None = None, group: GroupContext = Depends(require_group),
                  session: Session = Depends(get_session)):
     player = own_player(group, session)
-    if provider in {"openai", "azure"} and not cloud_consent:
-        raise HTTPException(422, "Geef toestemming voordat je de foto naar de clouddienst stuurt.")
     config = AvatarSettings.from_env()
+    if provider is not None and provider != config.default_provider:
+        raise HTTPException(409, "Ververs de pagina en probeer opnieuw.")
+    provider = config.default_provider
     if not config.available(provider):
         raise HTTPException(503, "Deze afbeeldingsdienst is nog niet ingesteld.")
     if provider == "local":
@@ -95,14 +97,30 @@ async def upload(request: Request, provider: Literal["local", "openai", "azure"]
         session.rollback()
         raise HTTPException(429, "Je kunt maximaal vijf avatars per 24 uur aanvragen.")
     job = AvatarJob(group_id=group_id, user_id=user_id, player_id=player_id,
-                    active_player_id=player_id, provider=provider, cloud_consent=cloud_consent,
+                    active_player_id=player_id, provider=provider,
+                    # Legacy worker processing flag; this is not a checkbox-consent record.
+                    cloud_consent=provider in {"azure", "openai"},
                     source_png=source, traceparent=current_traceparent())
-    session.add(job)
+    original = None
     try:
+        original = store_original(bytes(raw), mime, group_id=group_id, player_id=player_id, job_id=job.id)
+        session.add(job)
         session.commit()
+    except OSError as exc:
+        session.rollback()
+        if original is not None:
+            original.unlink(missing_ok=True)
+        raise HTTPException(503, "De foto kon niet worden opgeslagen. Probeer later opnieuw.") from exc
     except IntegrityError as exc:
         session.rollback()
+        if original is not None:
+            original.unlink(missing_ok=True)
         raise HTTPException(409, "Er wordt al een avatar voor je gemaakt.") from exc
+    except Exception:
+        session.rollback()
+        if original is not None:
+            original.unlink(missing_ok=True)
+        raise
     session.refresh(job)
     job_event(telemetry, job.provider, "enqueued")
     event("avatar.job.enqueued", provider=job.provider, outcome="enqueued")

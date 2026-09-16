@@ -63,3 +63,9 @@ def registered(client_factory):
         client.headers["X-CSRF-Token"] = info["csrf_token"]
         return client, info["user"]
     return factory
+
+
+@pytest.fixture(autouse=True)
+def private_avatar_storage(tmp_path, monkeypatch):
+    monkeypatch.setenv("AVATAR_ORIGINALS_DIR", str(tmp_path / "originals"))
+    monkeypatch.setenv("AVATAR_DEFAULT_PROVIDER", "local")

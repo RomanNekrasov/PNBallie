@@ -1,0 +1,48 @@
+name: Deploy release
+on:
+  workflow_call:
+    inputs:
+      target:
+        required: true
+        type: string
+      revision:
+        required: true
+        type: string
+    secrets:
+      HOMELAB_DEPLOY_KEY:
+        required: true
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: deploy-${{ inputs.target }}
+      cancel-in-progress: false
+    environment:
+      name: ${{ inputs.target }}
+      url: ${{ inputs.target == 'production' && 'https://pnballie.nl' || 'https://acceptatie.pnballie.nl' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.revision }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+      - name: Configure repository-scoped GitOps access
+        env:
+          DEPLOY_KEY: ${{ secrets.HOMELAB_DEPLOY_KEY }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          cp scripts/github-known-hosts ~/.ssh/known_hosts
+          git clone git@github.com:RomanNekrasov/spark-homelab.git homelab
+      - name: Propose, validate and deploy immutable release
+        run: python3 scripts/deploy_release.py --target "$TARGET" --release release.json --repository homelab
+        env:
+          TARGET: ${{ inputs.target }}
+      - name: Remove deploy credential
+        if: always()
+        run: rm -f ~/.ssh/id_ed25519

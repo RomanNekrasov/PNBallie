@@ -24,6 +24,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - run: python3 scripts/test_delivery.py
       - run: uv sync --locked
         working-directory: backend
       - run: uv run ruff check app tests

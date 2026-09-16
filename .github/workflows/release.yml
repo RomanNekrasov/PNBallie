@@ -1,4 +1,4 @@
-name: Publish images
+name: Release PNBallie
 
 on:
   workflow_run:
@@ -11,8 +11,24 @@ permissions:
   packages: write
 
 jobs:
+  prepare:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.changes.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 2
+      - id: changes
+        run: |
+          if git diff --name-only HEAD^ HEAD | grep -Eq '^(backend/|frontend/|scripts/|.github/workflows/)'; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
   publish:
-    if: github.event.workflow_run.conclusion == 'success'
+    needs: prepare
+    if: needs.prepare.outputs.changed == 'true'
     runs-on: ubuntu-latest
     env:
       IMAGE_SHA: ${{ github.event.workflow_run.head_sha }}
@@ -39,6 +55,9 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ghcr.io/romannekrasov/pnballie-${{ matrix.service }}:sha-${{ env.IMAGE_SHA }}
+          build-args: APP_REVISION=${{ env.IMAGE_SHA }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
           provenance: mode=max
           sbom: true
       - name: Verify manifest architectures
@@ -59,3 +78,41 @@ jobs:
           echo "Package pnballie-${{ matrix.service }} rejects anonymous pulls."
       - name: Add immutable digest to workflow summary
         run: echo "- \`ghcr.io/romannekrasov/pnballie-${{ matrix.service }}:sha-${IMAGE_SHA}\` → \`${{ steps.build.outputs.digest }}\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save digest
+        run: echo '${{ steps.build.outputs.digest }}' > digest.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: image-${{ matrix.service }}
+          path: digest.txt
+  metadata:
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: image-*
+      - run: python3 scripts/release_metadata.py
+        env:
+          IMAGE_SHA: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: release.json
+  acceptance:
+    needs: metadata
+    uses: ./.github/workflows/deploy.yml
+    with:
+      target: acceptance
+      revision: ${{ github.event.workflow_run.head_sha }}
+    secrets: inherit
+  production:
+    needs: acceptance
+    uses: ./.github/workflows/deploy.yml
+    with:
+      target: production
+      revision: ${{ github.event.workflow_run.head_sha }}
+    secrets: inherit

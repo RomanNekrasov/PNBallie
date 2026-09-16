@@ -1,3 +1,25 @@
+## Huidige avatarflow — 16 september 2026
+
+Het profiel toont alleen foto kiezen en avatar maken. De server kiest de provider
+via `AVATAR_DEFAULT_PROVIDER=azure`; Azure gebruikt `gpt-image-2`. Qwen blijft
+beschikbaar door de operatorinstelling terug op `local` te zetten. De browser
+biedt geen providerkeuze of toestemmingsvakje. Het historische databaseveld
+`cloud_consent` blijft een technische verwerkingsvlag, geen bewijs van een checkbox.
+
+Nieuwe originele uploads blijven byte voor byte privé bewaard in
+`AVATAR_ORIGINALS_DIR=/data/avatar-originals/<group>/<player>/<job>.<ext>`.
+Directories zijn 0700, bestanden 0600; er is geen downloadendpoint voor originelen.
+De database bevat daarnaast een genormaliseerde werkfoto die na afronding of
+annulering wordt verwijderd. Bestaande verwijderde bronfoto's zijn niet terug te halen.
+Originelen blijven behouden na een nieuwe aanvraag, annulering en podvervanging.
+Operationeel verwijderen gebeurt bewust op de schijf. De homelabhelper
+`scripts/pnballie-originals` maakt een aparte versleutelde Restic-back-up;
+de SQLite-back-up alleen bevat deze bestanden niet.
+
+De rest van dit document bevat ook historische experimenten en acceptatieverslagen;
+oude vermeldingen van providerkeuze, expliciete toestemming en verwijdering van
+de bronfoto beschrijven de toenmalige flow.
+
 # Eigen spelersavatars
 
 ## iPhone-foto's en beschikbare capaciteit — 15 september 2026
