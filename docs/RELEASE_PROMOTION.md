@@ -66,3 +66,23 @@ Een eerdere image-digest terugzetten gaat via een nieuwe GitOps-PR. Dat werkt
 alleen als de database nog compatibel is met die versie. Een databasemigratie
 wordt niet teruggedraaid door de image te wijzigen; een eventuele restore is
 een afzonderlijke handeling en kan nieuwere scorewijzigingen verliezen.
+
+## E-mailverificatie meenemen bij promotie
+
+De acceptatierelease van 16 september ondersteunt verplichte e-mailverificatie.
+Een imagepromotie kopieert geen SMTP-secret of runtime-instelling automatisch.
+
+- Maak een SOPS-versleuteld `pnballie-smtp`-secret in de productie-namespace en
+  verwijs er alleen vanuit de API naar. De afzender/het domein moet bij Brevo
+  bevestigd zijn; gebruik geen plaintext credentials in Git of CLI-argumenten.
+- Activeer `AUTH_REQUIRE_EMAIL_VERIFICATION=true` op de API, met de bestaande
+  productieorigin. Mails verwijzen daarmee naar `https://pnballie.nl/verify-email`.
+- De schemawijziging behoudt alle accounts/groepen, maar markeert niemand
+  automatisch als geverifieerd. Lokale gebruikers moeten hun eigen mail bevestigen
+  vóór groepstoegang. Een bevestigd OIDC-claim voor het opgeslagen adres telt ook.
+- Test SMTP, eenmalige bevestiging, opnieuw aanvragen en toegang na verificatie.
+  SMTP-acceptatie is geen bewijs van inboxbezorging. De synthetische demoaccount
+  zonder mailbox is geen productieaccount of verificatie-uitzondering.
+
+Deze stappen beschrijven een latere productiepromotie; productie is voor de
+mailverificatie-uitrol op acceptatie niet aangepast.

@@ -151,3 +151,11 @@ Merges naar main publiceren na geslaagde CI private immutable images
 via de geselecteerde digests in `spark-homelab`.
 
 Commit nooit lokale configuratie, tokens, foto's, databasebestanden of secrets.
+
+### E-mailverificatie
+
+Met een SMTP-provider zoals Brevo kan PNBallie e-mailbezit verplicht stellen vóór
+toegang tot groepen. Configureer `AUTH_REQUIRE_EMAIL_VERIFICATION=true` en de
+`SMTP_*`-waarden uitsluitend op de API. Bestaande lokale accounts moeten dan ook
+bevestigen. Zie [authenticatie en SMTP](docs/AUTH_AND_GROUPS.md#e-mailverificatie-via-smtp)
+voor TLS, afzenderinstellingen, limieten, foutafhandeling en acceptatie.
