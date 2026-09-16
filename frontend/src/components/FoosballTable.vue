@@ -5,8 +5,8 @@
     :preserveAspectRatio="stretch ? 'none' : 'xMidYMid meet'"
     xmlns="http://www.w3.org/2000/svg"
   >
-    <!-- Table border -->
-    <rect x="30" y="20" width="340" height="660" rx="16" fill="#2d6a30" stroke="#5a3a1a" stroke-width="8" />
+    <!-- Playing surface -->
+    <rect x="30" y="20" width="340" height="660" rx="16" fill="#2d6a30" />
 
     <!-- Field lines -->
     <line x1="30" y1="350" x2="370" y2="350" stroke="rgba(255,255,255,0.25)" stroke-width="2" />
@@ -20,6 +20,9 @@
     <!-- Bottom goal area -->
     <rect x="130" y="620" width="140" height="60" rx="4" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2" />
     <rect x="160" y="650" width="80" height="30" rx="2" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2" />
+
+    <!-- The table rim covers the field lines; rods sit above it. -->
+    <rect x="30" y="20" width="340" height="660" rx="16" fill="none" stroke="#5a3a1a" stroke-width="8" />
 
     <!-- Ball -->
     <circle cx="200" cy="350" r="5" fill="#f5f5f0" opacity="0.6" class="ball" />
