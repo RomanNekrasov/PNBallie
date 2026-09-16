@@ -13,7 +13,9 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
   verwijderen, met paginering, teamvalidatie en bescherming tegen verouderde invoer.
 - Het aangewezen geverifieerde acceptatieaccount is beheerder van Democompetitie.
   De overige gegevens zijn behouden na een versleutelde, gecontroleerde backup.
-- 221 backendtests, 108 frontendtests en lokale browserchecks slagen. Uitrol volgt.
+- 221 backendtests, 108 frontendtests en lokale browserchecks slagen. De release
+  draait op acceptatie. De geïsoleerde API-proef op Spark, publieke levering en
+  behoud van alle oorspronkelijke account-/competitiedata zijn gecontroleerd.
 
 
 ### Wachtwoordherstel en inlogtafel

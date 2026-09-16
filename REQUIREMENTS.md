@@ -370,4 +370,4 @@ geen echte mailbox en krijgt geen stilzwijgende verificatie-uitzondering.
 - [x] Verwijder met expliciete bevestiging; voorkom overschrijven/verwijderen van inmiddels gewijzigde wedstrijden.
 - [x] Pas statistieken, ELO en historisch afgeleide badges toe op de gecorrigeerde geschiedenis.
 - [x] Maak het expliciet aangewezen, geverifieerde acceptatieaccount beheerder van Democompetitie; behoud overige rechten en gegevens.
-- [ ] Documenteer/test/publiceer en controleer op acceptatie; productie blijft op de bestaande release.
+- [x] Documenteer/test/publiceer en controleer op acceptatie; productie blijft op de bestaande release.
