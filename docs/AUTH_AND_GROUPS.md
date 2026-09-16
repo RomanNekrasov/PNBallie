@@ -236,3 +236,27 @@ docker compose --env-file .env.example -p pnballie-review down --volumes
 ```
 
 Voer deze laatste cleanup alleen uit voor de tijdelijke `pnballie-review`-stack.
+
+## Live acceptatie — 16 september 2026
+
+App-PRs 27 en 28 zijn gepubliceerd; de definitieve release is `8ae8f27e`.
+206 backendtests en 100 frontendtests, lint/build en containerchecks slagen.
+Homelab-PR 67 is via Flux gereconcilieerd als `da67868c`. Alle twaalf
+Kustomizations zijn ready. De migratie en een vergelijking met de versleutelde
+backup bevestigen behoud van alle oorspronkelijke competitie- en profieldata.
+Productie houdt zijn bestaande images.
+
+De SMTP-verbinding is met TLS/authenticatie getest vanaf de Mac en de Spark.
+Daarna accepteert Brevo exact één verificatiemail voor het afzonderlijk
+geautoriseerde testaccount. De publieke API blokkeert dat onbevestigde account
+voor groepsgebruik. De browser toont de nieuwe verificatiepagina. Eén veilige
+`auth.email.delivery`-logregel meldt succes; SMTP-key, wachtwoord en adres zijn
+afwezig in de API-logs. De gebruiker bevestigt ontvangst en succesvolle
+bevestiging in de echte mailbox. De server bevestigt `email_verified=true`,
+`verification_required=false`, één groepslidmaatschap en verwijdering van de
+gebruikte challenge. De afzonderlijke helpersessie is uitgelogd; het account en
+de eigen browsersessie van de gebruiker blijven beschikbaar.
+
+Een bestaande testbrowser had een oudere SPA-entry in zijn cache. Een verse
+URL laadde de nieuwe verificatiepagina correct; bij een oude pagina kan een
+harde refresh nodig zijn. Automatische cache-invalidering is niet gewijzigd.

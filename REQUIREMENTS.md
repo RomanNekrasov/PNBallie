@@ -345,7 +345,8 @@ De oorspronkelijke demo-/productiegegevens zijn behouden; zie `docs/AVATAR_SERVI
 - [x] Bevestigen via expliciete POST, geen automatische login of verificatie door mail-scanners; token uit URL-fragment en niet in telemetry.
 - [x] Heldere registratie-/verificatiepagina, behoud van uitnodiging, foutafhandeling bij mailstoring.
 - [x] OIDC-verificatie expliciet vastleggen; geen automatische koppeling op e-mailadres.
-- [ ] Migratie, veiligheids-/frontendtests, documentatie, acceptatie-uitrol en echte SMTP-verzending testen.
+- [x] Migratie, veiligheids-/frontendtests, documentatie, acceptatie-uitrol en echte SMTP-verzending testen.
+- [x] Ontvangst en bevestiging via de echte mailbox door de gebruiker bevestigd; serverbewijs en verbruikte link gecontroleerd.
 
 Productie blijft op zijn bestaande release. De gedeelde fictieve demoaccount heeft
 geen echte mailbox en krijgt geen stilzwijgende verificatie-uitzondering.

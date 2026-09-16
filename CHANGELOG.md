@@ -16,6 +16,11 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 - Behoud de uitnodiging ook wanneer bevestigen een bestaande groep herlaadt.
   Toon een duidelijke melding en wachttijd als de eerste mail niet verstuurd is.
   De aanvullende regressietest brengt het frontendtotaal op 100.
+- De release draait op acceptatie via Flux. Live migratiebehoud, verplichte
+  verificatie, de nieuwe browserpagina en één door Brevo geaccepteerde testmail
+  zijn gecontroleerd. De gebruiker bevestigt inboxontvangst en verificatie;
+  de server bevestigt geverifieerde status, groepsgebruik en verbruik van de link.
+  Productie is niet aangepast.
 
 ## Unreleased — 2026-09-15
 
