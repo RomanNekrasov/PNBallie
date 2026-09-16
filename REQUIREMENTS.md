@@ -361,6 +361,11 @@ geen echte mailbox en krijgt geen stilzwijgende verificatie-uitzondering.
 - [x] Illustratie links verwijderen en één gecentreerde login binnen de herkenbare voetbaltafel plaatsen, met dezelfde veld- en tafelkleuren als scoreregistratie.
 - [x] Mobiel/desktop controleren, documenteren en naar acceptatie uitrollen; productie blijft ongewijzigd.
 
+## Tafelrand — 16 september 2026
+
+- [x] Teken de witte doellijnen achter de bruine tafelrand in de gedeelde tafelillustratie.
+- [ ] Controleer de weergave en rol uit naar acceptatie.
+
 ## Rustige statistieken en wedstrijdbeheer — 16 september 2026
 
 - [x] Verwijder periodekeuze en de dubbele duelteller uit de kop; statistieken tonen standaard alle historie.
