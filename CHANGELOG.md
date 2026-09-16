@@ -5,6 +5,17 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 
 ## Unreleased — 2026-09-16
 
+### Productiepromotie
+
+- De geteste acceptatieversie draait op productie met lokale login, e-mailverificatie,
+  wachtwoordherstel, groepen, avatars en statistiek-/wedstrijdbeheer.
+- De echte competitie is behouden en het geverifieerde operatoraccount is aan
+  Roman gekoppeld als beheerder. Het ongebruikte profiel Beheerder is verwijderd.
+- Migratieproef, live login-/score-/rechtencontroles, SMTP-verbinding, private
+  avatarcapaciteit en Grafana-metingen slagen. Versleutelde backups voor en na
+  de overgang zijn gecontroleerd; bewijs staat in de homelab Phase 6-documentatie.
+
+
 - Witte doellijnen lopen achter de bruine tafelrand, zowel bij inloggen als bij
   scoreregistratie; stangen blijven boven de rand liggen. Uitgerold naar acceptatie
   en visueel gecontroleerd op de live mobiele inlogpagina.

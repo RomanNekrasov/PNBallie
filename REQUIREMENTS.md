@@ -361,6 +361,14 @@ geen echte mailbox en krijgt geen stilzwijgende verificatie-uitzondering.
 - [x] Illustratie links verwijderen en één gecentreerde login binnen de herkenbare voetbaltafel plaatsen, met dezelfde veld- en tafelkleuren als scoreregistratie.
 - [x] Mobiel/desktop controleren, documenteren en naar acceptatie uitrollen; productie blijft ongewijzigd.
 
+## Productiepromotie — 16 september 2026
+
+- [x] Promoveer de geteste acceptatie-images en benodigde authenticatie-, mail-, avatar- en observabilityconfiguratie naar pnballie.nl.
+- [x] Behoud de productiewedstrijden en spelers; maak en controleer een verse versleutelde backup en migratieproef.
+- [x] Neem uitsluitend het al geverifieerde persoonlijke account van de operator over, maak het beheerder en koppel het aan de bestaande speler Roman.
+- [x] Verwijder het ongebruikte spelersprofiel Beheerder zonder wedstrijdhistorie te verwijderen; kopieer geen demodata.
+- [x] Controleer productie, rechten, data, backups en metingen; documenteer de overgang.
+
 ## Tafelrand — 16 september 2026
 
 - [x] Teken de witte doellijnen achter de bruine tafelrand in de gedeelde tafelillustratie.
