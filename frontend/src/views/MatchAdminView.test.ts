@@ -49,3 +49,11 @@ it('keeps a conflict visible and reloads instead of retrying a mutation',async()
   expect(apiMock.mock.calls.filter(([,o])=>o?.method==='PUT')).toHaveLength(1)
   wrapper.unmount()
 })
+
+it('shows the original recorder and an explicit unknown for historical matches',async()=>{
+  apiMock.mockImplementation(async(path:string)=>path.startsWith('/api/matches') ? [{...match, recorded_by:{user_id:8,name:'Scorekeeper'}},{...match,id:9,recorded_by:null}] : players)
+  const wrapper=await view()
+  expect(wrapper.text()).toContain('Ingevoerd door Scorekeeper')
+  expect(wrapper.text()).toContain('Ingevoerd door Onbekend')
+  wrapper.unmount()
+})

@@ -28,6 +28,7 @@ def test_upgrade_preserves_legacy_history_and_matches_metadata(tmp_path, monkeyp
     with engine.connect() as connection:
         assert connection.execute(sa.text("SELECT id,name,group_id,user_id,is_active FROM player ORDER BY id")).all() == [(11, "Historic A", 1, None, 1), (12, "Historic B", 1, None, 1)]
         assert connection.execute(sa.text('SELECT id,orange_score,blue_score,played_at,group_id FROM "match"')).one() == (21, 10, 6, "2026-07-01 11:30:00", 1)
+        assert connection.execute(sa.text('SELECT recorded_by_user_id, recorded_by_name FROM "match"')).one() == (None, None)
         assert connection.execute(sa.text("SELECT COUNT(*) FROM match_player")).scalar() == 2
         assert connection.execute(sa.text("SELECT COUNT(*) FROM membership")).scalar() == 0
         assert connection.execute(sa.text('SELECT is_legacy FROM "group" WHERE id=1')).scalar() == 1

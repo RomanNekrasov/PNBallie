@@ -156,6 +156,8 @@ class Match(SQLModel, table=True):
     orange_score: int = Field(ge=0, le=10)
     blue_score: int = Field(ge=0, le=10)
     played_at: datetime = Field(default_factory=utc_now)
+    recorded_by_user_id: int | None = Field(default=None, foreign_key="app_user.id", ondelete="SET NULL")
+    recorded_by_name: str | None = Field(default=None, max_length=80)
 
     players: list["MatchPlayer"] = Relationship(back_populates="match")
 
@@ -193,12 +195,18 @@ class MatchPlayerOut(BaseModel):
     position: str
 
 
+class MatchRecorder(BaseModel):
+    user_id: int | None
+    name: str
+
+
 class MatchRead(BaseModel):
     id: int
     orange_score: int
     blue_score: int
     played_at: datetime
     players: list[MatchPlayerOut]
+    recorded_by: MatchRecorder | None = None
 
     _utc_played = field_validator("played_at")(as_utc)
 

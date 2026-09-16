@@ -19,6 +19,7 @@ export interface Match {
   orange_score: number
   blue_score: number
   played_at: string
+  recorded_by?: { user_id: number | null; name: string } | null
   players: MatchPlayerEntry[]
 }
 

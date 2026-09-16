@@ -162,3 +162,19 @@ dan niet dat een event is opgeslagen. De gebruikssamenvattingen zijn per dag;
 gebruik kalenderdagbereiken voor die panelen.
 OIDC vereist nog de eerder beschreven echte providerconfiguratie; dat staat
 los van deze werkende telemetry- en analyticsaansluiting.
+
+## Groepen, accounts en spelers tellen
+
+Grafana **PNBallie · Application operations** toont actuele databaseaantallen
+bovenaan: groepen, accounts, alle spelersprofielen en actieve spelersprofielen.
+Selecteer de omgeving via **Deployment** (`pnballie` voor productie,
+`pnballie-acceptance` voor acceptatie). Een account kan meerdere spelersprofielen
+hebben, één per groep. Accounts tellen ook mee zonder groep of e-mailbevestiging;
+spelers omvatten ook handmatig aangemaakte profielen zonder account.
+
+De private API-scrape levert `pnballie_entities{entity="groups|accounts|players|active_players"}`.
+Dit zijn actuele aantallen, geen cumulatieve ‘ooit aangemaakt’-tellers. Ze kunnen
+dalen bij verwijderen of samenvoegen. Prometheus bewaart opeenvolgende metingen;
+Umami meet bezoek en interactie en is niet de bron voor deze databaseaantallen.
+Er worden geen accountnamen, e-mails of groeps-ID’s als metriclabels toegevoegd.
+Een mislukte databaselezing levert geen oude waarde als nieuwe meting op.

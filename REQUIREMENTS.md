@@ -395,3 +395,11 @@ geen echte mailbox en krijgt geen stilzwijgende verificatie-uitzondering.
 - [x] Pas statistieken, ELO en historisch afgeleide badges toe op de gecorrigeerde geschiedenis.
 - [x] Maak het expliciet aangewezen, geverifieerde acceptatieaccount beheerder van Democompetitie; behoud overige rechten en gegevens.
 - [x] Documenteer/test/publiceer en controleer op acceptatie; productie blijft op de bestaande release.
+
+
+## Registratieherkomst en platformaantallen — 16 september 2026
+
+- [ ] Iedere nieuwe wedstrijd bewaart het registrerende account en de naam op dat moment; de server bepaalt dit uit de ingelogde gebruiker.
+- [ ] Wedstrijdbeheer toont ‘Ingevoerd door …’; bestaande wedstrijden blijven onbekend en wijzigen overschrijft de oorspronkelijke invoerder niet.
+- [ ] Grafana toont actuele groepen, accounts, spelersprofielen en actieve spelers per omgeving, rechtstreeks uit de database en zonder persoonsgegevens in metrics.
+- [ ] Migratie, toegangsrechten, vervalsingsbescherming en live acceptatie/productie worden gecontroleerd; documentatie en changelog worden bijgewerkt.
