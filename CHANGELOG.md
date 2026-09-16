@@ -9,7 +9,9 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
   oorspronkelijke invoerder bij de wedstrijd. Historische invoerders blijven onbekend.
 - Nieuwe private metrics tellen groepen, accounts en spelers rechtstreeks uit
   de database voor het Grafana-dashboard. 231 backendtests, 109 frontendtests,
-  lint/build en de lokale beheerweergave slagen.
+  lint/build en de lokale beheerweergave slagen. Acceptatie en productie zijn
+  bijgewerkt; live score-/invoerdercontroles en vergelijking van Grafana met de
+  database slagen. Alle bestaande gegevens zijn behouden.
 
 - Koppelen aan een bestaande speler ruimt het vorige profiel zonder wedstrijden op,
   zodat geen inactief dubbel profiel achterblijft. Bestaande doelavatars en
