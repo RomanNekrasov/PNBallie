@@ -39,19 +39,20 @@ def own_player(group: GroupContext, session: Session) -> Player:
 async def configuration(group: GroupContext = Depends(require_group)):
     config = AvatarSettings.from_env()
     return {"local_available": config.local_available, "openai_available": config.openai_available,
+            "azure_available": config.azure_available, "default_provider": config.default_provider,
             "max_upload_bytes": MAX_UPLOAD_BYTES, "local_status": await local_status(config),
             "local_style": config.local_style}
 
 
 @router.post("/me/jobs", status_code=202, response_model=AvatarJobRead)
-async def upload(request: Request, provider: Literal["local", "openai"] = "local",
+async def upload(request: Request, provider: Literal["local", "openai", "azure"] = "local",
                  cloud_consent: bool = False, group: GroupContext = Depends(require_group),
                  session: Session = Depends(get_session)):
     player = own_player(group, session)
-    if provider == "openai" and not cloud_consent:
-        raise HTTPException(422, "Geef toestemming voordat je de foto naar OpenAI stuurt.")
+    if provider in {"openai", "azure"} and not cloud_consent:
+        raise HTTPException(422, "Geef toestemming voordat je de foto naar de clouddienst stuurt.")
     config = AvatarSettings.from_env()
-    if not (config.local_available if provider == "local" else config.openai_available):
+    if not config.available(provider):
         raise HTTPException(503, "Deze afbeeldingsdienst is nog niet ingesteld.")
     if provider == "local":
         state = await local_status(config)

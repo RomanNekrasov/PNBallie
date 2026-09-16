@@ -783,3 +783,86 @@ def test_isolated_model_timeout_terminates_its_process_group(monkeypatch):
     with pytest.raises(subprocess.TimeoutExpired):
         avatar_service.generate_in_subprocess(png(), png())
     assert events == [(1234, signal.SIGTERM), "reaped"]
+
+
+def test_azure_queue_requires_consent_and_keeps_provider_after_default_switch(api, monkeypatch):
+    client, database, _ = api
+    monkeypatch.setenv("AZURE_OPENAI_API_KEY", "test-azure-key")
+    monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://example.cognitiveservices.azure.com/")
+    monkeypatch.setenv("AZURE_OPENAI_IMAGE_DEPLOYMENT", "gpt-image-2")
+    monkeypatch.setenv("AVATAR_DEFAULT_PROVIDER", "azure")
+    config = client.get("/api/avatars/config").json()
+    assert config["azure_available"] and config["local_available"]
+    assert config["default_provider"] == "azure"
+    assert "test-azure-key" not in str(config) and "endpoint" not in str(config)
+    assert enqueue(client, params={"provider": "azure"}).status_code == 422
+    result = enqueue(client, params={"provider": "azure", "cloud_consent": True})
+    assert result.status_code == 202
+    job_id = result.json()["id"]
+    monkeypatch.setenv("AVATAR_DEFAULT_PROVIDER", "local")
+
+    class AzureStub:
+        def generate(self, **kwargs):
+            assert kwargs["provider"] == "azure" and kwargs["cloud_consent"] is True
+            return png()
+
+    assert run_once(database, AzureStub())
+    assert client.get(f"/api/avatars/jobs/{job_id}").json()["provider"] == "azure"
+    with Session(database) as session:
+        assert session.get(AvatarJob, job_id).source_png is None
+        assert session.get(PlayerAvatar, 1) is not None
+
+
+def test_azure_edits_contract_and_cloud_timeout_never_retries(tmp_path):
+    reference = tmp_path / "template.png"
+    reference.write_bytes(png())
+    settings = AvatarSettings("", "", "", "", reference, azure_key="azure-unit-key",
+                              azure_endpoint="https://example.cognitiveservices.azure.com",
+                              azure_deployment="gpt-image-2", azure_reference_path=reference)
+    calls = []
+
+    def handle(request):
+        calls.append(request)
+        assert str(request.url) == "https://example.cognitiveservices.azure.com/openai/v1/images/edits?api-version=preview"
+        assert request.headers["api-key"] == "azure-unit-key"
+        assert all(name not in request.headers for name in ("authorization", "traceparent", "tracestate", "baggage"))
+        body = request.content
+        assert body.count(b'name="image[]"') == 2
+        for value in (b'gpt-image-2', b'transparent', b'1024x1024', b'high'):
+            assert value in body
+        assert b'Geen fotografisch uitgeknipt hoofd' in body
+        return httpx.Response(200, json={"data": [{"b64_json": base64.b64encode(png()).decode()}]})
+
+    provider = AvatarProvider(settings, transport=httpx.MockTransport(handle))
+    with pytest.raises(AvatarProviderError):
+        provider.generate(source_png=png(), provider="azure", cloud_consent=False, job_id="a")
+    assert not calls
+    assert validate_transparent_png(provider.generate(source_png=png(), provider="azure", cloud_consent=True, job_id="a"))
+    assert len(calls) == 1
+
+    def timeout(request):
+        raise httpx.ReadTimeout("private upstream detail", request=request)
+
+    with pytest.raises(AvatarProviderError) as error:
+        AvatarProvider(settings, transport=httpx.MockTransport(timeout)).generate(
+            source_png=png(), provider="azure", cloud_consent=True, job_id="a")
+    assert not error.value.retryable and "private upstream detail" not in str(error.value)
+
+
+@pytest.mark.parametrize("endpoint", [
+    "http://example.openai.azure.com", "https://attacker.example", "https://example.openai.azure.com.evil.test",
+    "https://user:pass@example.openai.azure.com", "https://example.openai.azure.com/path",
+    "https://example.openai.azure.com?redirect=evil", "https://example.openai.azure.com:8443",
+])
+def test_azure_rejects_invalid_endpoint_before_sending_credentials(tmp_path, endpoint):
+    reference = tmp_path / "reference.png"
+    reference.write_bytes(png())
+    settings = AvatarSettings("", "", "", "", reference, azure_key="secret",
+                              azure_endpoint=endpoint, azure_deployment="gpt-image-2",
+                              azure_reference_path=reference)
+    assert not settings.azure_available
+    def unexpected(_):
+        pytest.fail("No outbound request expected")
+    with pytest.raises(AvatarProviderError):
+        AvatarProvider(settings, transport=httpx.MockTransport(unexpected)).generate(
+            source_png=png(), provider="azure", cloud_consent=True, job_id="a")

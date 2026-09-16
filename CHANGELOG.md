@@ -5,6 +5,14 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 
 ## Unreleased — 2026-09-16
 
+### Added
+
+- Azure OpenAI avatars using the tested GPT Image 2 portrait/template prompt,
+  alongside the existing Qwen and direct OpenAI options. The profile respects
+  a configurable default and requests fresh consent for cloud processing.
+  Queued jobs retain their provider when the default changes; Azure is selected
+  for the acceptance rollout only.
+
 - Nieuwe wedstrijden bewaren wie ze heeft ingevoerd; groepsbeheerders zien de
   oorspronkelijke invoerder bij de wedstrijd. Historische invoerders blijven onbekend.
 - Nieuwe private metrics tellen groepen, accounts en spelers rechtstreeks uit
