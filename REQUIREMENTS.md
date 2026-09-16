@@ -364,7 +364,7 @@ geen echte mailbox en krijgt geen stilzwijgende verificatie-uitzondering.
 ## Tafelrand — 16 september 2026
 
 - [x] Teken de witte doellijnen achter de bruine tafelrand in de gedeelde tafelillustratie.
-- [ ] Controleer de weergave en rol uit naar acceptatie.
+- [x] Controleer de weergave en rol uit naar acceptatie (PR 34; homelab PR 73; live mobiele login gecontroleerd).
 
 ## Rustige statistieken en wedstrijdbeheer — 16 september 2026
 
