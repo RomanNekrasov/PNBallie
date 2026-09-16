@@ -5,6 +5,9 @@ Requirements en acceptatiestatus staan in `REQUIREMENTS.md`.
 
 ## Unreleased — 2026-09-16
 
+- Wins per kleur toont één verdeling die de spelvorm onder het tandwiel volgt,
+  in plaats van totaal, 1v1 en 2v2 tegelijk.
+
 ### Productiepromotie
 
 - De geteste acceptatieversie draait op productie met lokale login, e-mailverificatie,

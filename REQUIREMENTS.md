@@ -361,6 +361,11 @@ geen echte mailbox en krijgt geen stilzwijgende verificatie-uitzondering.
 - [x] Illustratie links verwijderen en één gecentreerde login binnen de herkenbare voetbaltafel plaatsen, met dezelfde veld- en tafelkleuren als scoreregistratie.
 - [x] Mobiel/desktop controleren, documenteren en naar acceptatie uitrollen; productie blijft ongewijzigd.
 
+## Wins per kleur — 16 september 2026
+
+- [x] Toon één kleurverdeling voor de spelvorm onder Tandwiel → Statistieken bekijken; standaard alles samen, optioneel alleen 1v1 of 2v2.
+- [ ] Controleer alle drie keuzes en rol de frontend via acceptatie uit naar productie.
+
 ## Productiepromotie — 16 september 2026
 
 - [x] Promoveer de geteste acceptatie-images en benodigde authenticatie-, mail-, avatar- en observabilityconfiguratie naar pnballie.nl.

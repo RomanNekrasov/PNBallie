@@ -73,9 +73,7 @@
             <article v-stats-block="'colour_wins'" class="broadcast-panel section-card">
               <div class="section-title"><span>Wins per kleur</span></div>
               <div class="format-lines">
-                <ColorBar label="Totaal" :orange="stats.global.orange_wins" :blue="stats.global.blue_wins" />
-                <ColorBar v-if="mode !== '2v2'" label="1v1" :orange="stats.global.orange_wins_1v1" :blue="stats.global.blue_wins_1v1" />
-                <ColorBar v-if="mode !== '1v1'" label="2v2" :orange="stats.global.orange_wins_2v2" :blue="stats.global.blue_wins_2v2" />
+                <ColorBar :label="stats.filters.mode === 'all' ? 'Alles samen' : stats.filters.mode" :orange="stats.global.orange_wins" :blue="stats.global.blue_wins" />
               </div>
             </article>
 
