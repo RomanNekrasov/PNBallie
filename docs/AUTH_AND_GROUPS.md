@@ -339,3 +339,17 @@ Statistieken, ELO en historisch afgeleide badges worden bij de volgende aanvraag
 uit de gecorrigeerde geschiedenis berekend. Clubstatistieken toont alle historie;
 spelvorm staat onder **tandwiel → Statistieken bekijken → Spelvorm**. Een actieve
 1v1/2v2-filter wordt kort vermeld; de periodekeuze en dubbele duelteller zijn weg.
+
+
+De uitbreiding is gepubliceerd als apprelease `6fc85d0b` en via homelab-PR 71
+uitgerold naar acceptatie (`618c35d7`). Alle twaalf Flux-resources zijn ready.
+221 backendtests en 108 frontendtests slagen. De browsercontrole gebruikte een
+private lokale databasekopie voor menu, mobiele/desktopindeling en scorecorrectie.
+Op Spark voert de echte ARM64-release dezelfde API-routes uit tegen een aparte
+in-memorydatabase: aanmaken, wijzigen, UTC, statistieken, stale-write-conflicten,
+CSRF en verwijderen slagen zonder de echte database te beschrijven.
+Publieke routes en de nieuwe assets zijn bereikbaar; anonieme API-toegang blijft
+geweigerd. Vergelijking met backup `38036556` bewaart alle oorspronkelijke
+account-, competitie-, wedstrijd- en avatarrecords. Alleen het expliciet
+gevraagde lidmaatschap in Democompetitie is naar beheerder gewijzigd. Productie
+houdt zijn bestaande images. Vernieuw de pagina om groepsrechten opnieuw te laden.
