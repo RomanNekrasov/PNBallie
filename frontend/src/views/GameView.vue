@@ -10,11 +10,7 @@
         title="Clubstatistieken"
         @click="router.push('/stats')"
       >
-        <svg viewBox="0 0 32 32" width="25" height="25" fill="none" aria-hidden="true">
-          <path d="M5 15 16 6l11 9v11H5V15Z" fill="currentColor" opacity=".2" />
-          <path d="m3.5 16 12.5-10 12.5 10M6 14.5V27h20V14.5M12 27v-8h8v8" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" />
-          <path d="M10 14h3m6 0h3" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" />
-        </svg>
+        <GameIcon asset="clubhouse" fallback="🏠" :size="38" />
       </button>
 
       <!-- Orange Score (top center) -->
@@ -37,6 +33,7 @@
           :player-name="playerName('blue_back')"
           :player-avatar="playerAvatarAt('blue_back')"
           :crowned="isLeader('blue_back')"
+          :win-streak="winStreakAt('blue_back')"
           @tap="openModal('blue_back')"
           @dropped="(from, to) => swapPlayers(from, to)"
         />
@@ -52,6 +49,7 @@
           :player-name="playerName('orange_front')"
           :player-avatar="playerAvatarAt('orange_front')"
           :crowned="isLeader('orange_front')"
+          :win-streak="winStreakAt('orange_front')"
           @tap="openModal('orange_front')"
           @dropped="(from, to) => swapPlayers(from, to)"
         />
@@ -67,6 +65,7 @@
           :player-name="playerName('blue_front')"
           :player-avatar="playerAvatarAt('blue_front')"
           :crowned="isLeader('blue_front')"
+          :win-streak="winStreakAt('blue_front')"
           @tap="openModal('blue_front')"
           @dropped="(from, to) => swapPlayers(from, to)"
         />
@@ -82,6 +81,7 @@
           :player-name="playerName('orange_back')"
           :player-avatar="playerAvatarAt('orange_back')"
           :crowned="isLeader('orange_back')"
+          :win-streak="winStreakAt('orange_back')"
           @tap="openModal('orange_back')"
           @dropped="(from, to) => swapPlayers(from, to)"
         />
@@ -173,6 +173,7 @@
       :current-player-id="modalPosition ? selectedPlayers[modalPosition] : null"
       :selected-players="selectedPlayers"
       :leader-player-ids="leaderPlayerIds"
+      :player-win-streaks="playerWinStreaks"
       :position="modalPosition!"
       @close="modalOpen = false"
       @select="handlePlayerSelect"
@@ -195,6 +196,8 @@ import SubmitButton from '../components/SubmitButton.vue'
 import MatchHistoryModal from '../components/MatchHistoryModal.vue'
 import { playerAvatar } from '../playerAvatar'
 import { isGroupAdmin } from '../auth'
+import { gameAssetUrl } from '../gameAssets'
+import GameIcon from '../components/GameIcon.vue'
 
 const router = useRouter()
 const { players, fetchPlayers } = usePlayers()
@@ -220,6 +223,9 @@ const rotationAnimating = ref(false)
 const leaderPlayerIds = computed(() => stats.value?.leaderboard
   .filter(entry => entry.rank === 1)
   .map(entry => entry.player_id) ?? [])
+const playerWinStreaks = computed<Record<number, number>>(() => Object.fromEntries(
+  (stats.value?.players ?? []).map(player => [player.player_id, player.current_winstreak]),
+))
 const canRotatePlayers = computed(() => {
   if (playerCount.value === 4) return true
   if (playerCount.value !== 2) return false
@@ -239,9 +245,14 @@ function spawnBounce(e: MouseEvent | TouchEvent) {
     suppressCustomCursor()
   }
 
-  const el = document.createElement('div')
+  const src = gameAssetUrl('football')
+  if (!src) return
+  const el = document.createElement('img')
   el.className = 'ball-bounce'
-  el.textContent = '\u26BD'
+  el.src = src
+  el.alt = ''
+  el.setAttribute('aria-hidden', 'true')
+  el.draggable = false
   const x = 'touches' in e ? e.touches[0]!.clientX : (e as MouseEvent).clientX
   const y = 'touches' in e ? e.touches[0]!.clientY : (e as MouseEvent).clientY
   el.style.left = `${x}px`
@@ -300,9 +311,15 @@ function onCursorPointerMove(e: PointerEvent) {
 function enableCustomCursor() {
   if (!window.matchMedia('(pointer: fine)').matches) return
 
-  const el = document.createElement('div')
+  const src = gameAssetUrl('football')
+  if (!src) return
+  const el = document.createElement('img')
   el.className = 'football-cursor-ball'
-  el.textContent = '\u26BD'
+  el.src = src
+  el.alt = ''
+  el.setAttribute('aria-hidden', 'true')
+  el.draggable = false
+  el.addEventListener('error', disableCustomCursor, { once: true })
   el.style.opacity = '0'
   document.body.appendChild(el)
 
@@ -366,6 +383,10 @@ function playerAvatarAt(position: Position): string | null {
 function isLeader(position: Position): boolean {
   const id = playerId(position)
   return id !== null && leaderPlayerIds.value.includes(id)
+}
+
+function winStreakAt(position: Position): number {
+  return playerWinStreaks.value[playerId(position) ?? -1] ?? 0
 }
 
 function playerIdentityRects(): Map<number, DOMRect> {
@@ -467,11 +488,8 @@ body.football-cursor * {
   height: 28px;
   pointer-events: none;
   z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  line-height: 1;
+  display: block;
+  object-fit: contain;
   transform: translate(-50%, -50%) rotate(0deg);
   will-change: transform, left, top;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.55));
@@ -489,7 +507,9 @@ body.football-cursor * {
 .ball-bounce {
   position: fixed;
   pointer-events: none;
-  font-size: 28px;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
   z-index: 9999;
   animation: ball-bounce 0.5s ease-out forwards;
 }

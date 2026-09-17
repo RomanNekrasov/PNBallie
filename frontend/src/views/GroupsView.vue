@@ -7,7 +7,7 @@
     <p v-if="error" class="account-error" role="alert">{{ error }}</p>
     <section v-if="groups.length" class="group-grid" aria-label="Je groepen">
       <button v-for="group in groups" :key="group.id" class="group-card" :class="{ selected: group.id === currentGroup?.id }" @click="openGroup(group.id)">
-        <span class="group-emblem" aria-hidden="true">⚽</span>
+        <GameIcon asset="football" fallback="⚽" class="group-emblem" :size="48" />
         <strong>{{ group.name }}</strong><small>{{ group.role === 'admin' ? 'Beheerder' : 'Speler' }}</small>
         <span class="group-open">Open groep <span aria-hidden="true">→</span></span>
       </button>
@@ -37,6 +37,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import GameIcon from '../components/GameIcon.vue'
 import { currentGroup, groups, refreshGroups, selectGroup, type Group } from '../auth'
 import { api } from '../composables/useApi'
 import SettingsMenu from '../components/SettingsMenu.vue'

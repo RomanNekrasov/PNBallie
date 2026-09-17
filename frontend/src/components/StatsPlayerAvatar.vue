@@ -1,5 +1,6 @@
 <template>
   <span class="stats-avatar" :style="avatarStyle">
+    <PlayerFlames :win-streak="winStreak" />
     <CrownIcon v-if="crowned" class="stats-avatar-crown" />
     <img
       v-if="resolvedAvatarUrl"
@@ -15,15 +16,18 @@
 import { computed } from 'vue'
 import { playerAvatar, playerInitials } from '../playerAvatar'
 import CrownIcon from './CrownIcon.vue'
+import PlayerFlames from './PlayerFlames.vue'
 
 const props = withDefaults(defineProps<{
   name: string
   avatarUrl?: string | null
   size?: number
   crowned?: boolean
+  winStreak?: number
 }>(), {
   size: 48,
   crowned: false,
+  winStreak: 0,
 })
 
 const resolvedAvatarUrl = computed(() => props.avatarUrl || playerAvatar(props.name))
@@ -32,7 +36,7 @@ const avatarStyle = computed(() => ({
   width: `${props.size}px`,
   height: `${props.size}px`,
   '--crown-size': `${Math.round(props.size * 0.4)}px`,
-  '--crown-top': `${Math.round(props.size * -0.24)}px`,
+  '--crown-top': `${Math.round(props.size * -0.32)}px`,
   '--initials-size': `${Math.round(props.size * 0.34)}px`,
 }))
 </script>
@@ -40,13 +44,16 @@ const avatarStyle = computed(() => ({
 <style scoped>
 .stats-avatar {
   position: relative;
+  isolation: isolate;
   flex: 0 0 auto;
   display: inline-grid;
   place-items: center;
   overflow: visible;
 }
 
-.stats-avatar img {
+.stats-avatar > img {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -55,6 +62,8 @@ const avatarStyle = computed(() => ({
 }
 
 .stats-avatar-fallback {
+  position: relative;
+  z-index: 1;
   width: 82%;
   height: 82%;
   display: grid;

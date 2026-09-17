@@ -53,3 +53,6 @@ frontend/public/config.json
 infra/prod/terraform.tfvars
 
 .local-data/
+
+# Local generated asset previews; selected app assets are copied separately.
+output/imagegen/

@@ -129,6 +129,17 @@ echte transparantie via Qwen Image Layered, lifecycle, runtime-inrichting en de
 grenzen van de uitgevoerde tests. Een geslaagde wachtrijtest is geen bewijs van
 beeldkwaliteit op de GPU.
 
+## Badges en iconen genereren
+
+Met `scripts/generate_assets.py` genereer je losse PNG-assets via dezelfde
+Azure/OpenAI-configuratie als de avatars. De catalogus bevat zestien assets en
+drie basisstijlen. **B · 3D-gamebadge** is gekozen en wordt gebruikt voor de badges,
+records, het kroontje van de nummer één, de winreeksvlam, de voetbal en het clubhuis op de startpagina.
+A en C blijven beschikbaar. `preview` maakt
+vergelijkingsbeelden, `select` bewaart de standaardstijl en `export` maakt kleine
+WebP-assets voor de frontend. Zie de
+[handleiding voor assetgeneratie](docs/ASSET_GENERATION.md).
+
 ## Telemetry en analytics
 
 Optionele OpenTelemetry-traces, veilige JSON/OTLP-logs en Prometheus-metrics

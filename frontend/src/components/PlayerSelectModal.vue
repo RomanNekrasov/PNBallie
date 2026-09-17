@@ -26,6 +26,7 @@
           >
             <span v-if="currentPlayerId === player.id" class="selected-check" aria-label="Huidige selectie">✓</span>
             <span class="choice-avatar-wrap">
+              <PlayerFlames :win-streak="playerWinStreaks?.[player.id] ?? 0" />
               <CrownIcon v-if="leaderIds.has(player.id)" class="choice-crown" />
               <img
                 v-if="playerAvatar(player.name, player.avatar_url)"
@@ -59,6 +60,7 @@ import { computed } from 'vue'
 import type { Player, Position } from '../types'
 import { playerAvatar, playerInitials } from '../playerAvatar'
 import CrownIcon from './CrownIcon.vue'
+import PlayerFlames from './PlayerFlames.vue'
 
 const props = defineProps<{
   open: boolean
@@ -66,6 +68,7 @@ const props = defineProps<{
   currentPlayerId: number | null
   selectedPlayers: Record<Position, number | null>
   leaderPlayerIds: number[]
+  playerWinStreaks?: Record<number, number>
   position: Position
 }>()
 
@@ -138,6 +141,8 @@ function select(playerId: number | null) {
 }
 
 .choice-avatar {
+  position: relative;
+  z-index: 1;
   width: 86px;
   height: 86px;
   object-fit: contain;
@@ -148,6 +153,7 @@ function select(playerId: number | null) {
 
 .choice-avatar-wrap {
   position: relative;
+  isolation: isolate;
   display: grid;
   place-items: center;
 }
@@ -155,7 +161,7 @@ function select(playerId: number | null) {
 .choice-crown {
   position: absolute;
   z-index: 2;
-  top: -11px;
+  top: -18px;
   left: 50%;
   width: 28px;
   height: auto;

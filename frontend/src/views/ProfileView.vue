@@ -12,7 +12,7 @@
         <section class="account-panel">
           <h2>{{ player.name }}</h2>
           <div class="profile-preview">
-            <div class="avatar-checker"><img v-if="avatarUrl" :src="avatarUrl" :alt="'Avatar van ' + player.name" /><span v-else>{{ playerInitials(player.name) }}</span></div>
+            <div class="avatar-checker"><PlayerFlames :win-streak="profileStats?.current_winstreak ?? 0" /><img v-if="avatarUrl" :src="avatarUrl" :alt="'Avatar van ' + player.name" /><span v-else>{{ playerInitials(player.name) }}</span></div>
             <div><p class="account-kicker">{{ currentGroup?.role === 'admin' ? 'BEHEERDER' : 'SPELER' }}</p><p class="account-muted">{{ authUser?.email }}</p></div>
           </div>
           <form class="account-form" @submit.prevent="saveProfile">
@@ -78,6 +78,7 @@ import { authUser, changePassword, currentGroup, refreshGroups } from '../auth'
 import { api } from '../composables/useApi'
 import { useStats } from '../composables/useStats'
 import PlayerBadges from '../components/PlayerBadges.vue'
+import PlayerFlames from '../components/PlayerFlames.vue'
 import SettingsMenu from '../components/SettingsMenu.vue'
 import { playerAvatar, playerInitials } from '../playerAvatar'
 import { formatLocalDateTime, parseUtcTimestamp } from '../dateTime'
@@ -107,7 +108,8 @@ const newPassword = ref('')
 const repeatPassword = ref('')
 const { stats, fetchStats } = useStats()
 const avatarUrl = computed(() => playerAvatar(player.value?.name, player.value?.avatar_url))
-const badges = computed(() => stats.value?.players.find(entry => entry.player_id === player.value?.id)?.badges ?? [])
+const profileStats = computed(() => stats.value?.players.find(entry => entry.player_id === player.value?.id))
+const badges = computed(() => profileStats.value?.badges ?? [])
 const jobActive = computed(() => job.value?.status === 'queued' || job.value?.status === 'processing')
 const localBlocked = computed(() => ['capacity', 'unavailable'].includes(config.value?.local_status ?? ''))
 const canRequest = computed(() => config.value?.available && (provider.value !== 'local' || !localBlocked.value))

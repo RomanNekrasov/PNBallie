@@ -1,0 +1,271 @@
+{
+  "style": "game3d",
+  "style_label": "B · 3D-gamebadge",
+  "export": {
+    "size": [
+      256,
+      256
+    ],
+    "visible_max": 224,
+    "alpha_cutoff": 16,
+    "lossless": true
+  },
+  "assets": {
+    "first_win": {
+      "label": "Eerste winst",
+      "source_file": "first_win--game3d.png",
+      "source_sha256": "50ca5b210187ca5918e8adf9e128e578748b96a7907e7cb2a6dacca24f515c37",
+      "web_sha256": "41a904c28fa9d50f095d93b7e1e69cb2c276f2ec1e00b9114ac3428bc184d891",
+      "source_bounds": [
+        136,
+        74,
+        910,
+        910
+      ],
+      "provider": "azure",
+      "model": "gpt-image-2",
+      "prompt": "Use case: stylized-concept. Create exactly one standalone game UI icon for PNBallie, a playful table-football competition app. Square composition, centered, approximately 12 percent empty margin on every side. A strong, instantly readable silhouette at 32 to 48 pixels. Consistent upper-left lighting. Rich but controlled colors, warm gold and orange accents with cool navy contrasts; readable on both dark navy and light backgrounds. Real transparent background with alpha. No backdrop, floor, external cast shadow, text, letters, numbers, watermark, checkerboard, surrounding UI, duplicate objects or multiple alternative designs. Keep the subject compact and avoid tiny decorative details. The asset title and meaning are context only and must never appear as text in the image.\n\nStyle: premium stylized 3D sports-game reward icon. Chunky sculpted shapes, rounded bevels, glossy enamel and satin metal, warm specular highlights, subtle self-shadowing and lively proportions. Near-front view with a slight three-quarter angle for depth. Playful collectible toy quality, controlled reflections, clean silhouette. No pixelation, realism, thin linework or ground plane.\n\nAsset title (context only): Eerste winst. Meaning: Je eerste wedstrijd gewonnen.\n\nSubject: A bright gold five-pointed star with a small black-and-white football inset at its center, plus two small sparkle accents. Welcoming first-victory reward, simple and immediately recognizable.",
+      "quality": "high"
+    },
+    "muurvast": {
+      "label": "Muurvast",
+      "source_file": "muurvast--game3d.png",
+      "source_sha256": "a873c3e87f3cb1f765548fa841cc68e003348b04538a6e814d6621f1ff60d3b3",
+      "web_sha256": "a44ed4be46aa2fda20fee835efa40ab21f76c29c954fa89630e8485abcd0c271",
+      "source_bounds": [
+        58,
+        90,
+        973,
+        903
+      ],
+      "provider": "azure",
+      "model": "gpt-image-2",
+      "prompt": "Use case: stylized-concept. Create exactly one standalone game UI icon for PNBallie, a playful table-football competition app. Square composition, centered, approximately 12 percent empty margin on every side. A strong, instantly readable silhouette at 32 to 48 pixels. Consistent upper-left lighting. Rich but controlled colors, warm gold and orange accents with cool navy contrasts; readable on both dark navy and light backgrounds. Real transparent background with alpha. No backdrop, floor, external cast shadow, text, letters, numbers, watermark, checkerboard, surrounding UI, duplicate objects or multiple alternative designs. Keep the subject compact and avoid tiny decorative details. The asset title and meaning are context only and must never appear as text in the image.\n\nStyle: premium stylized 3D sports-game reward icon. Chunky sculpted shapes, rounded bevels, glossy enamel and satin metal, warm specular highlights, subtle self-shadowing and lively proportions. Near-front view with a slight three-quarter angle for depth. Playful collectible toy quality, controlled reflections, clean silhouette. No pixelation, realism, thin linework or ground plane.\n\nAsset title (context only): Muurvast. Meaning: Minste goals tegen per wedstrijd, minimaal tien wedstrijden.\n\nSubject: A compact wall of red terracotta bricks standing in front of a small football goal. A black-and-white football visibly rebounds off the wall, with just two short impact marks. The wall is the dominant shape; the goal is a simple secondary outline. Sturdy, impenetrable defense.",
+      "quality": "high"
+    },
+    "doelpuntenmachine": {
+      "label": "Doelpuntenmachine",
+      "source_file": "doelpuntenmachine--game3d.png",
+      "source_sha256": "883924c2532a15c07602562e3fed2d5b98e5c8991411404d89b9bdb029417b7d",
+      "web_sha256": "c1e8be9ef99834e6094b4c45402cdd39f267789a805a15e3107924377b8c47da",
+      "source_bounds": [
+        98,
+        57,
+        975,
+        933
+      ],
+      "provider": "azure",
+      "model": "gpt-image-2",
+      "prompt": "Use case: stylized-concept. Create exactly one standalone game UI icon for PNBallie, a playful table-football competition app. Square composition, centered, approximately 12 percent empty margin on every side. A strong, instantly readable silhouette at 32 to 48 pixels. Consistent upper-left lighting. Rich but controlled colors, warm gold and orange accents with cool navy contrasts; readable on both dark navy and light backgrounds. Real transparent background with alpha. No backdrop, floor, external cast shadow, text, letters, numbers, watermark, checkerboard, surrounding UI, duplicate objects or multiple alternative designs. Keep the subject compact and avoid tiny decorative details. The asset title and meaning are context only and must never appear as text in the image.\n\nStyle: premium stylized 3D sports-game reward icon. Chunky sculpted shapes, rounded bevels, glossy enamel and satin metal, warm specular highlights, subtle self-shadowing and lively proportions. Near-front view with a slight three-quarter angle for depth. Playful collectible toy quality, controlled reflections, clean silhouette. No pixelation, realism, thin linework or ground plane.\n\nAsset title (context only): Doelpuntenmachine. Meaning: Meeste goals voor per wedstrijd, minimaal tien wedstrijden.\n\nSubject: A black-and-white football shooting diagonally forward from a compact steel mechanical gear, with a short orange burst and two clear speed streaks. The ball and gear remain clearly separated and recognizable. Energetic goal-scoring machine, a compact single icon.",
+      "quality": "high"
+    },
+    "win_streak_5": {
+      "label": "Vijf op rij",
+      "source_file": "win_streak_5--game3d.png",
+      "source_sha256": "f6fa71de31060cd64fffe3bd8e7750b4ff635763bd7d444e926ad3463d4bfc37",
+      "web_sha256": "d22547d49a1efe098e2ff72f5263c595c47cab945eb115868db573b9a013d208",
+      "source_bounds": [
+        201,
+        26,
+        812,
+        949
+      ],
+      "provider": "azure",
+      "model": "gpt-image-2",
+      "prompt": "Use case: stylized-concept. Create exactly one standalone game UI icon for PNBallie, a playful table-football competition app. Square composition, centered, approximately 12 percent empty margin on every side. A strong, instantly readable silhouette at 32 to 48 pixels. Consistent upper-left lighting. Rich but controlled colors, warm gold and orange accents with cool navy contrasts; readable on both dark navy and light backgrounds. Real transparent background with alpha. No backdrop, floor, external cast shadow, text, letters, numbers, watermark, checkerboard, surrounding UI, duplicate objects or multiple alternative designs. Keep the subject compact and avoid tiny decorative details. The asset title and meaning are context only and must never appear as text in the image.\n\nStyle: premium stylized 3D sports-game reward icon. Chunky sculpted shapes, rounded bevels, glossy enamel and satin metal, warm specular highlights, subtle self-shadowing and lively proportions. Near-front view with a slight three-quarter angle for depth. Playful collectible toy quality, controlled reflections, clean silhouette. No pixelation, realism, thin linework or ground plane.\n\nAsset title (context only): Vijf op rij. Meaning: Vijf wedstrijden achter elkaar gewonnen.\n\nSubject: A bronze sports medal hanging from a short blue-and-orange ribbon. A football with a small flame is embossed in the center. Compact, energetic achievement reward.",
+      "quality": "high"
+    },
+    "win_streak_10": {
+      "label": "Tien op rij",
+      "source_file": "win_streak_10--game3d.png",
+      "source_sha256": "6ca12cf5d431f5f04408c17f4d54cbba05c5778abf81703d1638f04503e91e95",
+      "web_sha256": "5622437a92f84a93a982643c40b28708b5f5d6ad356eae001b477a578e2b697d",
+      "source_bounds": [
+        118,
+        56,
+        905,
+        958
+      ],
+      "provider": "azure",
+      "model": "gpt-image-2",
+      "prompt": "Use case: stylized-concept. Create exactly one standalone game UI icon for PNBallie, a playful table-football competition app. Square composition, centered, approximately 12 percent empty margin on every side. A strong, instantly readable silhouette at 32 to 48 pixels. Consistent upper-left lighting. Rich but controlled colors, warm gold and orange accents with cool navy contrasts; readable on both dark navy and light backgrounds. Real transparent background with alpha. No backdrop, floor, external cast shadow, text, letters, numbers, watermark, checkerboard, surrounding UI, duplicate objects or multiple alternative designs. Keep the subject compact and avoid tiny decorative details. The asset title and meaning are context only and must never appear as text in the image.\n\nStyle: premium stylized 3D sports-game reward icon. Chunky sculpted shapes, rounded bevels, glossy enamel and satin metal, warm specular highlights, subtle self-shadowing and lively proportions. Near-front view with a slight three-quarter angle for depth. Playful collectible toy quality, controlled reflections, clean silhouette. No pixelation, realism, thin linework or ground plane.\n\nAsset title (context only): Tien op rij. Meaning: Tien wedstrijden achter elkaar gewonnen.\n\nSubject: An impressive gold trophy with broad handles, a football at the top and a short laurel wreath around the base. A prestigious upgrade from a bronze sports medal.",
+      "quality": "high"
+    },
+    "matches_50": {
+      "label": "Vaste speler",
+      "source_file": "matches_50--game3d.png",
+      "source_sha256": "701bcef88fe6333d3eaf284a77b3c96b1d21f8e0a41fc3743501a81c7db2d398",
+      "web_sha256": "c560624cc2f13404e1feec9653016bb45a8205607c237cc7b8db8d87d2113071",
+      "source_bounds": [
+        64,
+        63,
+        953,
+        902
+      ],
+      "provider": "azure",
+      "model": "gpt-image-2",
+      "prompt": "Use case: stylized-concept. Create exactly one standalone game UI icon for PNBallie, a playful table-football competition app. Square composition, centered, approximately 12 percent empty margin on every side. A strong, instantly readable silhouette at 32 to 48 pixels. Consistent upper-left lighting. Rich but controlled colors, warm gold and orange accents with cool navy contrasts; readable on both dark navy and light backgrounds. Real transparent background with alpha. No backdrop, floor, external cast shadow, text, letters, numbers, watermark, checkerboard, surrounding UI, duplicate objects or multiple alternative designs. Keep the subject compact and avoid tiny decorative details. The asset title and meaning are context only and must never appear as text in the image.\n\nStyle: premium stylized 3D sports-game reward icon. Chunky sculpted shapes, rounded bevels, glossy enamel and satin metal, warm specular highlights, subtle self-shadowing and lively proportions. Near-front view with a slight three-quarter angle for depth. Playful collectible toy quality, controlled reflections, clean silhouette. No pixelation, realism, thin linework or ground plane.\n\nAsset title (context only): Vaste speler. Meaning: Vijftig wedstrijden gespeeld.\n\nSubject: A silver mechanical arm firmly gripping a table-football rod handle. A small bronze gear behind the arm symbolizes experience and perseverance. Strong compact silhouette.",
+      "quality": "high"
+    },
+    "ijzeren_man": {
+      "label": "IJzeren Man",
+      "source_file": "ijzeren_man--game3d.png",
+      "source_sha256": "12871a4959cc93476bbacf15007af1546aa52ad1fef11e7a15bd7a4de597bf35",
+      "web_sha256": "186cb33170dc758e56da93551f3fbb328fa0ffef6c783555546ff14b0e2120f2",
+      "source_bounds": [
+        35,
+        26,
+        995,
+        983
+      ],
+      "provider": "azure",
+      "model": "gpt-image-2",
+      "prompt": "Use case: stylized-concept. Create exactly one standalone game UI icon for PNBallie, a playful table-football competition app. Square composition, centered, approximately 12 percent empty margin on every side. A strong, instantly readable silhouette at 32 to 48 pixels. Consistent upper-left lighting. Rich but controlled colors, warm gold and orange accents with cool navy contrasts; readable on both dark navy and light backgrounds. Real transparent background with alpha. No backdrop, floor, external cast shadow, text, letters, numbers, watermark, checkerboard, surrounding UI, duplicate objects or multiple alternative designs. Keep the subject compact and avoid tiny decorative details. The asset title and meaning are context only and must never appear as text in the image.\n\nStyle: premium stylized 3D sports-game reward icon. Chunky sculpted shapes, rounded bevels, glossy enamel and satin metal, warm specular highlights, subtle self-shadowing and lively proportions. Near-front view with a slight three-quarter angle for depth. Playful collectible toy quality, controlled reflections, clean silhouette. No pixelation, realism, thin linework or ground plane.\n\nAsset title (context only): IJzeren Man. Meaning: Meeste wedstrijden gespeeld.\n\nSubject: A sturdy table-football figurine made from dark steel, with riveted shoulder plates and a bright metal chest. A short horizontal foosball rod passes through its body. Durable and tireless.",
+      "quality": "high"
+    },
+    "dominant": {
+      "label": "Dominant",
+      "source_file": "dominant--game3d.png",
+      "source_sha256": "0f60f6196fdbe0c7666fe940040c9199871c0ce467dd77f0c513caa56d75d262",
+      "web_sha256": "25e59086baa61fd43663daeee599a9bc86287210c84bebfdda3d91a2221ea548",
+      "source_bounds": [
+        66,
+        70,
+        956,
+        894
+      ],
+      "provider": "azure",
+      "model": "gpt-image-2",
+      "prompt": "Use case: stylized-concept. Create exactly one standalone game UI icon for PNBallie, a playful table-football competition app. Square composition, centered, approximately 12 percent empty margin on every side. A strong, instantly readable silhouette at 32 to 48 pixels. Consistent upper-left lighting. Rich but controlled colors, warm gold and orange accents with cool navy contrasts; readable on both dark navy and light backgrounds. Real transparent background with alpha. No backdrop, floor, external cast shadow, text, letters, numbers, watermark, checkerboard, surrounding UI, duplicate objects or multiple alternative designs. Keep the subject compact and avoid tiny decorative details. The asset title and meaning are context only and must never appear as text in the image.\n\nStyle: premium stylized 3D sports-game reward icon. Chunky sculpted shapes, rounded bevels, glossy enamel and satin metal, warm specular highlights, subtle self-shadowing and lively proportions. Near-front view with a slight three-quarter angle for depth. Playful collectible toy quality, controlled reflections, clean silhouette. No pixelation, realism, thin linework or ground plane.\n\nAsset title (context only): Dominant. Meaning: Hoogste winrate, minimaal tien wedstrijden.\n\nSubject: A broad golden crown with three distinct points, a central orange gemstone and subtle blue accents. Confident, royal, simple readable silhouette.",
+      "quality": "high"
+    },
+    "koningspaar": {
+      "label": "Koningspaar",
+      "source_file": "koningspaar--game3d.png",
+      "source_sha256": "1f5f662c77030ff0739fcdc17e3118451af2ef6db5a0dbd4866d7f2dc8941c06",
+      "web_sha256": "d2a97106d369098d1209837e492e2be4e38502af29ba7053f85d9bd4e6b04845",
+      "source_bounds": [
+        86,
+        25,
+        938,
+        988
+      ],
+      "provider": "azure",
+      "model": "gpt-image-2",
+      "prompt": "Use case: stylized-concept. Create exactly one standalone game UI icon for PNBallie, a playful table-football competition app. Square composition, centered, approximately 12 percent empty margin on every side. A strong, instantly readable silhouette at 32 to 48 pixels. Consistent upper-left lighting. Rich but controlled colors, warm gold and orange accents with cool navy contrasts; readable on both dark navy and light backgrounds. Real transparent background with alpha. No backdrop, floor, external cast shadow, text, letters, numbers, watermark, checkerboard, surrounding UI, duplicate objects or multiple alternative designs. Keep the subject compact and avoid tiny decorative details. The asset title and meaning are context only and must never appear as text in the image.\n\nStyle: premium stylized 3D sports-game reward icon. Chunky sculpted shapes, rounded bevels, glossy enamel and satin metal, warm specular highlights, subtle self-shadowing and lively proportions. Near-front view with a slight three-quarter angle for depth. Playful collectible toy quality, controlled reflections, clean silhouette. No pixelation, realism, thin linework or ground plane.\n\nAsset title (context only): Koningspaar. Meaning: Beste duo, minimaal vijf wedstrijden samen.\n\nSubject: Two table-football figurines standing side by side beneath one shared golden crown. Equal size, matching jerseys, connected composition expressing teamwork and a winning partnership.",
+      "quality": "high"
+    },
+    "rivalen": {
+      "label": "Rivalen",
+      "source_file": "rivalen--game3d.png",
+      "source_sha256": "07ca36183cf37e4b853bfdebe73545365c5c95e953df0ed741c9c7bbb83dadb9",
+      "web_sha256": "96c6e50f7dd5413ef1c702bc7fa1a8c43ab38c24fd4fd09b5ff9b2de9b6dd709",
+      "source_bounds": [
+        82,
+        51,
+        949,
+        948
+      ],
+      "provider": "azure",
+      "model": "gpt-image-2",
+      "prompt": "Use case: stylized-concept. Create exactly one standalone game UI icon for PNBallie, a playful table-football competition app. Square composition, centered, approximately 12 percent empty margin on every side. A strong, instantly readable silhouette at 32 to 48 pixels. Consistent upper-left lighting. Rich but controlled colors, warm gold and orange accents with cool navy contrasts; readable on both dark navy and light backgrounds. Real transparent background with alpha. No backdrop, floor, external cast shadow, text, letters, numbers, watermark, checkerboard, surrounding UI, duplicate objects or multiple alternative designs. Keep the subject compact and avoid tiny decorative details. The asset title and meaning are context only and must never appear as text in the image.\n\nStyle: premium stylized 3D sports-game reward icon. Chunky sculpted shapes, rounded bevels, glossy enamel and satin metal, warm specular highlights, subtle self-shadowing and lively proportions. Near-front view with a slight three-quarter angle for depth. Playful collectible toy quality, controlled reflections, clean silhouette. No pixelation, realism, thin linework or ground plane.\n\nAsset title (context only): Rivalen. Meaning: Meeste duels tegen elkaar.\n\nSubject: Two crossed short table-football rods with clearly recognizable grip handles, one orange and one blue. One small bright spark at their crossing point. Friendly sporting rivalry.",
+      "quality": "high"
+    },
+    "op_dreef": {
+      "label": "Op Dreef",
+      "source_file": "op_dreef--game3d.png",
+      "source_sha256": "298b7c5b6d7bf75e54b0c6115f1499e92bb06c005e69d08a86a59915a359205c",
+      "web_sha256": "e3aece6e706124edc0183ac54a92921cad162934b25433fb4dd741a67675e189",
+      "source_bounds": [
+        37,
+        37,
+        991,
+        960
+      ],
+      "provider": "azure",
+      "model": "gpt-image-2",
+      "prompt": "Use case: stylized-concept. Create exactly one standalone game UI icon for PNBallie, a playful table-football competition app. Square composition, centered, approximately 12 percent empty margin on every side. A strong, instantly readable silhouette at 32 to 48 pixels. Consistent upper-left lighting. Rich but controlled colors, warm gold and orange accents with cool navy contrasts; readable on both dark navy and light backgrounds. Real transparent background with alpha. No backdrop, floor, external cast shadow, text, letters, numbers, watermark, checkerboard, surrounding UI, duplicate objects or multiple alternative designs. Keep the subject compact and avoid tiny decorative details. The asset title and meaning are context only and must never appear as text in the image.\n\nStyle: premium stylized 3D sports-game reward icon. Chunky sculpted shapes, rounded bevels, glossy enamel and satin metal, warm specular highlights, subtle self-shadowing and lively proportions. Near-front view with a slight three-quarter angle for depth. Playful collectible toy quality, controlled reflections, clean silhouette. No pixelation, realism, thin linework or ground plane.\n\nAsset title (context only): Op Dreef. Meaning: Langste actieve winstreak.\n\nSubject: A black-and-white football wrapped in a powerful upward orange-red flame. Compact dynamic composition expressing sustained winning momentum.",
+      "quality": "high"
+    },
+    "grootste_afstraffing": {
+      "label": "Grootste Afstraffing",
+      "source_file": "grootste_afstraffing--game3d.png",
+      "source_sha256": "d8822e9d71d5e0ab215cec5844e29dd62d3a9965050d111b299408ba7d977392",
+      "web_sha256": "61e9769e10df1ae4023a3285c339d3841fe8f207a99ab30245fd6c52b47879ef",
+      "source_bounds": [
+        79,
+        36,
+        943,
+        937
+      ],
+      "provider": "azure",
+      "model": "gpt-image-2",
+      "prompt": "Use case: stylized-concept. Create exactly one standalone game UI icon for PNBallie, a playful table-football competition app. Square composition, centered, approximately 12 percent empty margin on every side. A strong, instantly readable silhouette at 32 to 48 pixels. Consistent upper-left lighting. Rich but controlled colors, warm gold and orange accents with cool navy contrasts; readable on both dark navy and light backgrounds. Real transparent background with alpha. No backdrop, floor, external cast shadow, text, letters, numbers, watermark, checkerboard, surrounding UI, duplicate objects or multiple alternative designs. Keep the subject compact and avoid tiny decorative details. The asset title and meaning are context only and must never appear as text in the image.\n\nStyle: premium stylized 3D sports-game reward icon. Chunky sculpted shapes, rounded bevels, glossy enamel and satin metal, warm specular highlights, subtle self-shadowing and lively proportions. Near-front view with a slight three-quarter angle for depth. Playful collectible toy quality, controlled reflections, clean silhouette. No pixelation, realism, thin linework or ground plane.\n\nAsset title (context only): Grootste Afstraffing. Meaning: Grootste verschil in één wedstrijd.\n\nSubject: A playful stylized skull with a football panel pattern on its forehead, above two crossed table-football handles. Mischievous and competitive, no blood or horror.",
+      "quality": "high"
+    },
+    "football": {
+      "label": "Voetbal",
+      "source_file": "football--game3d.png",
+      "source_sha256": "e2184a3795e8be5fa5c4a73447cf29f2e6dc532297b8e0f8fc5220de528500f3",
+      "web_sha256": "5c898286cf76b7fa1e0847df1ce4421ad8530215787ce867d8f51d4f55813fb0",
+      "source_bounds": [
+        97,
+        89,
+        929,
+        923
+      ],
+      "provider": "azure",
+      "model": "gpt-image-2",
+      "prompt": "Use case: stylized-concept. Create exactly one standalone game UI icon for PNBallie, a playful table-football competition app. Square composition, centered, approximately 12 percent empty margin on every side. A strong, instantly readable silhouette at 32 to 48 pixels. Consistent upper-left lighting. Rich but controlled colors, warm gold and orange accents with cool navy contrasts; readable on both dark navy and light backgrounds. Real transparent background with alpha. No backdrop, floor, external cast shadow, text, letters, numbers, watermark, checkerboard, surrounding UI, duplicate objects or multiple alternative designs. Keep the subject compact and avoid tiny decorative details. The asset title and meaning are context only and must never appear as text in the image.\n\nStyle: premium stylized 3D sports-game reward icon. Chunky sculpted shapes, rounded bevels, glossy enamel and satin metal, warm specular highlights, subtle self-shadowing and lively proportions. Near-front view with a slight three-quarter angle for depth. Playful collectible toy quality, controlled reflections, clean silhouette. No pixelation, realism, thin linework or ground plane.\n\nAsset title (context only): Voetbal. Meaning: Groepen, voetbalcursor en stuiterende bal.\n\nSubject: One perfectly round football with white and dark navy panels, subtle spherical shading and crisp outer edges. No external shadow, motion effects, frame or additional objects.",
+      "quality": "high"
+    },
+    "langste_reeks": {
+      "label": "Langste Reeks",
+      "source_file": "langste_reeks--game3d.png",
+      "source_sha256": "d7233dc005843fd518e0d1a480cb8d7550478b7968adf97e0e9a7cadd11fe489",
+      "web_sha256": "d2ef8a65ae606e3cd89a04487afa3143779fef9c7967d70c2f7e54a9f27c760f",
+      "source_bounds": [
+        83,
+        63,
+        941,
+        966
+      ],
+      "provider": "azure",
+      "model": "gpt-image-2",
+      "prompt": "Use case: stylized-concept. Create exactly one standalone game UI icon for PNBallie, a playful table-football competition app. Square composition, centered, approximately 12 percent empty margin on every side. A strong, instantly readable silhouette at 32 to 48 pixels. Consistent upper-left lighting. Rich but controlled colors, warm gold and orange accents with cool navy contrasts; readable on both dark navy and light backgrounds. Real transparent background with alpha. No backdrop, floor, external cast shadow, text, letters, numbers, watermark, checkerboard, surrounding UI, duplicate objects or multiple alternative designs. Keep the subject compact and avoid tiny decorative details. The asset title and meaning are context only and must never appear as text in the image.\n\nStyle: premium stylized 3D sports-game reward icon. Chunky sculpted shapes, rounded bevels, glossy enamel and satin metal, warm specular highlights, subtle self-shadowing and lively proportions. Near-front view with a slight three-quarter angle for depth. Playful collectible toy quality, controlled reflections, clean silhouette. No pixelation, realism, thin linework or ground plane.\n\nAsset title (context only): Langste Reeks. Meaning: Langste winstreak binnen de selectie.\n\nSubject: A tall silver trophy with gold handles. Three substantial interlocking golden chain links form the central emblem, symbolizing consecutive victories.",
+      "quality": "high"
+    },
+    "streak_flame": {
+      "label": "Actieve winreeks",
+      "source_file": "streak_flame--game3d.png",
+      "source_sha256": "04a291990d51dbaf535ec9227335700d09e09ff28ad01474827fb3c0e9af073b",
+      "web_sha256": "7d6a6af21d46c2368a3ce0cb9091b542eeaa5ba2e796129efcef51a47644375c",
+      "source_bounds": [
+        231,
+        70,
+        804,
+        914
+      ],
+      "provider": "azure",
+      "model": "gpt-image-2",
+      "prompt": "Use case: stylized-concept. Create exactly one standalone game UI icon for PNBallie, a playful table-football competition app. Square composition, centered, approximately 12 percent empty margin on every side. A strong, instantly readable silhouette at 32 to 48 pixels. Consistent upper-left lighting. Rich but controlled colors, warm gold and orange accents with cool navy contrasts; readable on both dark navy and light backgrounds. Real transparent background with alpha. No backdrop, floor, external cast shadow, text, letters, numbers, watermark, checkerboard, surrounding UI, duplicate objects or multiple alternative designs. Keep the subject compact and avoid tiny decorative details. The asset title and meaning are context only and must never appear as text in the image.\n\nStyle: premium stylized 3D sports-game reward icon. Chunky sculpted shapes, rounded bevels, glossy enamel and satin metal, warm specular highlights, subtle self-shadowing and lively proportions. Near-front view with a slight three-quarter angle for depth. Playful collectible toy quality, controlled reflections, clean silhouette. No pixelation, realism, thin linework or ground plane.\n\nAsset title (context only): Actieve winreeks. Meaning: Bij de spelersnaam vanaf drie actuele overwinningen op rij.\n\nSubject: One simple strong flame with a yellow core and an orange-red outer contour. No football, frame or decorations. Extra clear at 16 to 24 pixels.",
+      "quality": "high"
+    },
+    "clubhouse": {
+      "label": "Clubhuis",
+      "source_file": "clubhouse--game3d.png",
+      "source_sha256": "f3bbf419cd968e4b2b689db87850c9a43a3ae851a6c4b3bac0f5134af99bab36",
+      "web_sha256": "f3bb4153ba03b4785f85d587c1f11c6cdac42f9d96a0424ca8fbb68ffdb35f80",
+      "source_bounds": [
+        63,
+        151,
+        966,
+        845
+      ],
+      "provider": "azure",
+      "model": "gpt-image-2",
+      "prompt": "Use case: stylized-concept. Create exactly one standalone game UI icon for PNBallie, a playful table-football competition app. Square composition, centered, approximately 12 percent empty margin on every side. A strong, instantly readable silhouette at 32 to 48 pixels. Consistent upper-left lighting. Rich but controlled colors, warm gold and orange accents with cool navy contrasts; readable on both dark navy and light backgrounds. Real transparent background with alpha. No backdrop, floor, external cast shadow, text, letters, numbers, watermark, checkerboard, surrounding UI, duplicate objects or multiple alternative designs. Keep the subject compact and avoid tiny decorative details. The asset title and meaning are context only and must never appear as text in the image.\n\nStyle: premium stylized 3D sports-game reward icon. Chunky sculpted shapes, rounded bevels, glossy enamel and satin metal, warm specular highlights, subtle self-shadowing and lively proportions. Near-front view with a slight three-quarter angle for depth. Playful collectible toy quality, controlled reflections, clean silhouette. No pixelation, realism, thin linework or ground plane.\n\nAsset title (context only): Clubhuis. Meaning: Het clubhuis op de startpagina opent de clubstatistieken.\n\nSubject: A very simple modest amateur football club hut, a small single-storey rectangular wooden cabin with a low dark navy shallow pitched roof, plain warm orange painted walls, one broad dark doorway and one large square pale-blue window. An oversized black-and-white football emblem is mounted prominently in the center of the roof fascia, making the football purpose immediately obvious. Compact almost-front view, minimal depth, squat and sturdy proportions. Design specifically to remain recognizable at just 32 pixels: only five or six large bold shapes, thick clean edges, broad flat color areas and restrained shading. Friendly stylized 3D toy icon, but an everyday local football shed rather than an ornate building. No gold trim, columns, arches, stairs, chimney, trophy, decorative moldings, small window panes, detailed wood grain, text, people, flags, landscaping, separate ball or surrounding scenery.",
+      "quality": "medium"
+    }
+  }
+}

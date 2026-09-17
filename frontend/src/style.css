@@ -77,9 +77,9 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .invite-code { display: block; overflow-wrap: anywhere; font: 700 15px/1.6 ui-monospace, monospace; letter-spacing: .04em; user-select: all; }
 .invite-result { display: grid; gap: 10px; margin-top: 18px; }
 .profile-preview { display: flex; align-items: center; gap: 22px; margin: 18px 0; }
-.avatar-checker { flex: 0 0 auto; width: 134px; height: 150px; display: grid; place-items: center; border: 1px solid #4a5970; border-radius: 16px; background: repeating-conic-gradient(#344357 0% 25%, #222f42 0% 50%) 50% / 18px 18px; }
-.avatar-checker img { width: 130px; height: 146px; object-fit: contain; }
-.avatar-checker span { font-size: 35px; font-weight: 800; }
+.avatar-checker { position: relative; isolation: isolate; flex: 0 0 auto; width: 134px; height: 150px; display: grid; place-items: center; border: 1px solid #4a5970; border-radius: 16px; background: repeating-conic-gradient(#344357 0% 25%, #222f42 0% 50%) 50% / 18px 18px; }
+.avatar-checker > img { position: relative; z-index: 1; width: 130px; height: 146px; object-fit: contain; }
+.avatar-checker > span:not(.player-flames) { position: relative; z-index: 1; font-size: 35px; font-weight: 800; }
 .job-status { display: grid; gap: 5px; padding: 14px; border: 1px solid #485976; background: #20314b; border-radius: 11px; margin: 14px 0; font-size: 12px; }
 .job-status small { color: #bdcce1; line-height: 1.6; }
 .upload-preview { width: 72px; height: 72px; object-fit: cover; border-radius: 10px; }

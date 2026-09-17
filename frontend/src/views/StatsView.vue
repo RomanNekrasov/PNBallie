@@ -38,7 +38,7 @@
         <section v-if="activeTab === 'Overzicht'" class="tab-content overview-grid">
           <article v-if="leader" v-stats-block="'overview_leader'" class="leader-card broadcast-panel">
             <div class="leader-main">
-              <StatsPlayerAvatar :name="leader.name" :avatar-url="leader.avatar_url" :size="84" crowned />
+              <StatsPlayerAvatar :name="leader.name" :avatar-url="leader.avatar_url" :size="84" :win-streak="playerWinStreak(leader.player_id)" crowned />
               <div class="leader-copy">
                 <h2><span class="rank-inline">#{{ leader.rank }}</span>{{ leader.name }}</h2>
                 <div class="leader-rating">{{ formatElo(leader.elo_precise) }} <span>ELO</span></div>
@@ -111,7 +111,7 @@
                 <div class="recent-teams">
                   <div class="recent-team orange-team">
                     <div v-for="player in matchPlayers(match, 'orange')" :key="player.id" class="recent-player">
-                      <StatsPlayerAvatar :name="player.name" :avatar-url="player.avatarUrl" :size="34" :crowned="isRankOne(player.id)" />
+                      <StatsPlayerAvatar :name="player.name" :avatar-url="player.avatarUrl" :size="34" :win-streak="playerWinStreak(player.id)" :crowned="isRankOne(player.id)" />
                       <div><strong>{{ player.name }}</strong><small>{{ positionLabel(player.position) }}</small></div>
                     </div>
                   </div>
@@ -122,7 +122,7 @@
                   </div>
                   <div class="recent-team blue-team">
                     <div v-for="player in matchPlayers(match, 'blue')" :key="player.id" class="recent-player">
-                      <StatsPlayerAvatar :name="player.name" :avatar-url="player.avatarUrl" :size="34" :crowned="isRankOne(player.id)" />
+                      <StatsPlayerAvatar :name="player.name" :avatar-url="player.avatarUrl" :size="34" :win-streak="playerWinStreak(player.id)" :crowned="isRankOne(player.id)" />
                       <div><strong>{{ player.name }}</strong><small>{{ positionLabel(player.position) }}</small></div>
                     </div>
                   </div>
@@ -138,8 +138,9 @@
             </div>
             <div v-if="stats.records.length" class="highlights-grid">
               <div v-for="record in visibleRecords" :key="record.key" class="highlight-card">
-                <div class="highlight-icon">{{ record.emoji }}</div>
-                <div><span>{{ record.label }}</span><strong>{{ record.value }}</strong><small>{{ record.detail }}</small></div>
+                <GameIcon class="highlight-icon" :asset="record.key" :fallback="record.emoji" :size="64" />
+                <div class="highlight-copy"><span>{{ record.label }}</span><strong>{{ record.value }}</strong><small>{{ record.detail }}</small></div>
+                <BadgeHelp :label="record.label" :description="record.description" />
               </div>
             </div>
             <p v-else class="empty-copy">Nog niet genoeg wedstrijden voor records.</p>
@@ -168,7 +169,7 @@
               >
                 <div class="rank-number">{{ entry.rank }}</div>
                 <div class="ranking-player">
-                  <StatsPlayerAvatar :name="entry.name" :avatar-url="entry.avatar_url" :size="42" :crowned="entry.rank === 1" />
+                  <StatsPlayerAvatar :name="entry.name" :avatar-url="entry.avatar_url" :size="42" :win-streak="playerWinStreak(entry.player_id)" :crowned="entry.rank === 1" />
                   <div>
                     <strong>{{ entry.name }}</strong>
                     <div class="mobile-form"><FormDots :results="entry.recent_form" /></div>
@@ -193,16 +194,16 @@
               @click="selectedPlayerId = player.player_id"
               :class="{ active: selectedPlayerId === player.player_id }"
             >
-              <StatsPlayerAvatar :name="player.name" :avatar-url="player.avatar_url" :size="30" :crowned="player.rank === 1" />
+              <StatsPlayerAvatar :name="player.name" :avatar-url="player.avatar_url" :size="30" :win-streak="player.current_winstreak" :crowned="player.rank === 1" />
               <span>{{ player.name }}</span>
             </button>
           </div>
 
           <template v-if="selectedPlayer">
             <article class="broadcast-panel player-hero">
-              <StatsPlayerAvatar :name="selectedPlayer.name" :avatar-url="selectedPlayer.avatar_url" :size="72" :crowned="selectedPlayer.rank === 1" />
+              <StatsPlayerAvatar :name="selectedPlayer.name" :avatar-url="selectedPlayer.avatar_url" :size="72" :win-streak="selectedPlayer.current_winstreak" :crowned="selectedPlayer.rank === 1" />
               <div class="player-hero-copy">
-                <h2>{{ selectedPlayer.name }} <span v-if="selectedPlayer.current_winstreak >= 3" class="streak-flame" :aria-label="`${selectedPlayer.current_winstreak} overwinningen op rij`">🔥</span></h2>
+                <h2>{{ selectedPlayer.name }}</h2>
                 <FormDots :results="selectedPlayer.recent_form" />
               </div>
               <div class="player-rank"><span>#{{ selectedPlayer.rank ?? '–' }}</span><strong>{{ formatElo(selectedPlayer.elo_precise) }}</strong><small>ELO</small></div>
@@ -216,7 +217,7 @@
             </div>
 
             <article v-stats-block="'player_badges'" class="broadcast-panel section-card">
-              <div class="section-title"><span>Badges</span><small>blijven bij je profiel</small></div>
+              <div class="section-title"><span>Badges</span></div>
               <PlayerBadges :badges="selectedPlayer.badges" />
             </article>
 
@@ -284,9 +285,9 @@
 
           <template v-if="h2hPlayer1 && h2hPlayer2">
             <article class="versus-banner broadcast-panel">
-              <div class="versus-player"><StatsPlayerAvatar :name="playerName(h2hPlayer1)" :avatar-url="playerAvatarUrl(h2hPlayer1)" :size="52" :crowned="isRankOne(h2hPlayer1)" /><strong>{{ playerName(h2hPlayer1) }}</strong></div>
+              <div class="versus-player"><StatsPlayerAvatar :name="playerName(h2hPlayer1)" :avatar-url="playerAvatarUrl(h2hPlayer1)" :size="52" :win-streak="playerWinStreak(h2hPlayer1)" :crowned="isRankOne(h2hPlayer1)" /><strong>{{ playerName(h2hPlayer1) }}</strong></div>
               <span>TEGEN</span>
-              <div class="versus-player"><StatsPlayerAvatar :name="playerName(h2hPlayer2)" :avatar-url="playerAvatarUrl(h2hPlayer2)" :size="52" :crowned="isRankOne(h2hPlayer2)" /><strong>{{ playerName(h2hPlayer2) }}</strong></div>
+              <div class="versus-player"><StatsPlayerAvatar :name="playerName(h2hPlayer2)" :avatar-url="playerAvatarUrl(h2hPlayer2)" :size="52" :win-streak="playerWinStreak(h2hPlayer2)" :crowned="isRankOne(h2hPlayer2)" /><strong>{{ playerName(h2hPlayer2) }}</strong></div>
             </article>
             <div v-stats-block="'head_to_head'" class="matchup-cards">
               <article class="broadcast-panel matchup-card">
@@ -339,6 +340,8 @@ import SettingsMenu from '../components/SettingsMenu.vue'
 import ColorBar from '../components/ColorBar.vue'
 import PlayerBadges from '../components/PlayerBadges.vue'
 import StatsPlayerAvatar from '../components/StatsPlayerAvatar.vue'
+import GameIcon from '../components/GameIcon.vue'
+import BadgeHelp from '../components/BadgeHelp.vue'
 import { useStats } from '../composables/useStats'
 import { useStatsBlockViews } from '../composables/useStatsBlockViews'
 import { currentGroup } from '../auth'
@@ -432,6 +435,10 @@ function orientedMatchup(matchups: HeadToHeadMatchup[]): HeadToHeadMatchup | nul
     player2_name: matchup.player1_name,
     player2_wins: matchup.player1_wins,
   }
+}
+
+function playerWinStreak(id: number | null): number {
+  return stats.value?.players.find(player => player.player_id === id)?.current_winstreak ?? 0
 }
 
 function formatElo(value: number): string {
@@ -558,7 +565,6 @@ function selectPair(first: number, second: number) {
 .tab-bar button:hover, .player-picker button:hover { color: white; background: #34435a; }
 .tab-bar button.active:hover { background: #ed7038; }
 .stats-shell button:focus-visible, .stats-shell select:focus-visible { outline: 2px solid #ffbd8c; outline-offset: 3px; }
-.streak-flame { font-size: .6em; vertical-align: middle; }
 .tab-content { animation: enter .22s ease-out both; }
 
 .overview-grid { display: grid; gap: 14px; }
@@ -638,8 +644,8 @@ function selectPair(first: number, second: number) {
 
 .highlights-grid { display: grid; gap: 8px; }
 .highlight-card { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 11px; border: 1px solid var(--line); border-radius: 13px; background: var(--panel-soft); }
-.highlight-icon { width: 38px; height: 38px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 11px; font-size: 20px; background: #30394a; }
-.highlight-card > div:last-child { min-width: 0; display: grid; }
+.highlight-icon { filter: drop-shadow(0 3px 3px rgb(0 0 0 / 20%)); }
+.highlight-copy { min-width: 0; display: grid; }
 .highlight-card span { color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: .09em; }
 .highlight-card strong { margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 750 16px/1.1 'Barlow Condensed', system-ui, sans-serif; }
 .highlight-card small { margin-top: 3px; color: var(--orange); font-size: 10px; }

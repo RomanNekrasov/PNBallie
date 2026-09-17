@@ -25,6 +25,7 @@
       class="player-identity"
       :data-player-id="playerId"
     >
+      <PlayerFlames class="field-flames" :win-streak="winStreak" />
       <CrownIcon v-if="crowned" class="field-crown" />
       <img
         v-if="playerAvatar"
@@ -44,6 +45,7 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
 import type { Position } from '../types'
 import CrownIcon from './CrownIcon.vue'
+import PlayerFlames from './PlayerFlames.vue'
 
 const TOUCH_DRAG_THRESHOLD = 8
 
@@ -54,6 +56,7 @@ const props = defineProps<{
   playerName: string | null
   playerAvatar: string | null
   crowned: boolean
+  winStreak?: number
   position: Position
 }>()
 
@@ -268,6 +271,7 @@ onBeforeUnmount(() => cleanupPointer(dragging.value))
 }
 
 .player-identity {
+  isolation: isolate;
   position: absolute;
   left: 50%;
   top: -37px;
@@ -295,12 +299,14 @@ onBeforeUnmount(() => cleanupPointer(dragging.value))
 .field-crown {
   position: absolute;
   z-index: 4;
-  top: -13px;
+  top: -21px;
   left: 50%;
   width: 30px;
   height: auto;
   transform: translateX(-50%) rotate(-7deg);
 }
+
+.field-flames { top: -12px; bottom: auto; left: -12px; width: 132px; height: 116px; }
 
 .player-avatar-fallback {
   display: flex;
