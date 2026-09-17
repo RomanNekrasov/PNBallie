@@ -15,7 +15,7 @@ metadata=load('release_metadata')
 
 class DeliveryTests(unittest.TestCase):
     def test_single_schema_head(self):
-        self.assertEqual(metadata.schema_head(Path(__file__).parents[1]/'backend/alembic/versions'), '20260916_recorder')
+        self.assertEqual(metadata.schema_head(Path(__file__).parents[1]/'backend/alembic/versions'), '20260917_table')
 
     def test_acceptance_changes_only_pins(self):
         with tempfile.TemporaryDirectory() as directory:
