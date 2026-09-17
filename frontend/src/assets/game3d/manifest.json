@@ -266,6 +266,22 @@
       "model": "gpt-image-2",
       "prompt": "Use case: stylized-concept. Create exactly one standalone game UI icon for PNBallie, a playful table-football competition app. Square composition, centered, approximately 12 percent empty margin on every side. A strong, instantly readable silhouette at 32 to 48 pixels. Consistent upper-left lighting. Rich but controlled colors, warm gold and orange accents with cool navy contrasts; readable on both dark navy and light backgrounds. Real transparent background with alpha. No backdrop, floor, external cast shadow, text, letters, numbers, watermark, checkerboard, surrounding UI, duplicate objects or multiple alternative designs. Keep the subject compact and avoid tiny decorative details. The asset title and meaning are context only and must never appear as text in the image.\n\nStyle: premium stylized 3D sports-game reward icon. Chunky sculpted shapes, rounded bevels, glossy enamel and satin metal, warm specular highlights, subtle self-shadowing and lively proportions. Near-front view with a slight three-quarter angle for depth. Playful collectible toy quality, controlled reflections, clean silhouette. No pixelation, realism, thin linework or ground plane.\n\nAsset title (context only): Clubhuis. Meaning: Het clubhuis op de startpagina opent de clubstatistieken.\n\nSubject: A very simple modest amateur football club hut, a small single-storey rectangular wooden cabin with a low dark navy shallow pitched roof, plain warm orange painted walls, one broad dark doorway and one large square pale-blue window. An oversized black-and-white football emblem is mounted prominently in the center of the roof fascia, making the football purpose immediately obvious. Compact almost-front view, minimal depth, squat and sturdy proportions. Design specifically to remain recognizable at just 32 pixels: only five or six large bold shapes, thick clean edges, broad flat color areas and restrained shading. Friendly stylized 3D toy icon, but an everyday local football shed rather than an ornate building. No gold trim, columns, arches, stairs, chimney, trophy, decorative moldings, small window panes, detailed wood grain, text, people, flags, landscaping, separate ball or surrounding scenery.",
       "quality": "medium"
+    },
+    "grootste_choke": {
+      "label": "Grootste choke",
+      "source_file": "grootste_choke--game3d.png",
+      "source_sha256": "ea53a0f118b62ae9252f51e7aec033e1010e5240033d2ed8054cec59afda42f5",
+      "web_sha256": "5e6ebe642ee521db21c180b5d3f6217078f4a0e1c1af8df5c96a9ff218dbb7be",
+      "source_bounds": [
+        94,
+        86,
+        934,
+        934
+      ],
+      "provider": "azure",
+      "model": "gpt-image-2",
+      "prompt": "Use case: stylized-concept. Create exactly one standalone game UI icon for PNBallie, a playful table-football competition app. Square composition, centered, approximately 12 percent empty margin on every side. A strong, instantly readable silhouette at 32 to 48 pixels. Consistent upper-left lighting. Rich but controlled colors, warm gold and orange accents with cool navy contrasts; readable on both dark navy and light backgrounds. Real transparent background with alpha. No backdrop, floor, external cast shadow, text, letters, numbers, watermark, checkerboard, surrounding UI, duplicate objects or multiple alternative designs. Keep the subject compact and avoid tiny decorative details. The asset title and meaning are context only and must never appear as text in the image.\n\nStyle: premium stylized 3D sports-game reward icon. Chunky sculpted shapes, rounded bevels, glossy enamel and satin metal, warm specular highlights, subtle self-shadowing and lively proportions. Near-front view with a slight three-quarter angle for depth. Playful collectible toy quality, controlled reflections, clean silhouette. No pixelation, realism, thin linework or ground plane.\n\nAsset title (context only): Grootste choke. Meaning: Het vaakst met 10–9 verloren: bij 9–9 bezweken onder de spanning. Bij 2-tegen-2 tellen beide verliezers mee.\n\nSubject: One nervous black-and-white football character with raised worried eyebrows, a small tense mouth and one oversized glossy blue sweat drop on its upper-right side. Playful last-point pressure and narrow defeat, sympathetic rather than mocking. Compact round silhouette, expressive face readable at tiny icon size. No hands, neck, choking gesture, scoreboard or text.",
+      "quality": "high"
     }
   }
 }

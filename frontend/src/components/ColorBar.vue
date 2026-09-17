@@ -92,26 +92,26 @@ const conclusion = computed(() => !total.value ? 'Nog geen wedstrijden' : leader
 .bar-line { position: relative; margin: 11px 5px 9px; }
 .bar-shell.empty { opacity: .25; }
 .leader-dot { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #17202c; transform: translate(-50%, -50%); box-shadow: 0 0 0 1px currentColor; }
-.leader-dot.orange { color: var(--team-orange-text, #ff904f); background: var(--team-orange, #ff904f); }
-.leader-dot.blue { color: var(--team-blue-text, #75adff); background: var(--team-blue, #75adff); }
+.leader-dot.orange { color: var(--team-orange-accent, #ff7a2f); background: var(--team-orange-accent, #ff7a2f); }
+.leader-dot.blue { color: var(--team-blue-accent, #3b8cff); background: var(--team-blue-accent, #3b8cff); }
 .leader-dot.tie { color: #aeb9c9; background: #aeb9c9; }
 .colorbar-conclusion { color: #aeb9c9; text-align: center; font-size: 10px; }
 
 .bar-orange {
-  background: var(--team-orange, #e87d2f);
+  background: var(--team-orange-accent, #ff7a2f);
   transition: width 0.25s ease;
 }
 
 .bar-blue {
-  background: var(--team-blue, #2d5fa1);
+  background: var(--team-blue-accent, #3b8cff);
   transition: width 0.25s ease;
 }
 
 .team-orange {
-  color: var(--team-orange-text, #f0b26f);
+  color: var(--team-orange-accent, #ff7a2f);
 }
 
 .team-blue {
-  color: var(--team-blue-text, #89b2de);
+  color: var(--team-blue-accent, #3b8cff);
 }
 </style>

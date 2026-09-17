@@ -5,7 +5,7 @@ gebruikt dezelfde configuratienamen en Azure v1-authenticatie als de avatarservi
 maar verstuurt alleen de assetprompt. Er worden geen spelersfoto's, accounts of
 wedstrijdgegevens gebruikt. De app en avatarworker hoeven niet te draaien.
 
-De catalogus in `scripts/asset_catalog.json` bevat alle 16 huidige assets,
+De catalogus in `scripts/asset_catalog.json` bevat alle huidige assets,
 hun betekenis, één gedeelde prompt en drie verwisselbare basisstijlen:
 
 - `pixel`: A, verfijnde pixelart.
@@ -20,7 +20,7 @@ negen afzonderlijke Images-aanroepen, één PNG per aanroep.
 
 ![De drie onderzochte stijlen; B is gekozen](images/asset-style-comparison.webp)
 
-De frontend gebruikt B voor vier blijvende badges, negen records, de actieve
+De frontend gebruikt B voor vier blijvende badges, tien records, de actieve
 winreeksvlam en de voetbal op de groepenpagina, bij de cursor en bij het
 klikeffect. De drie gekozen proefbeelden zijn hergebruikt; alleen de twaalf
 ontbrekende onderwerpen zijn nieuw gegenereerd. Ook de kroon bij de huidige
@@ -33,6 +33,18 @@ clubstatistieken. Het beeld is een eenvoudige voetbalkeet met een laag dak,
 Dit extra icoon is via dezelfde generator in stijl B gemaakt;
 de volledige prompt en herkomst staan in de catalogus en het assetmanifest.
 De overige SVG-interfaceiconen behouden hun eigen functie.
+
+`grootste_choke` gebruikt een nerveuze voetbal met een grote zweetdruppel in
+dezelfde stijl B. Het record gebruikt het hoogste verliespercentage bij 9–9:
+10–9-verliespartijen gedeeld door alle 10–9-duels, met minimaal drie van die
+duels per speler binnen de actieve filters. Beide spelers van een duo tellen
+individueel mee. Gelijke percentages delen het record. De kaart toont alleen het percentage, bijvoorbeeld `80%`.
+Het aantal verloren duels en het totaal per speler staan in de uitleg. Zonder spelers die aan de ondergrens voldoen,
+verschijnt het record niet. Afstraffer toont de winnaar(s) en de uitslag; de uitleg noemt
+expliciet wie van wie verloor. De korte uitleg verschijnt bij hover met de muis;
+een muisklik zet de uitleg niet vast. Op een aanraakscherm opent of sluit een
+tik op de recordkaart de uitleg. Scrollen sluit de uitleg direct, ook binnen
+een scrollbaar paneel. Toetsenbordbediening blijft beschikbaar.
 
 ## Configuratie
 

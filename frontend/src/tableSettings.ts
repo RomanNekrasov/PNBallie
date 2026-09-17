@@ -1,12 +1,12 @@
 export const teamColors = {
-  orange: { label: 'Oranje', color: '#e87d2f', dark: '#9f4f1e', text: '#ffc18b' },
-  blue: { label: 'Blauw', color: '#2d5fa1', dark: '#244f86', text: '#89b2de' },
-  red: { label: 'Rood', color: '#d54444', dark: '#8b2929', text: '#ffa3a3' },
-  green: { label: 'Groen', color: '#2e9b65', dark: '#1d6441', text: '#87dfb0' },
-  yellow: { label: 'Geel', color: '#edc638', dark: '#756016', text: '#ffe781' },
-  purple: { label: 'Paars', color: '#9560d0', dark: '#60388b', text: '#d2b0ff' },
-  black: { label: 'Zwart', color: '#272b33', dark: '#171b22', text: '#aeb8c8' },
-  white: { label: 'Wit', color: '#eeeeec', dark: '#52565e', text: '#ffffff' },
+  orange: { label: 'Oranje', color: '#e87d2f', dark: '#9f4f1e', text: '#ffc18b', accent: '#ff7a2f' },
+  blue: { label: 'Blauw', color: '#2d5fa1', dark: '#244f86', text: '#89b2de', accent: '#3b8cff' },
+  red: { label: 'Rood', color: '#d54444', dark: '#8b2929', text: '#ffa3a3', accent: '#ff6262' },
+  green: { label: 'Groen', color: '#2e9b65', dark: '#1d6441', text: '#87dfb0', accent: '#43ce89' },
+  yellow: { label: 'Geel', color: '#edc638', dark: '#756016', text: '#ffe781', accent: '#f1cf3c' },
+  purple: { label: 'Paars', color: '#9560d0', dark: '#60388b', text: '#d2b0ff', accent: '#b07aff' },
+  black: { label: 'Zwart', color: '#272b33', dark: '#171b22', text: '#aeb8c8', accent: '#aeb8c8' },
+  white: { label: 'Wit', color: '#eeeeec', dark: '#52565e', text: '#ffffff', accent: '#ffffff' },
 } as const
 export type TeamSide = 'orange' | 'blue'
 export interface TableSettings {
@@ -30,6 +30,7 @@ export function tableVariables(settings: TableSettings): Record<string, string> 
     result[`--team-${side}`] = color.color
     result[`--team-${side}-dark`] = color.dark
     result[`--team-${side}-text`] = color.text
+    result[`--team-${side}-accent`] = color.accent
   }
   return result
 }

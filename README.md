@@ -153,7 +153,7 @@ aan leden terug; `PUT /api/groups/current/table` is alleen voor beheerders.
 ## Badges en iconen genereren
 
 Met `scripts/generate_assets.py` genereer je losse PNG-assets via dezelfde
-Azure/OpenAI-configuratie als de avatars. De catalogus bevat zestien assets en
+Azure/OpenAI-configuratie als de avatars. De catalogus bevat alle game-assets en
 drie basisstijlen. **B · 3D-gamebadge** is gekozen en wordt gebruikt voor de badges,
 records, het kroontje van de nummer één, de winreeksvlam, de voetbal en het clubhuis op de startpagina.
 A en C blijven beschikbaar. `preview` maakt

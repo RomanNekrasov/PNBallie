@@ -149,8 +149,71 @@ def test_awards_include_aggregate_ties_and_use_latest_single_match(four_players)
     biggest = next(record for record in records if record["key"] == "grootste_afstraffing")
     assert iron["value"] == "Ada & Bo"
     assert biggest["value"] == "Bo"
+    assert "Ada verloor van Bo" in biggest["description"]
     assert biggest["detail"] == "10-2"
     assert not any(record["key"] == "hoogste_score" for record in records)
+
+
+def test_choke_uses_loss_ratio_instead_of_total_losses(four_players):
+    matches = []
+    for ids, losses, total in [((1, 2), 4, 5), ((3, 4), 6, 20)]:
+        for index in range(total):
+            matches.append(match(len(matches) + 1, datetime(2026, 9, 1),
+                                 9 if index < losses else 10, 10 if index < losses else 9,
+                                 [(ids[0], "orange", "solo"), (ids[1], "blue", "solo")]))
+    stats = _build_stats(matches, four_players)
+    choke = next(record for record in stats["records"] if record["key"] == "grootste_choke")
+    assert choke["value"] == "Ada"
+    assert choke["detail"] == "80%"
+    recent = _build_stats(matches, four_players, period="30d", now=datetime(2026, 11, 1, tzinfo=timezone.utc))
+    assert not any(record["key"] == "grootste_choke" for record in recent["records"])
+
+
+def test_choke_requires_three_deciding_duels_and_ignores_other_scores(four_players):
+    solo = [(1, "orange", "solo"), (2, "blue", "solo")]
+    matches = [match(i, datetime(2026, 9, 1), 9, 10, solo) for i in range(1, 3)]
+    matches += [match(5, datetime(2026, 9, 1), 8, 10, solo),
+                match(6, datetime(2026, 9, 1), 8, 9, solo)]
+    assert not any(record["key"] == "grootste_choke" for record in _build_stats(matches, four_players)["records"])
+    matches.append(match(7, datetime(2026, 9, 1), 10, 9, solo))
+    choke = next(record for record in _build_stats(matches, four_players)["records"] if record["key"] == "grootste_choke")
+    assert choke["value"] == "Ada"
+    assert choke["detail"] == "66,7%"
+
+
+def test_choke_shares_equal_ratios_without_claiming_equal_duel_counts(four_players):
+    matches = []
+    for ids, losses, total in [((1, 2), 4, 5), ((3, 4), 8, 10)]:
+        for index in range(total):
+            matches.append(match(len(matches) + 1, datetime(2026, 9, 1),
+                                 9 if index < losses else 10, 10 if index < losses else 9,
+                                 [(ids[0], "orange", "solo"), (ids[1], "blue", "solo")]))
+    choke = next(record for record in _build_stats(matches, four_players)["records"] if record["key"] == "grootste_choke")
+    assert choke["value"] == "Ada & Cleo"
+    assert choke["detail"] == "80%"
+    assert "Ada: 4/5 verloren" in choke["description"]
+    assert "Cleo: 8/10 verloren" in choke["description"]
+
+
+@pytest.mark.parametrize("orange_score,blue_score,losers,winners", [
+    (9, 10, "Ada & Cleo", "Bo & Daan"), (10, 9, "Bo & Daan", "Ada & Cleo"),
+])
+def test_deciding_duos_count_both_players_and_biggest_loss_names_both_sides(
+    four_players, orange_score, blue_score, losers, winners,
+):
+    duo = [(1, "orange", "voor"), (3, "orange", "achter"),
+           (2, "blue", "voor"), (4, "blue", "achter")]
+    matches = [match(i, datetime(2026, 9, 1), orange_score, blue_score, duo) for i in range(1, 6)]
+    stats = _build_stats(matches, four_players, mode="2v2")
+    choke = next(record for record in stats["records"] if record["key"] == "grootste_choke")
+    assert choke["value"] == losers
+    assert choke["detail"] == "100%"
+    biggest = next(record for record in stats["records"] if record["key"] == "grootste_afstraffing")
+    assert biggest["label"] == "Afstraffer"
+    assert biggest["value"] == winners
+    assert f"{losers} verloren van {winners}" in biggest["description"]
+    assert biggest["detail"] == "10-9"
+    assert not any(record["key"] == "grootste_choke" for record in _build_stats(matches, four_players, mode="1v1")["records"])
 
 
 def test_empty_statistics_are_safe(four_players):

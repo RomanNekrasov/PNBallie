@@ -2,6 +2,7 @@ import base64
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from io import BytesIO
+from threading import Barrier
 
 import httpx
 import pytest
@@ -122,17 +123,76 @@ def test_upload_checks_format_cloud_consent_and_configuration(api, monkeypatch):
     assert enqueue(client).status_code == 202
 
 
-def test_upload_has_size_and_per_user_daily_limit(api):
+def test_upload_has_size_and_lifetime_player_limit(api):
     client, database, _ = api
     assert client.post("/api/avatars/me/jobs", content=b"x" * (20 * 1024 * 1024 + 1),
                        headers={"Content-Type": "image/png"}).status_code == 413
-    for _ in range(5):
+    for _ in range(3):
         response = enqueue(client)
         assert response.status_code == 202
         assert client.delete(f"/api/avatars/jobs/{response.json()['id']}").json()["status"] == "cancelled"
     assert enqueue(client).status_code == 429
     with Session(database) as session:
         assert all(job.source_png is None for job in session.exec(select(AvatarJob)).all())
+
+
+@pytest.mark.parametrize("status", ["succeeded", "failed", "cancelled"])
+def test_player_quota_counts_old_jobs_and_is_independent_of_requester(api, status):
+    client, database, _ = api
+    with Session(database) as session:
+        for _ in range(3):
+            session.add(AvatarJob(group_id=1, player_id=1, user_id=2, provider="azure",
+                                  status=status, created_at=utcnow() - timedelta(days=30)))
+        session.commit()
+    response = enqueue(client)
+    assert response.status_code == 429
+    assert "drie" in response.json()["detail"]
+
+
+def test_daily_account_limit_still_covers_other_player_profiles(api):
+    client, database, _ = api
+    with Session(database) as session:
+        for _ in range(5):
+            session.add(AvatarJob(group_id=1, player_id=2, user_id=1, provider="azure", status="succeeded"))
+        session.commit()
+    response = enqueue(client)
+    assert response.status_code == 429
+    assert "24 uur" in response.json()["detail"]
+
+
+def test_other_players_do_not_consume_player_quota(api):
+    client, database, _ = api
+    with Session(database) as session:
+        for _ in range(3):
+            session.add(AvatarJob(group_id=2, player_id=3, user_id=3, provider="azure", status="succeeded"))
+        session.commit()
+    assert enqueue(client).status_code == 202
+
+
+def test_simultaneous_uploads_cannot_exceed_three_generations(api, monkeypatch):
+    client, database, _ = api
+    with Session(database) as session:
+        for _ in range(2):
+            session.add(AvatarJob(group_id=1, player_id=1, user_id=1, provider="azure", status="succeeded"))
+        session.commit()
+    barrier = Barrier(2)
+    original_normalize = avatars.normalize_upload
+
+    def normalize_together(*args):
+        result = original_normalize(*args)
+        barrier.wait(timeout=5)
+        return result
+
+    monkeypatch.setattr(avatars, "normalize_upload", normalize_together)
+    # Separate clients run both preflight checks before either write transaction.
+    def upload(_):
+        with TestClient(client.app) as concurrent_client:
+            return enqueue(concurrent_client).status_code
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        assert sorted(executor.map(upload, range(2))) == [202, 429]
+    with Session(database) as session:
+        assert len(session.exec(select(AvatarJob).where(AvatarJob.player_id == 1)).all()) == 3
 
 
 def test_cannot_upload_for_unbound_or_inactive_profile(api):

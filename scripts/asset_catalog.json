@@ -109,10 +109,10 @@
       "prompt": "A black-and-white football shooting diagonally forward from a compact steel mechanical gear, with a short orange burst and two clear speed streaks. The ball and gear remain clearly separated and recognizable. Energetic goal-scoring machine, a compact single icon."
     },
     "grootste_afstraffing": {
-      "label": "Grootste Afstraffing",
+      "label": "Afstraffer",
       "emoji": "💀",
       "kind": "record",
-      "description": "Grootste verschil in één wedstrijd.",
+      "description": "Winnaar van de wedstrijd met het grootste doelverschil; de uitleg noemt wie is afgestraft.",
       "prompt": "A playful stylized skull with a football panel pattern on its forehead, above two crossed table-football handles. Mischievous and competitive, no blood or horror."
     },
     "streak_flame": {
@@ -135,6 +135,13 @@
       "kind": "ui",
       "description": "Groepen, voetbalcursor en stuiterende bal.",
       "prompt": "One perfectly round football with white and dark navy panels, subtle spherical shading and crisp outer edges. No external shadow, motion effects, frame or additional objects."
+    },
+    "grootste_choke": {
+      "label": "Grootste choke",
+      "emoji": "😰",
+      "kind": "record",
+      "description": "Hoogste verliespercentage bij 9–9: verloren 10–9-duels gedeeld door alle 10–9-duels, minimaal 3 duels binnen de selectie.",
+      "prompt": "One nervous black-and-white football character with raised worried eyebrows, a small tense mouth and one oversized glossy blue sweat drop on its upper-right side. Playful last-point pressure and narrow defeat, sympathetic rather than mocking. Compact round silhouette, expressive face readable at tiny icon size. No hands, neck, choking gesture, scoreboard or text."
     }
   }
 }

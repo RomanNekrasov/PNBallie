@@ -657,8 +657,15 @@ Tijdstippen hebben een expliciete UTC-offset.
   de groep; de client kiest geen andere speler-ID.
 - De API decodeert en hercodeert foto's, verwijdert metadata, weigert animaties
   en controleert werkelijk bestandsformaat. Limieten: 20 MiB upload, 50 megapixels bronfoto (16 megapixels modeluitvoer),
-  maximaal vijf aanvragen per gebruiker per 24 uur, één actieve opdracht per
-  speler. De genormaliseerde foto is maximaal 1024 × 1024.
+  maximaal drie aanvragen in totaal per spelersprofiel, daarnaast maximaal vijf
+  aanvragen per gebruiker per 24 uur over diens profielen heen, en één actieve
+  opdracht per speler. De genormaliseerde foto is maximaal 1024 × 1024.
+- De limiet van drie telt alle bestaande opdrachten mee, ook mislukte en
+  geannuleerde opdrachten, zonder dagelijkse reset. Ongeldige uploads tellen niet
+  mee; interne workerherhalingen blijven onderdeel van dezelfde opdracht.
+  Opdrachtmetadata blijft bewaard na het opruimen van foto's. Beide quota worden
+  vóór de uploadverwerking én onder de schrijftransactie gecontroleerd; een
+  overschrijding geeft HTTP 429. De frontend toont geen quotateller.
 - De quota/indiening zijn onder een SQLite-schrijftransactie beschermd.
 - Atomische claims, vernieuwde leases, een maximumaantal pogingen en fencing
   voorkomen dubbele publicatie na crashes. Iedere publicatie controleert opnieuw

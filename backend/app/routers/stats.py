@@ -559,6 +559,36 @@ def _compute_records(
             "detail": f"{highest_for:.1f} gem. voor",
         })
 
+    chokes: defaultdict[int, int] = defaultdict(int)
+    deciding_duels: defaultdict[int, int] = defaultdict(int)
+    for match in matches:
+        if sorted((match.orange_score, match.blue_score)) == [9, 10]:
+            for entry in match.players:
+                deciding_duels[entry.player_id] += 1
+                if entry.side != _winner(match):
+                    chokes[entry.player_id] += 1
+    eligible_chokers = [player for player in active_players if deciding_duels[player["player_id"]] >= 3]
+    if eligible_chokers:
+        leaders, loss_rate = _best_players(
+            eligible_chokers, lambda player: chokes[player["player_id"]] / deciding_duels[player["player_id"]],
+        )
+    else:
+        leaders, loss_rate = [], 0
+    if loss_rate:
+        percentage = f"{loss_rate * 100:.1f}".rstrip("0").rstrip(".").replace(".", ",")
+        explanation = "; ".join(
+            f"{player['name']}: {chokes[player['player_id']]}/{deciding_duels[player['player_id']]} verloren"
+            for player in leaders
+        )
+        records.append({
+            "key": "grootste_choke",
+            "label": "Grootste choke",
+            "emoji": "😰",
+            "description": "Hoogste verliespercentage bij 9–9: verloren 10–9-duels gedeeld door alle 10–9-duels. Minimaal 3 duels binnen de selectie. " + explanation + ".",
+            "value": _joined_names([player["name"] for player in leaders]),
+            "detail": f"{percentage}%",
+        })
+
     ordered_matches = _ordered_matches(matches)
     if ordered_matches:
         biggest = max(
@@ -570,12 +600,17 @@ def _compute_records(
             names.get(match_player.player_id, "?")
             for match_player in biggest.players if match_player.side == winner
         ]
+        loser_names = [
+            names.get(match_player.player_id, "?")
+            for match_player in biggest.players if match_player.side != winner
+        ]
+        result = f"{_joined_names(loser_names)} {'verloren' if len(loser_names) > 1 else 'verloor'} van {_joined_names(winner_names)}"
         winner_score, loser_score = _score_for_player(biggest, winner)
         records.append({
             "key": "grootste_afstraffing",
-            "label": "Grootste Afstraffing",
+            "label": "Afstraffer",
             "emoji": "💀",
-            "description": "Grootste verschil in één wedstrijd",
+            "description": f"Grootste verschil in één wedstrijd: {result}, met {loser_score}–{winner_score}.",
             "value": _joined_names(winner_names),
             "detail": f"{winner_score}-{loser_score}",
         })

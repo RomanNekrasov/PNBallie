@@ -25,6 +25,20 @@ from app.telemetry import API_SERVICE, Runtime, current_traceparent, event, job_
 telemetry = Runtime(API_SERVICE)
 
 router = APIRouter(prefix="/avatars", tags=["avatars"])
+MAX_PLAYER_GENERATIONS = 3
+
+
+def check_generation_quota(session: Session, player_id: int, user_id: int) -> None:
+    total = session.exec(select(func.count()).select_from(AvatarJob).where(
+        AvatarJob.player_id == player_id,
+    )).one()
+    if total >= MAX_PLAYER_GENERATIONS:
+        raise HTTPException(429, "Je kunt maximaal drie avatars voor dit spelersprofiel aanvragen.")
+    recent = session.exec(select(func.count()).select_from(AvatarJob).where(
+        AvatarJob.user_id == user_id, AvatarJob.created_at > utcnow() - SOURCE_RETENTION,
+    )).one()
+    if recent >= 5:
+        raise HTTPException(429, "Je kunt maximaal vijf avatars per 24 uur aanvragen.")
 
 
 def own_player(group: GroupContext, session: Session) -> Player:
@@ -62,11 +76,7 @@ async def upload(request: Request, provider: Literal["local", "openai", "azure"]
             raise HTTPException(503, CAPACITY_MESSAGE if state == "capacity" else UNAVAILABLE_MESSAGE)
     if session.exec(select(AvatarJob.id).where(AvatarJob.active_player_id == player.id)).first():
         raise HTTPException(409, "Er wordt al een avatar voor je gemaakt.")
-    recent_jobs = session.exec(select(func.count()).select_from(AvatarJob).where(
-        AvatarJob.user_id == group.user.id, AvatarJob.created_at > utcnow() - SOURCE_RETENTION,
-    )).one()
-    if recent_jobs >= 5:
-        raise HTTPException(429, "Je kunt maximaal vijf avatars per 24 uur aanvragen.")
+    check_generation_quota(session, player.id, group.user.id)
     mime = request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
     if mime not in ALLOWED_MIME:
         raise HTTPException(415, "Gebruik een JPEG-, PNG-, WebP- of HEIC/HEIF-foto.")
@@ -80,8 +90,8 @@ async def upload(request: Request, provider: Literal["local", "openai", "azure"]
     except InvalidAvatarImage as exc:
         raise HTTPException(422, str(exc)) from exc
     # Decode before opening a write transaction. Recheck authorization and quota
-    # under SQLite's write lock, so simultaneous uploads in multiple groups do
-    # not bypass the per-user limit.
+    # under SQLite's write lock, so simultaneous uploads cannot bypass either
+    # the lifetime per-player quota or the daily per-user limit.
     group_id, user_id, player_id = group.id, group.user.id, player.id
     session.rollback()
     session.connection().exec_driver_sql("BEGIN IMMEDIATE")
@@ -90,12 +100,11 @@ async def upload(request: Request, provider: Literal["local", "openai", "azure"]
             or not session.get(Membership, (group_id, user_id)):
         session.rollback()
         raise HTTPException(409, "Je hebt geen toegang meer tot dit spelersprofiel.")
-    recent_jobs = session.exec(select(func.count()).select_from(AvatarJob).where(
-        AvatarJob.user_id == user_id, AvatarJob.created_at > utcnow() - SOURCE_RETENTION,
-    )).one()
-    if recent_jobs >= 5:
+    try:
+        check_generation_quota(session, player_id, user_id)
+    except HTTPException:
         session.rollback()
-        raise HTTPException(429, "Je kunt maximaal vijf avatars per 24 uur aanvragen.")
+        raise
     job = AvatarJob(group_id=group_id, user_id=user_id, player_id=player_id,
                     active_player_id=player_id, provider=provider,
                     # Legacy worker processing flag; this is not a checkbox-consent record.

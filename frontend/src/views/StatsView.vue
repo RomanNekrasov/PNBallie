@@ -137,11 +137,13 @@
               <span>Records</span>
             </div>
             <div v-if="stats.records.length" class="highlights-grid">
-              <div v-for="record in visibleRecords" :key="record.key" class="highlight-card">
+              <BadgeHelp v-for="record in visibleRecords" :key="record.key" class="highlight-card" :label="record.label" :description="record.description" card>
                 <GameIcon class="highlight-icon" :asset="record.key" :fallback="record.emoji" :size="64" />
-                <div class="highlight-copy"><span>{{ record.label }}</span><strong>{{ record.value }}</strong><small>{{ record.detail }}</small></div>
-                <BadgeHelp :label="record.label" :description="record.description" />
-              </div>
+                <div class="highlight-copy">
+                  <div class="highlight-heading"><span :title="record.label">{{ record.label }}</span><small>{{ record.detail }}</small></div>
+                  <strong :title="record.value">{{ record.value }}</strong>
+                </div>
+              </BadgeHelp>
             </div>
             <p v-else class="empty-copy">Nog niet genoeg wedstrijden voor records.</p>
             <button v-if="stats.records.length > 4" class="more-button" @click="showAllRecords = !showAllRecords">
@@ -534,8 +536,8 @@ function selectPair(first: number, second: number) {
   --panel-soft: #202a38;
   --line: #303b4b;
   --muted: #96a3b5;
-  --orange: var(--team-orange-text, #ff7a2f);
-  --blue: var(--team-blue-text, #3b8cff);
+  --orange: var(--team-orange-accent, #ff7a2f);
+  --blue: var(--team-blue-accent, #3b8cff);
   --green: #58e899;
   min-height: 100dvh;
   overflow-x: hidden;
@@ -614,8 +616,8 @@ function selectPair(first: number, second: number) {
 .activity-summary strong { font: 800 24px/1 'Barlow Condensed', system-ui, sans-serif; }
 .activity-summary span { color: var(--muted); font-size: 10px; }
 .activity-summary span i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; }
-.activity-before strong { color: #ffb078; }
-.activity-after strong { color: #86b5ff; }
+.activity-before strong { color: var(--orange); }
+.activity-after strong { color: var(--blue); }
 .activity-before span i, .activity-before-fill { background: var(--orange); }
 .activity-after span i, .activity-after-fill { background: var(--blue); }
 .day-chart { height: 100px; display: grid; grid-template-columns: repeat(7, 1fr); align-items: end; gap: 5px; margin-top: 14px; }
@@ -631,8 +633,8 @@ function selectPair(first: number, second: number) {
 .recent-match-head time { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .recent-match-head span { flex: 0 0 auto; padding: 3px 6px; border-radius: 6px; color: #cad4e2; background: #111822; }
 .recent-score { display: flex; align-items: center; gap: 4px; align-self: center; }
-.recent-score strong { min-width: 20px; text-align: center; font: 900 25px/1 'Barlow Condensed', system-ui, sans-serif; opacity: .72; }
-.recent-score strong.winner { opacity: 1; }
+.recent-score strong { min-width: 20px; text-align: center; font: 700 25px/1 'Barlow Condensed', system-ui, sans-serif; }
+.recent-score strong.winner { font-weight: 900; }
 .recent-score span { color: #596578; }
 .recent-teams { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 6px; }
 .recent-team { min-width: 0; display: grid; gap: 5px; padding: 7px; border-radius: 10px; }
@@ -645,12 +647,13 @@ function selectPair(first: number, second: number) {
 .recent-player small { margin-top: 3px; color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: .09em; }
 
 .highlights-grid { display: grid; gap: 8px; }
-.highlight-card { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 11px; border: 1px solid var(--line); border-radius: 13px; background: var(--panel-soft); }
+.highlight-card { min-width: 0; }
 .highlight-icon { filter: drop-shadow(0 3px 3px rgb(0 0 0 / 20%)); }
-.highlight-copy { min-width: 0; display: grid; }
-.highlight-card span { color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: .09em; }
-.highlight-card strong { margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 750 16px/1.1 'Barlow Condensed', system-ui, sans-serif; }
-.highlight-card small { margin-top: 3px; color: var(--orange); font-size: 10px; }
+.highlight-copy { min-width: 0; flex: 1; display: grid; gap: 5px; }
+.highlight-heading { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.highlight-heading span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font: 600 12px/1.2 'Barlow Condensed', system-ui, sans-serif; text-transform: uppercase; letter-spacing: .04em; }
+.highlight-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 750 20px/1.15 'Barlow Condensed', system-ui, sans-serif; }
+.highlight-heading small { flex: 0 0 auto; color: var(--orange); white-space: nowrap; font: 600 13px/1.2 'Barlow Condensed', system-ui, sans-serif; }
 .more-button { display: block; margin: 13px auto 0; }
 
 .ranking-panel { border-radius: 20px; overflow: hidden; }
