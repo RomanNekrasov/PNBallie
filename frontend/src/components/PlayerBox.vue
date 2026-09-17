@@ -92,8 +92,8 @@ let suppressNextClick = false
 let clickResetTimer: ReturnType<typeof setTimeout> | null = null
 
 const teamStyle = computed(() => {
-  const background = props.team === 'orange' ? '#9f4f1e' : '#244f86'
-  const border = props.team === 'orange' ? '#dc7c35' : '#4c82c5'
+  const background = `var(--team-${props.team}-dark, ${props.team === 'orange' ? '#9f4f1e' : '#244f86'})`
+  const border = `var(--team-${props.team}, ${props.team === 'orange' ? '#dc7c35' : '#4c82c5'})`
   return {
     background,
     border: `1px solid ${border}`,
@@ -351,11 +351,11 @@ onBeforeUnmount(() => cleanupPointer(dragging.value))
 }
 
 .player-name--orange {
-  --player-accent: #f28a32;
+  --player-accent: var(--team-orange, #f28a32);
 }
 
 .player-name--blue {
-  --player-accent: #4387df;
+  --player-accent: var(--team-blue, #4387df);
 }
 
 .player-empty {

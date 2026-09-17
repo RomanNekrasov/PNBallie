@@ -3,7 +3,7 @@
     <div
       v-if="open"
       class="fixed inset-0 z-50 bg-black/70 flex flex-col"
-      @click.self="$emit('close')"
+      @click="onOverlayClick"
     >
       <div class="flex-1 flex flex-col items-center justify-center p-6 overflow-y-auto">
         <h2 class="text-white text-xl font-bold mb-2 text-center">Kies speler</h2>
@@ -56,6 +56,8 @@
 </template>
 
 <script setup lang="ts">
+import { useTableSettings } from '../composables/useTableSettings'
+const { teamName } = useTableSettings()
 import { computed } from 'vue'
 import type { Player, Position } from '../types'
 import { playerAvatar, playerInitials } from '../playerAvatar'
@@ -89,23 +91,29 @@ const disabledIds = computed(() => {
 
 const leaderIds = computed(() => new Set(props.leaderPlayerIds))
 
-const POSITION_LABELS: Record<Position, string> = {
-  orange_front: 'Oranje · voor',
-  orange_back: 'Oranje · achter',
-  blue_front: 'Blauw · voor',
-  blue_back: 'Blauw · achter',
-}
+const positionLabels = computed<Record<Position, string>>(() => ({
+  orange_front: `${teamName('orange')} · voor`,
+  orange_back: `${teamName('orange')} · achter`,
+  blue_front: `${teamName('blue')} · voor`,
+  blue_back: `${teamName('blue')} · achter`,
+}))
 
-const positionLabel = computed(() => POSITION_LABELS[props.position])
+const positionLabel = computed(() => positionLabels.value[props.position])
 
 function selectedPosition(playerId: number): string | null {
   const entry = Object.entries(props.selectedPlayers).find(([, id]) => id === playerId)
   if (!entry) return null
-  return entry[0] === props.position ? 'Geselecteerd' : POSITION_LABELS[entry[0] as Position]
+  return entry[0] === props.position ? 'Geselecteerd' : positionLabels.value[entry[0] as Position]
 }
 
 function select(playerId: number | null) {
+  if (playerId !== null && disabledIds.value.has(playerId)) return
   emit('select', playerId)
+  emit('close')
+}
+
+function onOverlayClick(event: MouseEvent) {
+  if (!(event.target instanceof Element) || event.target.closest('button')) return
   emit('close')
 }
 </script>

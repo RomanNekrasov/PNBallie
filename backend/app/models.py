@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import Literal, Optional
 
 from pydantic import BaseModel, field_validator
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import JSON, Column, UniqueConstraint, text
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -74,6 +74,7 @@ class Group(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(max_length=80)
     is_legacy: bool = False
+    table_settings: dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False, server_default=text("'{}'")))
     created_at: datetime = Field(default_factory=utc_now)
 
 

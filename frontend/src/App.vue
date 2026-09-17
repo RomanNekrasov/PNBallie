@@ -5,13 +5,19 @@
 </template>
 
 <script setup lang="ts">
-import { watch } from 'vue'
+import { watch, watchEffect } from 'vue'
+import { useTableSettings } from './composables/useTableSettings'
+import { tableVariables } from './tableSettings'
 import { useRoute, useRouter } from 'vue-router'
 import { authUser, currentGroup } from './auth'
 import { trackScreen, type AnalyticsScreen } from './analytics'
 
 const router = useRouter()
 const route = useRoute()
+const { tableSettings } = useTableSettings()
+watchEffect(() => {
+  for (const [key, value] of Object.entries(tableVariables(tableSettings.value))) document.documentElement.style.setProperty(key, value)
+})
 watch(() => route.path, path => {
   const screen: AnalyticsScreen | undefined = ({ '/': 'game', '/profile': 'profile', '/groups': 'groups', '/admin': 'admin', '/login': 'login' } as Record<string, AnalyticsScreen>)[path]
   if (screen) trackScreen(screen)

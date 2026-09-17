@@ -129,6 +129,27 @@ echte transparantie via Qwen Image Layered, lifecycle, runtime-inrichting en de
 grenzen van de uitgevoerde tests. Een geslaagde wachtrijtest is geen bewijs van
 beeldkwaliteit op de GPU.
 
+## Tafel per groep instellen
+
+In **Groepsbeheer → Jullie tafel** kunnen beheerders de twee teamkleuren,
+het speelveld, de tafelrand en de plek van de scores instellen. Kies voor scores
+bij het eigen doel of bij het doel van de tegenstander, passend bij de fysieke
+voetbaltafel. Een live voorbeeld laat de wijziging zien vóór het opslaan.
+De teamkleuren zijn Oranje, Blauw, Rood, Groen, Geel, Paars, Zwart en Wit;
+speelveld en rand hebben een vrije kleurkiezer. Beide teams moeten verschillen.
+
+De instelling geldt voor alle groepsleden. Teamnamen en kleuren worden ook in
+de spelerskeuze, wedstrijdhistorie en statistieken gebruikt. De vaste interne
+wedstrijdzijdes `orange` en `blue` blijven gelijk: andere kleuren of scoreposities
+verwisselen geen uitslagen, spelers of statistieken. Bestaande groepen houden
+standaard de groen/bruine tafel, Oranje/Blauw en scores bij het doel van de tegenstander.
+**Standaardinstellingen** herstelt het voorbeeld; **Tafel opslaan** bevestigt de wijziging.
+
+Bij uitrollen eerst vanuit `backend` de opdracht `uv run alembic upgrade head`
+uitvoeren. Migratie
+`20260917_table` voegt `group.table_settings` toe. De groeps-API geeft de instellingen
+aan leden terug; `PUT /api/groups/current/table` is alleen voor beheerders.
+
 ## Badges en iconen genereren
 
 Met `scripts/generate_assets.py` genereer je losse PNG-assets via dezelfde

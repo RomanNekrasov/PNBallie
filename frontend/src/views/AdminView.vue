@@ -26,6 +26,8 @@
         </section>
       </div>
 
+      <TableSettingsForm />
+
       <section class="account-panel" style="margin-top:20px">
         <div class="action-row"><h2>Spelers</h2><span class="account-hint">{{ players.filter(player => player.is_active).length }} actief</span></div>
         <p class="account-muted">Deactiveren haalt een speler uit de spelerskeuze. Uitslagen en badges blijven bewaard.</p>
@@ -107,6 +109,7 @@ import { useRouter } from 'vue-router'
 import { authUser, currentGroup, isGroupAdmin, refreshGroups } from '../auth'
 import { api } from '../composables/useApi'
 import SettingsMenu from '../components/SettingsMenu.vue'
+import TableSettingsForm from '../components/TableSettingsForm.vue'
 import { formatLocalDateTime, parseUtcTimestamp } from '../dateTime'
 import type { Player } from '../types'
 import { trackEvent, type AnalyticsEvent } from '../analytics'

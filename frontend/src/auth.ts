@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue'
+import type { TableSettings } from './tableSettings'
 
 export interface AuthUser {
   id: number
@@ -13,6 +14,7 @@ export interface Group {
   name: string
   role: 'admin' | 'member'
   player_id: number | null
+  table_settings?: TableSettings
 }
 export interface AuthProviders {
   local: boolean

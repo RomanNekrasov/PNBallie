@@ -19,6 +19,7 @@ from app.auth import (
 )
 from app.database import get_session
 from app.models import Group, Invite, Membership, Player, User, as_utc, utc_now
+from app.table_settings import TableSettings
 
 router = APIRouter(prefix="/api/groups", tags=["groups"])
 
@@ -40,6 +41,7 @@ class GroupRead(BaseModel):
     name: str
     role: Literal["admin", "member"]
     player_id: int | None
+    table_settings: TableSettings
 
 
 class MemberRead(BaseModel):
@@ -78,7 +80,8 @@ class JoinGroup(BaseModel):
 
 def group_read(session: Session, group: Group, membership: Membership) -> GroupRead:
     player = session.exec(select(Player).where(Player.group_id == group.id, Player.user_id == membership.user_id)).first()
-    return GroupRead(id=group.id, name=group.name, role=membership.role, player_id=player.id if player else None)
+    return GroupRead(id=group.id, name=group.name, role=membership.role, player_id=player.id if player else None,
+                     table_settings=TableSettings.model_validate(group.table_settings))
 
 
 def ensure_member_player(session: Session, group_id: int, user: User) -> Player:
@@ -180,6 +183,16 @@ def current_group(group: GroupContext = Depends(require_group), session: Session
 def update_group(payload: GroupCreate, group: GroupContext = Depends(require_group_admin), session: Session = Depends(get_session)):
     row = session.get(Group, group.id)
     row.name = payload.name
+    session.add(row)
+    session.commit()
+    return group_read(session, row, session.get(Membership, (group.id, group.user.id)))
+
+
+@router.put("/current/table", response_model=GroupRead)
+def update_table(payload: TableSettings, group: GroupContext = Depends(require_group_admin), session: Session = Depends(get_session)):
+    _locked_admin(session, group)
+    row = session.get(Group, group.id)
+    row.table_settings = payload.model_dump()
     session.add(row)
     session.commit()
     return group_read(session, row, session.get(Membership, (group.id, group.user.id)))

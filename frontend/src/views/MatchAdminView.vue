@@ -11,13 +11,13 @@
       <h2>Wedstrijd wijzigen</h2>
       <form class="account-form" @submit.prevent="save">
         <div class="account-columns">
-          <label>Oranje<input v-model.number="orangeScore" type="number" min="0" max="10" required /></label>
-          <label>Blauw<input v-model.number="blueScore" type="number" min="0" max="10" required /></label>
+          <label>{{ teamName('orange') }}<input v-model.number="orangeScore" type="number" min="0" max="10" required /></label>
+          <label>{{ teamName('blue') }}<input v-model.number="blueScore" type="number" min="0" max="10" required /></label>
           <label>Datum en tijd<input v-model="playedAt" type="datetime-local" step="1" required /></label>
           <label>Spelvorm<select v-model="formation" @change="setFormation"><option value="1v1">1v1</option><option value="2v2">2v2</option></select></label>
         </div>
         <div class="account-columns">
-          <label v-for="(slot, index) in slots" :key="slot.side + slot.position">{{ slot.side === 'orange' ? 'Oranje' : 'Blauw' }} · {{ slot.position }}
+          <label v-for="(slot, index) in slots" :key="slot.side + slot.position">{{ teamName(slot.side) }} · {{ slot.position }}
             <select v-model.number="slots[index]!.player_id" required>
               <option :value="0" disabled>Kies speler</option>
               <option v-for="player in availablePlayers" :key="player.id" :value="player.id">{{ player.name }}{{ player.is_active ? '' : ' (inactief)' }}</option>
@@ -46,6 +46,8 @@
 </template>
 
 <script setup lang="ts">
+import { useTableSettings } from '../composables/useTableSettings'
+const { teamName } = useTableSettings()
 import { computed, nextTick, onMounted, ref } from 'vue'
 import SettingsMenu from '../components/SettingsMenu.vue'
 import { currentGroup } from '../auth'

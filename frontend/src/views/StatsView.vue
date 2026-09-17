@@ -115,7 +115,7 @@
                       <div><strong>{{ player.name }}</strong><small>{{ positionLabel(player.position) }}</small></div>
                     </div>
                   </div>
-                  <div class="recent-score" :aria-label="`Oranje ${match.orange_score}, Blauw ${match.blue_score}`">
+                  <div class="recent-score" :aria-label="`${teamName('orange')} ${match.orange_score}, ${teamName('blue')} ${match.blue_score}`">
                     <strong class="orange-text" :class="{ winner: match.orange_score > match.blue_score }">{{ match.orange_score }}</strong>
                     <span>–</span>
                     <strong class="blue-text" :class="{ winner: match.blue_score > match.orange_score }">{{ match.blue_score }}</strong>
@@ -242,8 +242,8 @@
               <article v-stats-block="'player_colours'" class="broadcast-panel section-card">
                 <div class="section-title"><span>Kleur</span><small>{{ colorConclusion }}</small></div>
                 <div class="context-split">
-                  <div class="orange-context"><span>Oranje</span><strong>{{ formatPct(selectedPlayer.winrate_orange) }}</strong><small>{{ selectedPlayer.matches_orange }} duels</small></div>
-                  <div class="blue-context"><span>Blauw</span><strong>{{ formatPct(selectedPlayer.winrate_blue) }}</strong><small>{{ selectedPlayer.matches_blue }} duels</small></div>
+                  <div class="orange-context"><span>{{ teamName('orange') }}</span><strong>{{ formatPct(selectedPlayer.winrate_orange) }}</strong><small>{{ selectedPlayer.matches_orange }} duels</small></div>
+                  <div class="blue-context"><span>{{ teamName('blue') }}</span><strong>{{ formatPct(selectedPlayer.winrate_blue) }}</strong><small>{{ selectedPlayer.matches_blue }} duels</small></div>
                 </div>
               </article>
 
@@ -333,6 +333,8 @@
 </template>
 
 <script setup lang="ts">
+import { useTableSettings } from '../composables/useTableSettings'
+const { teamName } = useTableSettings()
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import FormDots from '../components/FormDots.vue'
@@ -400,7 +402,7 @@ const colorConclusion = computed(() => splitConclusion(
   selectedPlayer.value?.color_delta ?? null,
   selectedPlayer.value?.matches_orange ?? 0,
   selectedPlayer.value?.matches_blue ?? 0,
-  'Oranje', 'Blauw',
+  teamName('orange'), teamName('blue'),
 ))
 
 const positionConclusion = computed(() => splitConclusion(
@@ -532,8 +534,8 @@ function selectPair(first: number, second: number) {
   --panel-soft: #202a38;
   --line: #303b4b;
   --muted: #96a3b5;
-  --orange: #ff7a2f;
-  --blue: #3b8cff;
+  --orange: var(--team-orange-text, #ff7a2f);
+  --blue: var(--team-blue-text, #3b8cff);
   --green: #58e899;
   min-height: 100dvh;
   overflow-x: hidden;
@@ -634,8 +636,8 @@ function selectPair(first: number, second: number) {
 .recent-score span { color: #596578; }
 .recent-teams { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 6px; }
 .recent-team { min-width: 0; display: grid; gap: 5px; padding: 7px; border-radius: 10px; }
-.orange-team { border-left: 3px solid var(--orange); background: #302016; }
-.blue-team { border-right: 3px solid var(--blue); background: #172741; }
+.orange-team { border-left: 3px solid var(--orange); background: color-mix(in srgb, var(--team-orange, #e87d2f) 15%, #171f2b); }
+.blue-team { border-right: 3px solid var(--blue); background: color-mix(in srgb, var(--team-blue, #2d5fa1) 15%, #171f2b); }
 .blue-team .recent-player { flex-direction: row-reverse; text-align: right; }
 .recent-player { min-width: 0; display: flex; align-items: center; gap: 6px; }
 .recent-player > div { min-width: 0; display: grid; }

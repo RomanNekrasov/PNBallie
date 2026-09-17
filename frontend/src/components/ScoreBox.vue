@@ -1,5 +1,5 @@
 <template>
-  <div class="score-box select-none rounded-2xl" :style="teamStyle" data-score-control>
+  <div class="score-box select-none rounded-2xl" :style="teamStyle" data-score-control role="group" :aria-label="`Score ${teamName(team)}`">
     <!-- Touch: horizontal scroll-snap picker -->
     <div v-if="isTouch" class="relative">
       <div
@@ -29,14 +29,14 @@
     <!-- Non-touch: +/- buttons -->
     <div v-else class="flex items-center gap-1 px-3 py-2">
       <button
-        @click="$emit('adjust', -1)"
+        @click="$emit('adjust', -1)" :aria-label="`Score ${teamName(team)} verlagen`"
         class="w-11 h-11 rounded-full text-white text-2xl font-bold flex items-center justify-center active:scale-90 transition-transform"
       >
         &minus;
       </button>
       <span class="text-white text-3xl font-bold min-w-[2ch] text-center tabular-nums drop-shadow">{{ score }}</span>
       <button
-        @click="$emit('adjust', 1)"
+        @click="$emit('adjust', 1)" :aria-label="`Score ${teamName(team)} verhogen`"
         class="w-11 h-11 rounded-full text-white text-2xl font-bold flex items-center justify-center active:scale-90 transition-transform"
       >
         +
@@ -46,6 +46,8 @@
 </template>
 
 <script setup lang="ts">
+import { useTableSettings } from '../composables/useTableSettings'
+const { teamName } = useTableSettings()
 import { computed, ref, onMounted, watch, nextTick } from 'vue'
 
 const props = defineProps<{
@@ -98,8 +100,8 @@ function onScroll() {
 }
 
 const teamStyle = computed(() => {
-  const background = props.team === 'orange' ? '#8f461d' : '#244b7c'
-  const border = props.team === 'orange' ? '#d87a34' : '#477dbd'
+  const background = `var(--team-${props.team}-dark, ${props.team === 'orange' ? '#8f461d' : '#244b7c'})`
+  const border = `var(--team-${props.team}, ${props.team === 'orange' ? '#d87a34' : '#477dbd'})`
   return {
     background,
     border: `1px solid ${border}`,

@@ -3,7 +3,7 @@
     <div
       v-if="open"
       class="fixed inset-0 z-50 bg-black/70 flex flex-col"
-      @click.self="$emit('close')"
+      @click="onOverlayClick"
     >
       <div class="flex-1 flex flex-col items-center justify-center p-6 overflow-y-auto">
         <h2 class="text-white text-xl font-bold mb-6 text-center">Gespeelde wedstrijden</h2>
@@ -21,13 +21,13 @@
             <div class="flex-1 min-w-0">
               <time class="history-time" :datetime="match.played_at">{{ formatLocalDateTime(match.played_at) }}</time>
               <div class="history-result">
-                <span class="history-team text-[#e87d2f]">{{ orangeNames(match) }}</span>
-                <div class="history-score text-lg font-bold" :aria-label="`Oranje ${match.orange_score}, Blauw ${match.blue_score}`">
-                  <span class="text-[#e87d2f]">{{ match.orange_score }}</span>
+                <span class="history-team text-[var(--team-orange-text,#e87d2f)]">{{ orangeNames(match) }}</span>
+                <div class="history-score text-lg font-bold" :aria-label="`${teamName('orange')} ${match.orange_score}, ${teamName('blue')} ${match.blue_score}`">
+                  <span class="text-[var(--team-orange-text,#e87d2f)]">{{ match.orange_score }}</span>
                   <span class="text-white/40">–</span>
-                  <span class="text-[#4a90d9]">{{ match.blue_score }}</span>
+                  <span class="text-[var(--team-blue-text,#4a90d9)]">{{ match.blue_score }}</span>
                 </div>
-                <span class="history-team history-team-blue text-[#4a90d9]">{{ blueNames(match) }}</span>
+                <span class="history-team history-team-blue text-[var(--team-blue-text,#4a90d9)]">{{ blueNames(match) }}</span>
               </div>
             </div>
             <button
@@ -58,6 +58,8 @@
 </template>
 
 <script setup lang="ts">
+import { useTableSettings } from '../composables/useTableSettings'
+const { teamName } = useTableSettings()
 import type { Match } from '../types'
 import type { Player } from '../types'
 import { formatLocalDateTime } from '../dateTime'
@@ -69,10 +71,15 @@ const props = defineProps<{
   canDelete: boolean
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   close: []
   delete: [id: number]
 }>()
+
+function onOverlayClick(event: MouseEvent) {
+  if (!(event.target instanceof Element) || event.target.closest('button')) return
+  emit('close')
+}
 
 function getPlayerName(id: number): string {
   return props.players.find(p => p.id === id)?.name ?? '?'

@@ -3,8 +3,8 @@
     <div class="colorbar-top">
       <span class="colorbar-label">{{ label }}</span>
       <span class="colorbar-score">
-        <span class="team-orange">Oranje {{ orange }}</span>
-        <span class="team-blue">Blauw {{ blue }}</span>
+        <span class="team-orange">{{ teamName('orange') }} {{ orange }}</span>
+        <span class="team-blue">{{ teamName('blue') }} {{ blue }}</span>
       </span>
     </div>
     <div class="bar-line" :aria-label="`${label}: ${conclusion}`">
@@ -23,6 +23,8 @@
 </template>
 
 <script setup lang="ts">
+import { useTableSettings } from '../composables/useTableSettings'
+const { teamName } = useTableSettings()
 import { computed } from 'vue'
 
 const props = defineProps<{
@@ -37,7 +39,7 @@ const bluePct = computed(() => total.value ? `${(props.blue / total.value) * 100
 const orangeShare = computed(() => total.value ? `${Math.round((props.orange / total.value) * 100)}%` : '–')
 const blueShare = computed(() => total.value ? `${Math.round((props.blue / total.value) * 100)}%` : '–')
 const leader = computed(() => props.orange > props.blue ? 'orange' : props.blue > props.orange ? 'blue' : 'tie')
-const conclusion = computed(() => !total.value ? 'Nog geen wedstrijden' : leader.value === 'tie' ? 'Gelijke stand' : `${leader.value === 'orange' ? 'Oranje' : 'Blauw'} leidt`)
+const conclusion = computed(() => !total.value ? 'Nog geen wedstrijden' : leader.value === 'tie' ? 'Gelijke stand' : `${teamName(leader.value === 'orange' ? 'orange' : 'blue')} leidt`)
 </script>
 
 <style scoped>
@@ -90,26 +92,26 @@ const conclusion = computed(() => !total.value ? 'Nog geen wedstrijden' : leader
 .bar-line { position: relative; margin: 11px 5px 9px; }
 .bar-shell.empty { opacity: .25; }
 .leader-dot { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #17202c; transform: translate(-50%, -50%); box-shadow: 0 0 0 1px currentColor; }
-.leader-dot.orange { color: #ff904f; background: #ff904f; }
-.leader-dot.blue { color: #75adff; background: #75adff; }
+.leader-dot.orange { color: var(--team-orange-text, #ff904f); background: var(--team-orange, #ff904f); }
+.leader-dot.blue { color: var(--team-blue-text, #75adff); background: var(--team-blue, #75adff); }
 .leader-dot.tie { color: #aeb9c9; background: #aeb9c9; }
 .colorbar-conclusion { color: #aeb9c9; text-align: center; font-size: 10px; }
 
 .bar-orange {
-  background: linear-gradient(90deg, rgba(232, 125, 47, 1), rgba(232, 125, 47, 0.82));
+  background: var(--team-orange, #e87d2f);
   transition: width 0.25s ease;
 }
 
 .bar-blue {
-  background: linear-gradient(90deg, rgba(45, 95, 161, 0.9), rgba(45, 95, 161, 1));
+  background: var(--team-blue, #2d5fa1);
   transition: width 0.25s ease;
 }
 
 .team-orange {
-  color: #f0b26f;
+  color: var(--team-orange-text, #f0b26f);
 }
 
 .team-blue {
-  color: #89b2de;
+  color: var(--team-blue-text, #89b2de);
 }
 </style>

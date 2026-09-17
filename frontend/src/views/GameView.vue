@@ -13,8 +13,7 @@
         <GameIcon asset="clubhouse" fallback="🏠" :size="38" />
       </button>
 
-      <!-- Orange Score (top center) -->
-      <div class="absolute top-[2%] left-1/2 -translate-x-1/2 z-10">
+      <div class="absolute left-1/2 -translate-x-1/2 z-10" data-score-side="orange" :data-placement="topScoreSide === 'orange' ? 'top' : 'bottom'" :class="topScoreSide === 'orange' ? 'top-[2%]' : 'bottom-[2%] pb-[env(safe-area-inset-bottom)]'">
         <ScoreBox
           :score="orangeScore"
           team="orange"
@@ -135,8 +134,7 @@
         </div>
       </div>
 
-      <!-- Blue Score (bottom center) -->
-      <div class="absolute bottom-[2%] left-1/2 -translate-x-1/2 z-10 pb-[env(safe-area-inset-bottom)]">
+      <div class="absolute left-1/2 -translate-x-1/2 z-10" data-score-side="blue" :data-placement="topScoreSide === 'blue' ? 'top' : 'bottom'" :class="topScoreSide === 'blue' ? 'top-[2%]' : 'bottom-[2%] pb-[env(safe-area-inset-bottom)]'">
         <ScoreBox
           :score="blueScore"
           team="blue"
@@ -198,8 +196,12 @@ import { playerAvatar } from '../playerAvatar'
 import { isGroupAdmin } from '../auth'
 import { gameAssetUrl } from '../gameAssets'
 import GameIcon from '../components/GameIcon.vue'
+import { useTableSettings } from '../composables/useTableSettings'
+import { scoreSideAtTop } from '../tableSettings'
 
 const router = useRouter()
+const { tableSettings } = useTableSettings()
+const topScoreSide = computed(() => scoreSideAtTop(tableSettings.value))
 const { players, fetchPlayers } = usePlayers()
 const { stats, fetchStats } = useStats()
 const {
